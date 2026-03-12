@@ -2,9 +2,9 @@
 // config/db.php
 
 $host = 'localhost';
-$username = 'root';
-$password = ''; // Default XAMPP password is empty
-$database = 'crm_leads';
+$username = 'u823573651_lead';
+$password = 'l|93mj3S:'; // Default XAMPP password is empty
+$database = 'u823573651_lead';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
