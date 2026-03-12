@@ -16,7 +16,8 @@ $filters = [
     'assigned_to' => $_GET['assigned_to'] ?? '',
     'date_from'   => $_GET['date_from'] ?? '',
     'date_to'     => $_GET['date_to'] ?? '',
-    'tag_id'      => $_GET['tag_id'] ?? '',
+    'tag_id'          => $_GET['tag_id'] ?? '',
+    'facebook_page_id' => $_GET['facebook_page_id'] ?? '',
 ];
 
 // Fetch matching leads for export

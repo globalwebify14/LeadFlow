@@ -64,14 +64,20 @@ class Lead {
             $params[':tag_id'] = $filters['tag_id'];
         }
 
+        // Facebook Page filter
+        if (!empty($filters['facebook_page_id'])) {
+            $sql .= " AND l.facebook_page_id = :fb_page_id";
+            $params[':fb_page_id'] = $filters['facebook_page_id'];
+        }
+
         $sql .= " ORDER BY l.created_at DESC LIMIT :limit OFFSET :offset";
 
         $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => &$val) {
-            $stmt->bindParam($key, $val);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
         }
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
 
         $stmt->execute();
         return $stmt->fetchAll();
@@ -116,13 +122,18 @@ class Lead {
             $sql .= " AND l.id IN (SELECT lead_id FROM lead_tag_map WHERE tag_id = :tag_id)";
             $params[':tag_id'] = $filters['tag_id'];
         }
+        if (!empty($filters['facebook_page_id'])) {
+            $sql .= " AND l.facebook_page_id = :fb_page_id";
+            $params[':fb_page_id'] = $filters['facebook_page_id'];
+        }
 
         $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => &$val) {
-            $stmt->bindParam($key, $val);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
         }
         $stmt->execute();
-        return $stmt->fetch()['total'];
+        $row = $stmt->fetch();
+        return $row ? $row['total'] : 0;
     }
 
     /**
@@ -522,15 +533,24 @@ class Lead {
             $sql .= " AND l.id IN (SELECT lead_id FROM lead_tag_map WHERE tag_id = :tag_id)";
             $params[':tag_id'] = $filters['tag_id'];
         }
+        if (!empty($filters['facebook_page_id'])) {
+            $sql .= " AND l.facebook_page_id = :fb_page_id";
+            $params[':fb_page_id'] = $filters['facebook_page_id'];
+        }
 
         $sql .= " ORDER BY l.created_at DESC";
 
         $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => &$val) {
-            $stmt->bindParam($key, $val);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
         }
 
         $stmt->execute();
+        return $stmt->fetchAll();
+    }
+    public function getFacebookPages($orgId) {
+        $stmt = $this->pdo->prepare("SELECT DISTINCT page_id, page_name FROM facebook_pages WHERE organization_id = :org_id ORDER BY page_name");
+        $stmt->execute([':org_id' => $orgId]);
         return $stmt->fetchAll();
     }
 }

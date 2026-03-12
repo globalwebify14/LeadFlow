@@ -6,7 +6,6 @@ require_once '../../config/db.php';
 require_once '../../models/Lead.php';
 require_once '../../models/User.php';
 
-
 $orgId = getOrgId();
 $leadModel = new Lead($pdo);
 $userModel = new User($pdo);
@@ -50,7 +49,8 @@ $filters = [
     'assigned_to' => $_GET['assigned_to'] ?? '',
     'date_from'   => $_GET['date_from'] ?? '',
     'date_to'     => $_GET['date_to'] ?? '',
-    'tag_id'      => $_GET['tag_id'] ?? '',
+    'tag_id'          => $_GET['tag_id'] ?? '',
+    'facebook_page_id' => $_GET['facebook_page_id'] ?? '',
 ];
 
 $page = max(1, (int)($_GET['page'] ?? 1));
@@ -63,6 +63,7 @@ $totalPages = ceil($totalLeads / $limit);
 $agents = $userModel->getAgents($orgId);
 $tags = $leadModel->getOrgTags($orgId);
 $sources = $leadModel->getSources($orgId);
+$fbPages = $leadModel->getFacebookPages($orgId);
 
 include '../../includes/header.php';
 ?>
@@ -88,6 +89,14 @@ include '../../includes/header.php';
                     <option value="Hot" <?= $filters['priority']==='Hot'?'selected':'' ?>>🔥 Hot</option>
                     <option value="Warm" <?= $filters['priority']==='Warm'?'selected':'' ?>>☀️ Warm</option>
                     <option value="Cold" <?= $filters['priority']==='Cold'?'selected':'' ?>>❄️ Cold</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="facebook_page_id">
+                    <option value="">All Pages</option>
+                    <?php foreach ($fbPages as $fbPage): ?>
+                        <option value="<?= $fbPage['page_id'] ?>" <?= $filters['facebook_page_id'] == $fbPage['page_id'] ? 'selected' : '' ?>><?= e($fbPage['page_name']) ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">

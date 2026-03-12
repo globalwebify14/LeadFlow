@@ -124,7 +124,7 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
 
     // F. Inject into CRM leads table with ALL fields, including exact Facebook submission time
     $createdAt = isset($leadData['created_time']) ? date('Y-m-d H:i:s', strtotime($leadData['created_time'])) : date('Y-m-d H:i:s');
-    $stmt = $pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note, meta_campaign, meta_form_id, created_at) VALUES (:org, :name, :phone, :email, :company, :source, 'New Lead', 'Hot', :assign, :note, :campaign, :form, :created)");
+    $stmt = $pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note, meta_campaign, meta_form_id, facebook_page_id, created_at) VALUES (:org, :name, :phone, :email, :company, :source, 'New Lead', 'Hot', :assign, :note, :campaign, :form, :page_id, :created)");
     $stmt->execute([
         'org' => $orgId,
         'name' => $parsed['name'],
@@ -136,6 +136,7 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
         'note' => $parsed['note'],
         'campaign' => $campaign,
         'form' => $formId,
+        'page_id' => $pageId,
         'created' => $createdAt
     ]);
 
