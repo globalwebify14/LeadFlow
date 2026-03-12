@@ -1,0 +1,37 @@
+[
+    {
+        "id": 16,
+        "name": "Shakti Singh",
+        "email": "shakti@gmail.com",
+        "role": "org_owner",
+        "is_active": 1
+    },
+    {
+        "id": 10,
+        "name": "kunal",
+        "email": "kunal@gmail.com",
+        "role": "agent",
+        "is_active": 1
+    },
+    {
+        "id": 9,
+        "name": "Sales Agent",
+        "email": "agent@crm.com",
+        "role": "agent",
+        "is_active": 1
+    },
+    {
+        "id": 8,
+        "name": "Team Lead",
+        "email": "teamlead@crm.com",
+        "role": "team_lead",
+        "is_active": 1
+    },
+    {
+        "id": 7,
+        "name": "Org Admin",
+        "email": "orgadmin@crm.com",
+        "role": "org_admin",
+        "is_active": 1
+    }
+]

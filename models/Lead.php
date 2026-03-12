@@ -1,0 +1,537 @@
+<?php
+require_once __DIR__ . '/../config/db.php';
+
+class Lead {
+    private $pdo;
+
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
+    }
+
+    /**
+     * Get all leads with advanced filtering
+     */
+    public function getAllLeads($orgId, $filters = [], $limit = 10, $offset = 0) {
+        $sql = "SELECT l.*, u.name as agent_name
+                FROM leads l
+                LEFT JOIN users u ON l.assigned_to = u.id
+                WHERE l.organization_id = :org_id";
+        $params = [':org_id' => $orgId];
+
+        // Search filter
+        if (!empty($filters['search'])) {
+            $sql .= " AND (l.name LIKE :search OR l.phone LIKE :search OR l.email LIKE :search OR l.company LIKE :search)";
+            $params[':search'] = "%" . $filters['search'] . "%";
+        }
+
+        // Status filter
+        if (!empty($filters['status'])) {
+            $sql .= " AND l.status = :status";
+            $params[':status'] = $filters['status'];
+        }
+
+        // Priority filter
+        if (!empty($filters['priority'])) {
+            $sql .= " AND l.priority = :priority";
+            $params[':priority'] = $filters['priority'];
+        }
+
+        // Source filter
+        if (!empty($filters['source'])) {
+            $sql .= " AND l.source = :source";
+            $params[':source'] = $filters['source'];
+        }
+
+        // Assigned agent filter
+        if (!empty($filters['assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['assigned_to'];
+        }
+
+        // Date range filter
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(l.created_at) >= :date_from";
+            $params[':date_from'] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(l.created_at) <= :date_to";
+            $params[':date_to'] = $filters['date_to'];
+        }
+
+        // Tag filter
+        if (!empty($filters['tag_id'])) {
+            $sql .= " AND l.id IN (SELECT lead_id FROM lead_tag_map WHERE tag_id = :tag_id)";
+            $params[':tag_id'] = $filters['tag_id'];
+        }
+
+        $sql .= " ORDER BY l.created_at DESC LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => &$val) {
+            $stmt->bindParam($key, $val);
+        }
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Count leads with filters
+     */
+    public function getTotalLeadsCount($orgId, $filters = []) {
+        $sql = "SELECT COUNT(*) as total FROM leads l WHERE l.organization_id = :org_id";
+        $params = [':org_id' => $orgId];
+
+        if (!empty($filters['search'])) {
+            $sql .= " AND (l.name LIKE :search OR l.phone LIKE :search OR l.email LIKE :search OR l.company LIKE :search)";
+            $params[':search'] = "%" . $filters['search'] . "%";
+        }
+        if (!empty($filters['status'])) {
+            $sql .= " AND l.status = :status";
+            $params[':status'] = $filters['status'];
+        }
+        if (!empty($filters['priority'])) {
+            $sql .= " AND l.priority = :priority";
+            $params[':priority'] = $filters['priority'];
+        }
+        if (!empty($filters['source'])) {
+            $sql .= " AND l.source = :source";
+            $params[':source'] = $filters['source'];
+        }
+        if (!empty($filters['assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['assigned_to'];
+        }
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(l.created_at) >= :date_from";
+            $params[':date_from'] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(l.created_at) <= :date_to";
+            $params[':date_to'] = $filters['date_to'];
+        }
+        if (!empty($filters['tag_id'])) {
+            $sql .= " AND l.id IN (SELECT lead_id FROM lead_tag_map WHERE tag_id = :tag_id)";
+            $params[':tag_id'] = $filters['tag_id'];
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => &$val) {
+            $stmt->bindParam($key, $val);
+        }
+        $stmt->execute();
+        return $stmt->fetch()['total'];
+    }
+
+    /**
+     * Get single lead by ID
+     */
+    public function getLeadById($id, $orgId = null) {
+        $sql = "SELECT l.*, u.name as agent_name 
+                FROM leads l 
+                LEFT JOIN users u ON l.assigned_to = u.id 
+                WHERE l.id = :id";
+        $params = ['id' => $id];
+        if ($orgId) {
+            $sql .= " AND l.organization_id = :org_id";
+            $params['org_id'] = $orgId;
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Add a new lead
+     */
+    public function addLead($data) {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note) 
+                VALUES (:org_id, :name, :phone, :email, :company, :source, :status, :priority, :assigned_to, :note)");
+            $stmt->execute([
+                'org_id'      => $data['organization_id'],
+                'name'        => $data['name'],
+                'phone'       => $data['phone'],
+                'email'       => $data['email'] ?? null,
+                'company'     => $data['company'] ?? null,
+                'source'      => $data['source'] ?? null,
+                'status'      => $data['status'] ?? 'New Lead',
+                'priority'    => $data['priority'] ?? 'Warm',
+                'assigned_to' => $data['assigned_to'] ?: null,
+                'note'        => $data['note'] ?? null,
+            ]);
+            $leadId = $this->pdo->lastInsertId();
+
+            // Log initial activity
+            $this->logActivity($leadId, 'status_change', 'Lead created with status: ' . ($data['status'] ?? 'New Lead'), null, $data['status'] ?? 'New Lead', $data['user_id'] ?? null);
+
+            // Add initial note if present
+            if (!empty($data['note'])) {
+                $this->addNote($leadId, $data['note'], $data['user_id'] ?? null);
+            }
+
+            // Handle tags
+            if (!empty($data['tags'])) {
+                $this->syncTags($leadId, $data['tags']);
+            }
+
+            $this->pdo->commit();
+            return $leadId;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return false;
+        }
+    }
+
+    /**
+     * Update a lead
+     */
+    public function updateLead($id, $data) {
+        $currentLead = $this->getLeadById($id);
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare("UPDATE leads SET name=:name, phone=:phone, email=:email, company=:company, source=:source, status=:status, priority=:priority, assigned_to=:assigned_to, note=:note WHERE id=:id");
+            $stmt->execute([
+                'id'          => $id,
+                'name'        => $data['name'],
+                'phone'       => $data['phone'],
+                'email'       => $data['email'] ?? null,
+                'company'     => $data['company'] ?? null,
+                'source'      => $data['source'] ?? null,
+                'status'      => $data['status'] ?? 'New Lead',
+                'priority'    => $data['priority'] ?? 'Warm',
+                'assigned_to' => $data['assigned_to'] ?: null,
+                'note'        => $data['note'] ?? null,
+            ]);
+
+            // Log status change
+            if ($currentLead && $currentLead['status'] !== $data['status']) {
+                $this->logActivity($id, 'status_change', 'Status changed from ' . $currentLead['status'] . ' to ' . $data['status'], $currentLead['status'], $data['status'], $data['user_id'] ?? null);
+            }
+
+            // Log assignment change
+            if ($currentLead && $currentLead['assigned_to'] != ($data['assigned_to'] ?: null)) {
+                $this->logActivity($id, 'assignment', 'Lead reassigned', $currentLead['assigned_to'], $data['assigned_to'] ?: null, $data['user_id'] ?? null);
+            }
+
+            // Sync tags
+            if (isset($data['tags'])) {
+                $this->syncTags($id, $data['tags']);
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return false;
+        }
+    }
+
+    /**
+     * Delete a lead
+     */
+    public function deleteLead($id) {
+        $stmt = $this->pdo->prepare("DELETE FROM leads WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
+
+    /**
+     * Update lead status
+     */
+    public function updateStatus($id, $status, $note = '', $userId = null) {
+        $currentLead = $this->getLeadById($id);
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare("UPDATE leads SET status=:status WHERE id=:id");
+            $stmt->execute(['status' => $status, 'id' => $id]);
+
+            $desc = $note ?: 'Status changed from ' . ($currentLead['status'] ?? '') . ' to ' . $status;
+            $this->logActivity($id, 'status_change', $desc, $currentLead['status'] ?? null, $status, $userId);
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return false;
+        }
+    }
+
+    /**
+     * Log an activity for a lead
+     */
+    public function logActivity($leadId, $type, $description, $oldValue = null, $newValue = null, $userId = null) {
+        $stmt = $this->pdo->prepare("INSERT INTO lead_activities (lead_id, user_id, activity_type, description, old_value, new_value) VALUES (:lead_id, :user_id, :type, :desc, :old, :new)");
+        return $stmt->execute([
+            'lead_id' => $leadId,
+            'user_id' => $userId,
+            'type'    => $type,
+            'desc'    => $description,
+            'old'     => $oldValue,
+            'new'     => $newValue,
+        ]);
+    }
+
+    /**
+     * Add a note to a lead
+     */
+    public function addNote($leadId, $note, $userId = null) {
+        $stmt = $this->pdo->prepare("INSERT INTO lead_notes (lead_id, user_id, note) VALUES (:lead_id, :user_id, :note)");
+        $result = $stmt->execute([
+            'lead_id' => $leadId,
+            'user_id' => $userId,
+            'note'    => $note,
+        ]);
+        // Also log as activity
+        $this->logActivity($leadId, 'note', $note, null, null, $userId);
+        return $result;
+    }
+
+    /**
+     * Get activities for a lead
+     */
+    public function getActivities($leadId) {
+        $stmt = $this->pdo->prepare("SELECT la.*, u.name as user_name FROM lead_activities la LEFT JOIN users u ON la.user_id = u.id WHERE la.lead_id = :lead_id ORDER BY la.created_at DESC");
+        $stmt->execute(['lead_id' => $leadId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Get notes for a lead
+     */
+    public function getNotes($leadId) {
+        $stmt = $this->pdo->prepare("SELECT ln.*, u.name as user_name FROM lead_notes ln LEFT JOIN users u ON ln.user_id = u.id WHERE ln.lead_id = :lead_id ORDER BY ln.created_at DESC");
+        $stmt->execute(['lead_id' => $leadId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Get tags for a lead
+     */
+    public function getTags($leadId) {
+        $stmt = $this->pdo->prepare("SELECT t.* FROM lead_tags t INNER JOIN lead_tag_map ltm ON t.id = ltm.tag_id WHERE ltm.lead_id = :lead_id");
+        $stmt->execute(['lead_id' => $leadId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Sync tags for a lead
+     */
+    public function syncTags($leadId, $tagIds) {
+        // Remove all existing
+        $this->pdo->prepare("DELETE FROM lead_tag_map WHERE lead_id = ?")->execute([$leadId]);
+        // Add new ones
+        if (!empty($tagIds)) {
+            $stmt = $this->pdo->prepare("INSERT INTO lead_tag_map (lead_id, tag_id) VALUES (?, ?)");
+            foreach ($tagIds as $tagId) {
+                $stmt->execute([$leadId, $tagId]);
+            }
+        }
+    }
+
+    /**
+     * Get all tags for an organization
+     */
+    public function getOrgTags($orgId) {
+        $stmt = $this->pdo->prepare("SELECT * FROM lead_tags WHERE organization_id = :org_id ORDER BY name");
+        $stmt->execute(['org_id' => $orgId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Find duplicates by phone or email
+     */
+    public function findDuplicates($orgId, $phone, $email = null, $excludeId = null) {
+        $sql = "SELECT * FROM leads WHERE organization_id = :org_id AND (phone = :phone";
+        $params = ['org_id' => $orgId, 'phone' => $phone];
+        
+        if (!empty($email)) {
+            $sql .= " OR email = :email";
+            $params['email'] = $email;
+        }
+        $sql .= ")";
+        
+        if ($excludeId) {
+            $sql .= " AND id != :exclude_id";
+            $params['exclude_id'] = $excludeId;
+        }
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Bulk update status
+     */
+    public function bulkUpdateStatus($ids, $status, $userId = null) {
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("UPDATE leads SET status = ? WHERE id IN ($placeholders)");
+        $params = array_merge([$status], $ids);
+        $result = $stmt->execute($params);
+        
+        // Log activities
+        foreach ($ids as $id) {
+            $this->logActivity($id, 'status_change', "Bulk status change to $status", null, $status, $userId);
+        }
+        return $result;
+    }
+
+    /**
+     * Bulk delete leads
+     */
+    public function bulkDelete($ids) {
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("DELETE FROM leads WHERE id IN ($placeholders)");
+        return $stmt->execute($ids);
+    }
+
+    /**
+     * Bulk assign leads to agent
+     */
+    public function bulkAssign($ids, $agentId, $userId = null) {
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("UPDATE leads SET assigned_to = ? WHERE id IN ($placeholders)");
+        $params = array_merge([$agentId], $ids);
+        $result = $stmt->execute($params);
+
+        foreach ($ids as $id) {
+            $this->logActivity($id, 'assignment', 'Lead assigned via bulk action', null, $agentId, $userId);
+        }
+        return $result;
+    }
+
+    /**
+     * Get distinct sources for filter dropdown
+     */
+    public function getSources($orgId) {
+        $stmt = $this->pdo->prepare("SELECT DISTINCT source FROM leads WHERE organization_id = :org_id AND source IS NOT NULL AND source != '' ORDER BY source");
+        $stmt->execute(['org_id' => $orgId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Get leads count by status for dashboard
+     */
+    public function getCountByStatus($orgId) {
+        $stmt = $this->pdo->prepare("SELECT status, COUNT(*) as count FROM leads WHERE organization_id = :org_id GROUP BY status");
+        $stmt->execute(['org_id' => $orgId]);
+        return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    /**
+     * Get leads count by priority
+     */
+    public function getCountByPriority($orgId) {
+        $stmt = $this->pdo->prepare("SELECT priority, COUNT(*) as count FROM leads WHERE organization_id = :org_id GROUP BY priority");
+        $stmt->execute(['org_id' => $orgId]);
+        return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    /**
+     * Get monthly lead growth (last 6 months)
+     */
+    public function getMonthlyGrowth($orgId) {
+        $stmt = $this->pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count 
+            FROM leads WHERE organization_id = :org_id AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) 
+            GROUP BY month ORDER BY month");
+        $stmt->execute(['org_id' => $orgId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Get leads for pipeline view
+     */
+    public function getLeadsByStage($orgId, $stageId, $userId = null) {
+        $sql = "SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.organization_id = :org_id AND l.pipeline_stage_id = :stage_id";
+        $params = ['org_id' => $orgId, 'stage_id' => $stageId];
+        if ($userId) {
+            $sql .= " AND l.assigned_to = :user_id";
+            $params['user_id'] = $userId;
+        }
+        $sql .= " ORDER BY l.updated_at DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Update lead pipeline stage
+     */
+    public function updatePipelineStage($leadId, $stageId, $userId = null) {
+        $stmt = $this->pdo->prepare("UPDATE leads SET pipeline_stage_id = :stage_id WHERE id = :id");
+        $result = $stmt->execute(['stage_id' => $stageId, 'id' => $leadId]);
+        $this->logActivity($leadId, 'status_change', 'Pipeline stage updated', null, $stageId, $userId);
+        return $result;
+    }
+
+    /**
+     * Get filtered leads for export without pagination
+     */
+    public function getFilteredLeadsForExport($orgId, $filters = []) {
+        $sql = "SELECT l.*, u.name as agent_name
+                FROM leads l
+                LEFT JOIN users u ON l.assigned_to = u.id
+                WHERE l.organization_id = :org_id";
+        $params = [':org_id' => $orgId];
+
+        // Search filter
+        if (!empty($filters['search'])) {
+            $sql .= " AND (l.name LIKE :search OR l.phone LIKE :search OR l.email LIKE :search OR l.company LIKE :search)";
+            $params[':search'] = "%" . $filters['search'] . "%";
+        }
+
+        // Status filter
+        if (!empty($filters['status'])) {
+            $sql .= " AND l.status = :status";
+            $params[':status'] = $filters['status'];
+        }
+
+        // Priority filter
+        if (!empty($filters['priority'])) {
+            $sql .= " AND l.priority = :priority";
+            $params[':priority'] = $filters['priority'];
+        }
+
+        // Source filter
+        if (!empty($filters['source'])) {
+            $sql .= " AND l.source = :source";
+            $params[':source'] = $filters['source'];
+        }
+
+        // Assigned agent filter
+        if (!empty($filters['assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['assigned_to'];
+        }
+
+        // Date range filter
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(l.created_at) >= :date_from";
+            $params[':date_from'] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(l.created_at) <= :date_to";
+            $params[':date_to'] = $filters['date_to'];
+        }
+
+        // Tag filter
+        if (!empty($filters['tag_id'])) {
+            $sql .= " AND l.id IN (SELECT lead_id FROM lead_tag_map WHERE tag_id = :tag_id)";
+            $params[':tag_id'] = $filters['tag_id'];
+        }
+
+        $sql .= " ORDER BY l.created_at DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => &$val) {
+            $stmt->bindParam($key, $val);
+        }
+
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+}
+?>
