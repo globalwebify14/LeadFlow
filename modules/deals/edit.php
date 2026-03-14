@@ -16,6 +16,10 @@ if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/deals/'); }
 $deal = $dealModel->getDealById((int)$_GET['id'], $orgId);
 if (!$deal) { redirect(BASE_URL . 'modules/deals/', 'Deal not found.', 'danger'); }
 
+if (getUserRole() === 'agent' && $deal['assigned_to'] != getUserId()) {
+    redirect(BASE_URL . 'modules/deals/', 'Access denied. You can only edit deals assigned to you.', 'danger');
+}
+
 $agents = $userModel->getAgents($orgId);
 $stagesStmt = $pdo->prepare("SELECT id, name FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
 $stagesStmt->execute(['org' => $orgId]);

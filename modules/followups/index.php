@@ -10,8 +10,15 @@ $followupModel = new Followup($pdo);
 
 // Handle complete action
 if (isset($_GET['complete'])) {
-    $followupModel->complete((int)$_GET['complete']);
-    redirect('index.php', 'Follow-up completed!', 'success');
+    $id = (int)$_GET['complete'];
+    $f = $followupModel->getById($id);
+    if ($f && !isAdmin() && $f['user_id'] != getUserId()) {
+        redirect('index.php', 'Access denied.', 'danger');
+    }
+    if ($f) {
+        $followupModel->complete($id);
+        redirect('index.php', 'Follow-up completed!', 'success');
+    }
 }
 
 // Handle add followup
@@ -46,8 +53,15 @@ $overdueCount = $followupModel->getOverdueCount($orgId, isAdmin() ? null : getUs
 $todayCount = $followupModel->getTodayCount($orgId, isAdmin() ? null : getUserId());
 
 // Get leads and agents for the add form
-$leadsStmt = $pdo->prepare("SELECT id, name FROM leads WHERE organization_id = :org ORDER BY name LIMIT 200");
-$leadsStmt->execute(['org' => $orgId]);
+$leadsSql = "SELECT id, name FROM leads WHERE organization_id = :org";
+$leadsParams = ['org' => $orgId];
+if (!isAdmin()) {
+    $leadsSql .= " AND assigned_to = :uid";
+    $leadsParams['uid'] = getUserId();
+}
+$leadsSql .= " ORDER BY name LIMIT 200";
+$leadsStmt = $pdo->prepare($leadsSql);
+$leadsStmt->execute($leadsParams);
 $leads = $leadsStmt->fetchAll();
 $agentsStmt = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = :org AND is_active = 1 ORDER BY name");
 $agentsStmt->execute(['org' => $orgId]);

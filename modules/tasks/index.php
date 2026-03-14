@@ -13,6 +13,12 @@ $taskModel = new Task($pdo);
 if (isset($_GET['complete'])) {
     $id = (int)$_GET['complete'];
     $task = $taskModel->getTaskById($id, $orgId);
+    
+    // Security Check
+    if ($task && getUserRole() === 'agent' && $task['assigned_to'] != getUserId()) {
+        redirect(BASE_URL . 'modules/tasks/', 'Access denied.', 'danger');
+    }
+
     if ($task) {
         $taskModel->updateTask($id, ['status' => 'completed', 'task_title' => $task['task_title'], 'due_date' => $task['due_date'], 'assigned_to' => $task['assigned_to']]);
         redirect(BASE_URL . 'modules/tasks/', 'Task completed!', 'success');

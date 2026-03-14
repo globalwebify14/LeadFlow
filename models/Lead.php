@@ -598,7 +598,10 @@ class Lead {
         }
 
         // Assigned agent filter
-        if (!empty($filters['assigned_to'])) {
+        if (!empty($filters['enforce_assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['enforce_assigned_to'];
+        } elseif (!empty($filters['assigned_to'])) {
             $sql .= " AND l.assigned_to = :assigned_to";
             $params[':assigned_to'] = $filters['assigned_to'];
         }

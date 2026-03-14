@@ -5,6 +5,37 @@ $userRole = getUserRole(); // super_admin, org_owner, org_admin, team_lead, agen
 $base = BASE_URL;
 ?>
 <div class="d-flex" id="wrapper">
+    <?php if (in_array(getUserRole(), ['agent', 'team_lead'])): ?>
+    <style>
+        /* Give agent sidebar items more breathing room */
+        #sidebar-wrapper .list-group-item {
+            padding: 6px 22px !important;
+            margin: 6px 16px !important;
+            border-radius: 12px !important;
+            font-size: 14.5px !important;
+            width: auto !important;
+            display: flex;
+            align-items: center;
+        }
+        #sidebar-wrapper .list-group-item.active-link {
+            border-left: none !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+        #sidebar-wrapper .list-group-item .bi {
+            font-size: 1.25rem !important;
+            margin-right: 12px !important;
+        }
+        #sidebar-wrapper .sidebar-category {
+            /* margin-top: 2rem !important; */
+            margin-left: 16px !important;
+            margin-bottom: 10px !important;
+            font-size: 11px !important;
+            letter-spacing: 1.5px !important;
+            opacity: 0.7;
+        }
+    </style>
+    <?php endif; ?>
+
     <!-- Sidebar -->
     <div id="sidebar-wrapper" class="text-white border-end shadow-sm d-flex flex-column" style="background-color: var(--sidebar-bg); border-color: rgba(255,255,255,0.05) !important; height: 100vh; position: fixed; width: var(--sidebar-width); z-index: 1060; transition: all 0.3s;">
         <div class="sidebar-heading px-4 py-4 fs-5 fw-bold d-flex align-items-center flex-shrink-0">

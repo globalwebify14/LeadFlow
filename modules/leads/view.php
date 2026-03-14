@@ -14,6 +14,11 @@ if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/leads/'); }
 $lead = $leadModel->getLeadById((int)$_GET['id'], $orgId);
 if (!$lead) { redirect(BASE_URL . 'modules/leads/', 'Lead not found.', 'danger'); }
 
+// Security: Agent can only view their own leads
+if (getUserRole() === 'agent' && $lead['assigned_to'] != getUserId()) {
+    redirect(BASE_URL . 'modules/leads/', 'Access denied. You can only view leads assigned to you.', 'danger');
+}
+
 // Handle add task
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_task'])) {
     $taskModel = new Task($pdo);

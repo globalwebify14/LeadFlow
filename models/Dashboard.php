@@ -180,7 +180,7 @@ class Dashboard {
              WHERE l.organization_id = :org_id";
         $params = ['org_id' => $orgId];
         if ($role === 'agent' && $userId) {
-            $sql .= " AND la.user_id = :user_id";
+            $sql .= " AND (la.user_id = :user_id OR l.assigned_to = :user_id)";
             $params['user_id'] = $userId;
         }
         $sql .= " ORDER BY la.created_at DESC LIMIT " . (int)$limit;

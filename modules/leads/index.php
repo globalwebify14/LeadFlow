@@ -127,48 +127,53 @@ include '../../includes/header.php';
     overflow: hidden;
 }
 .table-premium th {
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #94a3b8;
+    letter-spacing: 0.8px;
+    color: #64748b;
     background-color: #f8fafc;
     border-bottom: 2px solid #e2e8f0;
-    padding: 16px;
-    font-weight: 600;
+    padding: 18px 24px;
+    font-weight: 700;
 }
 .table-premium td {
-    padding: 16px;
+    padding: 18px 24px;
     vertical-align: middle;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
 }
 .table-premium tbody tr {
-    transition: all 0.2s ease;
-    /* Removed translate as it creates a new stacking context that breaks z-index */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #ffffff;
 }
 .table-premium tbody tr:hover {
     background-color: #f8fafc;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    transform: translateY(-2px);
+    z-index: 10;
+    position: relative;
 }
 .lead-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-    color: #4f46e5;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 18px;
     flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
 }
 .lead-name-link {
     color: #0f172a;
-    font-weight: 600;
-    font-size: 14.5px;
+    font-weight: 700;
+    font-size: 15.5px;
     text-decoration: none;
     transition: color 0.2s;
+    letter-spacing: -0.3px;
 }
 .lead-name-link:hover {
     color: #4f46e5;
@@ -208,15 +213,90 @@ include '../../includes/header.php';
     opacity: 1;
 }
 .custom-checkbox {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
     border-color: #cbd5e1;
     cursor: pointer;
+    transition: all 0.2s;
 }
 .custom-checkbox:checked {
     background-color: #4f46e5;
     border-color: #4f46e5;
+}
+
+/* Agent Quick Actions Styling */
+.agent-status-dropdown {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    padding: 8px 36px 8px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 20px 20px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.agent-status-dropdown:hover, .agent-status-dropdown:focus {
+    border-color: #4f46e5;
+    background-color: #ffffff;
+    outline: none;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+}
+.agent-action-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.agent-action-pill:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+.agent-action-pill.call { color: #2563eb; background-color: #eff6ff; border-color: #bfdbfe; }
+.agent-action-pill.call:hover { background-color: #2563eb; color: #ffffff; border-color: #2563eb; box-shadow: 0 6px 12px rgba(37, 99, 235, 0.2); }
+
+.agent-action-pill.wa { color: #16a34a; background-color: #f0fdf4; border-color: #bbf7d0; }
+.agent-action-pill.wa:hover { background-color: #16a34a; color: #ffffff; border-color: #16a34a; box-shadow: 0 6px 12px rgba(22, 163, 74, 0.2); }
+
+.agent-action-pill.email { color: #d97706; background-color: #fffbeb; border-color: #fde68a; }
+.agent-action-pill.email:hover { background-color: #d97706; color: #ffffff; border-color: #d97706; box-shadow: 0 6px 12px rgba(217, 119, 6, 0.2); }
+
+.btn-quick-note {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #4f46e5;
+    font-weight: 600;
+    font-size: 11.5px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+.btn-quick-note:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    color: #4338ca;
 }
 </style>
 
@@ -342,7 +422,9 @@ include '../../includes/header.php';
                             <th width="250">Lead Name</th>
                             <th>Contact Info</th>
                             <th>Context / Notes</th>
-                            <th width="150">Assignment</th>
+                            <?php if ($userRole !== 'agent'): ?>
+                                <th width="150">Assignment</th>
+                            <?php endif; ?>
                             <th width="120">Status</th>
                             <th width="80" class="text-end pe-4">Actions</th>
                         </tr>
@@ -359,26 +441,67 @@ include '../../includes/header.php';
                                         <?= strtoupper(substr($lead['name'], 0, 1)) ?>
                                     </div>
                                     <div>
-                                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="lead-name-link d-block">
-                                            <?= e($lead['name']) ?>
-                                        </a>
-                                        <div class="text-muted small mt-1 d-flex align-items-center gap-2">
-                                            <span><i class="bi bi-calendar-event me-1"></i><?= date('M d, g:i A', strtotime($lead['created_at'])) ?></span>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="lead-name-link text-truncate" style="max-width: 150px;">
+                                                <?= e($lead['name']) ?>
+                                            </a>
                                             <?php if($lead['priority']): ?>
-                                                <span class="badge bg-<?= $lead['priority'] === 'Hot' ? 'danger' : ($lead['priority'] === 'Warm' ? 'warning' : 'info') ?> bg-opacity-10 text-<?= $lead['priority'] === 'Hot' ? 'danger' : ($lead['priority'] === 'Warm' ? 'warning' : 'info') ?> py-0 px-1" style="font-size: 10px;"><?= $lead['priority'] ?></span>
+                                                <?php 
+                                                $pClass = '';
+                                                if($lead['priority'] === 'Hot') $pClass = 'bg-danger text-danger bg-opacity-10';
+                                                elseif($lead['priority'] === 'Warm') $pClass = 'bg-warning text-dark bg-opacity-25';
+                                                else $pClass = 'bg-info text-info bg-opacity-10';
+                                                ?>
+                                                <span class="badge border border-light shadow-sm <?= $pClass ?>" style="font-size: 10px; padding: 4px 6px; font-weight: 700; letter-spacing: 0.5px; border-radius: 6px;"><?= strtoupper($lead['priority']) ?></span>
                                             <?php endif; ?>
+                                        </div>
+                                        <div class="text-muted text-nowrap d-flex align-items-center" style="font-size: 12.5px;">
+                                            <i class="bi bi-calendar-event me-2 text-secondary px-1 py-0 bg-secondary bg-opacity-10 rounded"></i>
+                                            <?= date('M d, Y', strtotime($lead['created_at'])) ?> 
+                                            <span class="text-black-50 ms-2 fw-medium" style="font-size: 11.5px;"><?= date('g:i A', strtotime($lead['created_at'])) ?></span>
                                         </div>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                <div class="text-dark fw-semibold" style="font-size: 13.5px;">
-                                    <i class="bi bi-telephone text-primary me-2"></i><?= trim(e($lead['phone'] ?: '—')) ?>
-                                </div>
-                                <?php if ($lead['email']): ?>
-                                <div class="text-muted mt-1" style="font-size: 12px;">
-                                    <i class="bi bi-envelope me-2"></i><?= e($lead['email']) ?>
-                                </div>
+                                <?php if ($userRole !== 'agent'): ?>
+                                    <div class="text-dark fw-semibold" style="font-size: 13.5px;">
+                                        <i class="bi bi-telephone text-primary me-2"></i><?= trim(e($lead['phone'] ?: '—')) ?>
+                                    </div>
+                                    <?php if ($lead['email']): ?>
+                                    <div class="text-muted mt-1" style="font-size: 12px;">
+                                        <i class="bi bi-envelope me-2"></i><?= e($lead['email']) ?>
+                                    </div>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="text-dark fw-bold" style="font-size: 14.5px;">
+                                                <i class="bi bi-telephone text-muted me-1" style="font-size: 12px;"></i> <?= trim(e($lead['phone'] ?: '—')) ?>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <?php if($lead['phone']): ?>
+                                                    <?php $waPhone = preg_replace('/[^0-9]/', '', $lead['phone']); ?>
+                                                    <a href="tel:<?= e($lead['phone']) ?>" class="agent-action-pill call" title="Call">
+                                                        <i class="bi bi-telephone-fill" style="font-size: 14px;"></i>
+                                                    </a>
+                                                    <a href="https://wa.me/<?= e($waPhone) ?>" target="_blank" class="agent-action-pill wa" title="WhatsApp">
+                                                        <i class="bi bi-whatsapp" style="font-size: 14.5px;"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                                <?php if($lead['email']): ?>
+                                                    <a href="mailto:<?= e($lead['email']) ?>" class="agent-action-pill email" title="Email">
+                                                        <i class="bi bi-envelope-fill" style="font-size: 14px;"></i>
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <?php if($lead['email']): ?>
+                                            <div class="text-muted text-truncate mt-1" style="font-size: 13px; max-width: 220px;" title="<?= e($lead['email']) ?>">
+                                                <i class="bi bi-envelope text-muted me-1" style="font-size: 11px;"></i> <?= e($lead['email']) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 <?php endif; ?>
                             </td>
                             <td>
@@ -390,51 +513,65 @@ include '../../includes/header.php';
                                     $previewNote = "FB Lead: " . ($lead['meta_campaign'] ?? 'Ad Campaign');
                                 }
                                 ?>
-                                <div class="text-muted" style="font-size: 13px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?= e($previewNote) ?>">
+                                <div class="text-muted" style="font-size: 13px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.6;" id="note_text_<?= $lead['id'] ?>" title="<?= e($previewNote) ?>">
                                     <?= e($previewNote ?: '—') ?>
                                 </div>
                                 <?php if ($lead['company']): ?>
-                                    <div class="text-dark fw-medium mt-1" style="font-size: 12px;"><i class="bi bi-building me-1 text-secondary"></i><?= e($lead['company']) ?></div>
+                                    <div class="text-dark fw-bold mt-2" style="font-size: 13px;"><i class="bi bi-building me-1 text-secondary"></i><?= e($lead['company']) ?></div>
                                 <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($userRole !== 'agent'): ?>
-                                    <?php 
-                                    $assignedAgentName = 'Unassigned';
-                                    foreach($agents as $ag) { if($ag['id'] == $lead['assigned_to']) { $assignedAgentName = $ag['name']; break; } }
-                                    ?>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-light bg-white border shadow-sm w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" style="font-size: 12.5px; border-radius: 8px;">
-                                            <span class="text-truncate">
-                                                <?php if($lead['assigned_to']): ?>
-                                                    <span class="agent-avatar"><?= strtoupper(substr($assignedAgentName,0,1)) ?></span><?= e($assignedAgentName) ?>
-                                                <?php else: ?>
-                                                    <i class="bi bi-person-x text-muted me-1"></i> Unassigned
-                                                <?php endif; ?>
-                                            </span>
-                                            <i class="bi bi-chevron-down text-muted" style="font-size: 10px;"></i>
+                                
+                                <?php if ($userRole === 'agent'): ?>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn-quick-note" onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                            <i class="bi bi-pencil-square me-1"></i> Add Note
                                         </button>
-                                        <ul class="dropdown-menu shadow-sm border-0" style="font-size: 13px;">
-                                            <li><h6 class="dropdown-header">Reassign Lead</h6></li>
-                                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_null').submit();">Unassigned</a></li>
-                                            <?php foreach ($agents as $agent): ?>
-                                                <li><a class="dropdown-item <?= $lead['assigned_to'] == $agent['id'] ? 'active bg-primary bg-opacity-10 text-primary fw-bold' : '' ?>" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>').submit();"><?= e($agent['name']) ?></a></li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    </div>
-                                    <!-- Hidden assignment forms -->
-                                    <form id="assign_<?= $lead['id'] ?>_null" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value=""></form>
-                                    <?php foreach ($agents as $agent): ?>
-                                    <form id="assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value="<?= $agent['id'] ?>"></form>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <div class="d-inline-flex align-items-center bg-light border px-2 py-1 rounded" style="font-size: 12.5px;">
-                                        <span class="agent-avatar bg-primary text-white"><?= strtoupper(substr(getUserName(),0,1)) ?></span> You
                                     </div>
                                 <?php endif; ?>
                             </td>
+                            <?php if ($userRole !== 'agent'): ?>
                             <td>
-                                <span class="badge <?= getStatusBadgeClass($lead['status']) ?> status-badge"><?= e($lead['status']) ?></span>
+                                <?php 
+                                $assignedAgentName = 'Unassigned';
+                                foreach($agents as $ag) { if($ag['id'] == $lead['assigned_to']) { $assignedAgentName = $ag['name']; break; } }
+                                ?>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light bg-white border shadow-sm w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" style="font-size: 12.5px; border-radius: 8px;">
+                                        <span class="text-truncate">
+                                            <?php if($lead['assigned_to']): ?>
+                                                <span class="agent-avatar"><?= strtoupper(substr($assignedAgentName,0,1)) ?></span><?= e($assignedAgentName) ?>
+                                            <?php else: ?>
+                                                <i class="bi bi-person-x text-muted me-1"></i> Unassigned
+                                            <?php endif; ?>
+                                        </span>
+                                        <i class="bi bi-chevron-down text-muted" style="font-size: 10px;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu shadow-sm border-0" style="font-size: 13px;">
+                                        <li><h6 class="dropdown-header">Reassign Lead</h6></li>
+                                        <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_null').submit();">Unassigned</a></li>
+                                        <?php foreach ($agents as $agent): ?>
+                                            <li><a class="dropdown-item <?= $lead['assigned_to'] == $agent['id'] ? 'active bg-primary bg-opacity-10 text-primary fw-bold' : '' ?>" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>').submit();"><?= e($agent['name']) ?></a></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                                <!-- Hidden assignment forms -->
+                                <form id="assign_<?= $lead['id'] ?>_null" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value=""></form>
+                                <?php foreach ($agents as $agent): ?>
+                                <form id="assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value="<?= $agent['id'] ?>"></form>
+                                <?php endforeach; ?>
+                            </td>
+                            <?php endif; ?>
+                            <td>
+                                <?php if ($userRole === 'agent'): ?>
+                                    <select class="agent-status-dropdown agent-quick-status" data-lead-id="<?= $lead['id'] ?>">
+                                        <?php 
+                                        $agentStatuses = ['New Lead', 'Contacted', 'Working', 'Qualified', 'Follow Up', 'Done', 'Rejected'];
+                                        foreach ($agentStatuses as $s): ?>
+                                            <option value="<?= $s ?>" <?= $lead['status'] === $s ? 'selected' : '' ?>><?= $s ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php else: ?>
+                                    <span class="badge <?= getStatusBadgeClass($lead['status']) ?> status-badge"><?= e($lead['status']) ?></span>
+                                <?php endif; ?>
                             </td>
                             <td class="text-end pe-4">
                                 <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="btn btn-light btn-sm rounded-circle d-inline-flex align-items-center justify-content-center text-primary border" style="width: 32px; height: 32px; transition: all 0.2s;" title="View Lead" onmouseover="this.classList.add('bg-primary', 'text-white')" onmouseout="this.classList.remove('bg-primary', 'text-white')">
@@ -532,6 +669,77 @@ document.addEventListener('hide.bs.dropdown', function (event) {
         setTimeout(() => { tr.style.position = ''; }, 300); // Wait for transition
     }
 });
+
+// Agent Quick Actions
+// ----------------------------------------------------------------------
+document.querySelectorAll('.agent-quick-status').forEach(select => {
+    select.addEventListener('change', function() {
+        const leadId = this.getAttribute('data-lead-id');
+        const status = this.value;
+        const selectEl = this;
+        
+        // Show loading state
+        this.disabled = true;
+        
+        fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                'action': 'update_status',
+                'lead_id': leadId,
+                'status': status
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            selectEl.disabled = false;
+            if (data.success) {
+                // Flash green outline to show success
+                selectEl.style.boxShadow = '0 0 0 0.25rem rgba(25, 135, 84, 0.25)';
+                selectEl.style.borderColor = '#198754';
+                setTimeout(() => {
+                    selectEl.style.boxShadow = '';
+                    selectEl.style.borderColor = '';
+                }, 1000);
+            } else {
+                alert(data.message || 'Error updating status');
+            }
+        })
+        .catch(err => {
+            selectEl.disabled = false;
+            alert('A network error occurred');
+        });
+    });
+});
+
+function openQuickNote(leadId) {
+    const noteText = prompt("Add a quick note for this lead:");
+    if (noteText && noteText.trim().length > 0) {
+        fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                'action': 'add_note',
+                'lead_id': leadId,
+                'note': noteText.trim()
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Instantly update the UI snippet
+                const noteDiv = document.getElementById('note_text_' + leadId);
+                if (noteDiv) {
+                    noteDiv.textContent = noteText.trim();
+                    noteDiv.title = noteText.trim();
+                }
+            } else {
+                alert(data.message || 'Error adding note');
+            }
+        })
+        .catch(err => alert('A network error occurred. Note not saved.'));
+    }
+}
 </script>
 
 <?php include '../../includes/footer.php'; ?>

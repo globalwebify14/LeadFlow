@@ -17,6 +17,11 @@ if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/leads/'); }
 $lead = $leadModel->getLeadById((int)$_GET['id'], $orgId);
 if (!$lead) { redirect(BASE_URL . 'modules/leads/', 'Lead not found.', 'danger'); }
 
+// Security: Agent can only edit their own leads
+if (getUserRole() === 'agent' && $lead['assigned_to'] != getUserId()) {
+    redirect(BASE_URL . 'modules/leads/', 'Access denied. You can only edit leads assigned to you.', 'danger');
+}
+
 $agents = $userModel->getAgents($orgId);
 $tags = $leadModel->getOrgTags($orgId);
 $leadTags = array_column($leadModel->getTags($lead['id']), 'id');

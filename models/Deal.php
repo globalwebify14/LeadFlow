@@ -29,7 +29,10 @@ class Deal {
             $sql .= " AND d.stage_id = :stage_id";
             $params[':stage_id'] = $filters['stage_id'];
         }
-        if (!empty($filters['assigned_to'])) {
+        if (!empty($filters['enforce_assigned_to'])) {
+            $sql .= " AND d.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['enforce_assigned_to'];
+        } elseif (!empty($filters['assigned_to'])) {
             $sql .= " AND d.assigned_to = :assigned_to";
             $params[':assigned_to'] = $filters['assigned_to'];
         }
@@ -57,6 +60,13 @@ class Deal {
         if (!empty($filters['stage_id'])) {
             $sql .= " AND d.stage_id = :stage_id";
             $params[':stage_id'] = $filters['stage_id'];
+        }
+        if (!empty($filters['enforce_assigned_to'])) {
+            $sql .= " AND d.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['enforce_assigned_to'];
+        } elseif (!empty($filters['assigned_to'])) {
+            $sql .= " AND d.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['assigned_to'];
         }
         $stmt = $this->pdo->prepare($sql);
         foreach ($params as $key => &$val) { $stmt->bindParam($key, $val); }
