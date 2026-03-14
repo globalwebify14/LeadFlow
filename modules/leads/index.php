@@ -144,10 +144,10 @@ include '../../includes/header.php';
 }
 .table-premium tbody tr {
     transition: all 0.2s ease;
+    /* Removed translate as it creates a new stacking context that breaks z-index */
 }
 .table-premium tbody tr:hover {
     background-color: #f8fafc;
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 .lead-avatar {
@@ -333,7 +333,8 @@ include '../../includes/header.php';
                 <button type="submit" class="btn btn-light btn-sm fw-bold px-3" onclick="return confirm('Execute bulk action on selected leads?')">Apply Action</button>
             </div>
 
-            <div class="table-responsive">
+            <!-- Removed class table-responsive as overflow-x:auto clips absolute dropdowns -->
+            <div style="overflow-x: visible;">
                 <table class="table table-premium align-middle mb-0 w-100">
                     <thead>
                         <tr>
@@ -515,6 +516,22 @@ function updateBulkBar() {
     
     document.getElementById('selectedCount').textContent = checked + ' selected';
 }
+
+// Fix z-index overlap for assignment dropdowns in table
+document.addEventListener('show.bs.dropdown', function (event) {
+    let tr = event.target.closest('tr');
+    if (tr) {
+        tr.style.position = 'relative';
+        tr.style.zIndex = '1050';
+    }
+});
+document.addEventListener('hide.bs.dropdown', function (event) {
+    let tr = event.target.closest('tr');
+    if (tr) {
+        tr.style.zIndex = '';
+        setTimeout(() => { tr.style.position = ''; }, 300); // Wait for transition
+    }
+});
 </script>
 
 <?php include '../../includes/footer.php'; ?>
