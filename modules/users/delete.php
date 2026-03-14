@@ -9,8 +9,8 @@ require_once '../../models/User.php';
 if (isset($_GET['id']) && $_GET['id'] != getUserId()) {
     $userModel = new User($pdo);
     $userModel->deleteUser((int)$_GET['id']);
-    redirect(BASE_URL . 'modules/users/'', 'User deleted.', 'success');
+    redirect(BASE_URL . 'modules/users/', 'User deleted.', 'success');
 }
-redirect(BASE_URL . 'modules/users/'');
+redirect(BASE_URL . 'modules/users/');
 
 

@@ -56,7 +56,7 @@ class User {
      * Create a new user
      */
     public function createUser($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO users (organization_id, name, email, password, phone, role) VALUES (:org_id, :name, :email, :password, :phone, :role)");
+        $stmt = $this->pdo->prepare("INSERT INTO users (organization_id, name, email, password, phone, role, availability_status) VALUES (:org_id, :name, :email, :password, :phone, :role, :avail)");
         return $stmt->execute([
             'org_id'   => $data['organization_id'],
             'name'     => $data['name'],
@@ -64,6 +64,7 @@ class User {
             'password' => password_hash($data['password'], PASSWORD_DEFAULT),
             'phone'    => $data['phone'] ?? null,
             'role'     => $data['role'] ?? 'agent',
+            'avail'    => $data['availability_status'] ?? 'active',
         ]);
     }
 
@@ -79,6 +80,11 @@ class User {
             'phone' => $data['phone'] ?? null,
             'role'  => $data['role'] ?? 'agent',
         ];
+
+        if (isset($data['availability_status'])) {
+            $fields .= ", availability_status=:avail";
+            $params['avail'] = $data['availability_status'];
+        }
 
         // Only update password if provided
         if (!empty($data['password'])) {

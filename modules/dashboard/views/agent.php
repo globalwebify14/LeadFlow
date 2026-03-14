@@ -29,13 +29,13 @@ $recentActivities = $dashboard->getRecentActivities($orgId, 15, $userId, 'agent'
             </div>
         </div>
     </div>
-    <!-- Leads Assigned Today -->
+    <!-- Contacted Leads -->
     <div class="col-xl-2 col-md-4 col-sm-6">
         <div class="stat-card">
-            <div class="stat-card-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);"><i class="bi bi-person-down"></i></div>
+            <div class="stat-card-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);"><i class="bi bi-chat-dots"></i></div>
             <div class="stat-card-info">
-                <span class="stat-card-label">Assigned Today</span>
-                <h3 class="stat-card-number"><?= number_format($stats['assigned_today']) ?></h3>
+                <span class="stat-card-label">Contacted</span>
+                <h3 class="stat-card-number"><?= number_format($stats['contacted_leads']) ?></h3>
             </div>
         </div>
     </div>

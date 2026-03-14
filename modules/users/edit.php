@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'role' => $_POST['role'] ?? 'agent',
         'password' => $_POST['password'] ?? '',
         'is_active' => isset($_POST['is_active']) ? 1 : 0,
+        'availability_status' => $_POST['availability_status'] ?? 'active',
     ];
     
     if (!array_key_exists($data['role'], $allowedRoles)) {
@@ -63,6 +64,14 @@ include '../../includes/header.php';
                     <?php foreach ($allowedRoles as $val => $label): ?>
                         <option value="<?= $val ?>" <?= $user['role'] === $val ? 'selected' : '' ?>><?= $label ?></option>
                     <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Availability Status</label>
+                <select class="form-select" name="availability_status">
+                    <option value="active" <?= ($user['availability_status']??'active') === 'active' ? 'selected' : '' ?>>Active (Receives Leads)</option>
+                    <option value="inactive" <?= ($user['availability_status']??'') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                    <option value="absent" <?= ($user['availability_status']??'') === 'absent' ? 'selected' : '' ?>>Absent Today</option>
                 </select>
             </div>
             <div class="mb-3 form-check"><input type="checkbox" class="form-check-input" name="is_active" id="isActive" <?= $user['is_active']?'checked':'' ?>><label class="form-check-label" for="isActive">Active</label></div>

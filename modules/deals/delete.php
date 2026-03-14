@@ -8,8 +8,8 @@ require_once '../../models/Deal.php';
 if (isset($_GET['id'])) {
     $dealModel = new Deal($pdo);
     $dealModel->deleteDeal((int)$_GET['id']);
-    redirect(BASE_URL . 'modules/deals/'', 'Deal deleted.', 'success');
+    redirect(BASE_URL . 'modules/deals/', 'Deal deleted.', 'success');
 }
-redirect(BASE_URL . 'modules/deals/'');
+redirect(BASE_URL . 'modules/deals/');
 
 

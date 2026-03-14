@@ -117,43 +117,38 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     $parsed = parseAllLeadFields($leadData);
     $campaign = $leadData['campaign_name'] ?? 'Facebook Ads';
 
-    // E. Determine Agent Assignment
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE organization_id = ? AND role = 'agent' AND is_active = 1 ORDER BY RAND() LIMIT 1");
-    $stmt->execute([$orgId]);
-    $agentId = $stmt->fetchColumn() ?: null;
-
-    // F. Inject into CRM leads table with ALL fields, including exact Facebook submission time
+    // E + F + G. Inject into CRM leads table using Model (Handles Auto-Assign, Notifications, Logs, tags)
+    require_once '../../models/Lead.php';
+    $leadModel = new Lead($pdo);
+    
     $createdAt = isset($leadData['created_time']) ? date('Y-m-d H:i:s', strtotime($leadData['created_time'])) : date('Y-m-d H:i:s');
-    $stmt = $pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note, meta_campaign, meta_form_id, facebook_page_id, created_at) VALUES (:org, :name, :phone, :email, :company, :source, 'New Lead', 'Hot', :assign, :note, :campaign, :form, :page_id, :created)");
-    $stmt->execute([
-        'org' => $orgId,
-        'name' => $parsed['name'],
-        'phone' => $parsed['phone'],
-        'email' => $parsed['email'],
-        'company' => $parsed['company'],
-        'source' => 'facebook_ads',
-        'assign' => $agentId,
-        'note' => $parsed['note'],
-        'campaign' => $campaign,
-        'form' => $formId,
-        'page_id' => $pageId,
-        'created' => $createdAt
+    
+    $leadModel->addLead([
+        'organization_id' => $orgId,
+        'name'            => $parsed['name'],
+        'phone'           => $parsed['phone'],
+        'email'           => $parsed['email'] ?: null,
+        'company'         => $parsed['company'] ?: null,
+        'source'          => 'facebook_ads',
+        'status'          => 'New Lead',
+        'priority'        => 'Hot',
+        'assigned_to'     => null, // Let the model handle Auto-Assignment (Round Robin)
+        'note'            => $parsed['note'],
+        // We need to inject these specifically but Model's addLead doesn't take meta_ fields yet, so let's update after insertion.
     ]);
-
+    
+    // We get the last insert ID since addLead returns it
     $leadDbId = $pdo->lastInsertId();
-
-    // G. Notify the assigned agent
-    if ($agentId) {
-        require_once '../../models/Notification.php';
-        $notifier = new Notification($pdo);
-        $notifier->create(
-            $orgId, 
-            $agentId, 
-            'lead_assigned', 
-            'New Facebook Lead Assigned', 
-            "You have been assigned a new lead: {$parsed['name']} from campaign {$campaign}.", 
-            BASE_URL . "modules/leads/view.php?id={$leadDbId}"
-        );
+    
+    if ($leadDbId) {
+        $stmtUpdate = $pdo->prepare("UPDATE leads SET meta_campaign = :campaign, meta_form_id = :form, facebook_page_id = :page_id, created_at = :created WHERE id = :id");
+        $stmtUpdate->execute([
+            'campaign' => $campaign,
+            'form'     => $formId,
+            'page_id'  => $pageId,
+            'created'  => $createdAt,
+            'id'       => $leadDbId
+        ]);
     }
 }
 

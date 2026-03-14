@@ -59,8 +59,8 @@ h6,
 
 #sidebar-wrapper .list-group-item {
     border: none;
-    padding: 10px 20px;
-    font-size: 14px;
+    padding: 6px 20px;
+    font-size: 13.5px;
     font-weight: 500;
     color: #94a3b8;
     transition: var(--transition);
@@ -81,8 +81,8 @@ h6,
 }
 
 .sidebar-category {
-    padding: 8px 20px 4px;
-    font-size: 11px;
+    padding: 6px 20px 2px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;

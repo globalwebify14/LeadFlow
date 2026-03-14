@@ -3,6 +3,9 @@ $pageTitle = 'Sales Pipeline';
 require_once '../../config/auth.php';
 requireLogin();
 require_once '../../config/db.php';
+if (getUserRole() === 'super_admin') {
+    redirect(BASE_URL . 'modules/dashboard/', 'No permission.', 'danger');
+}
 require_once '../../models/Lead.php';
 
 $orgId = getOrgId();
@@ -13,21 +16,27 @@ $stagesStmt = $pdo->prepare("SELECT * FROM pipeline_stages WHERE organization_id
 $stagesStmt->execute(['org' => $orgId]);
 $stages = $stagesStmt->fetchAll();
 
-// Get leads grouped by pipeline stage
-$pipelineData = [];
-$agentId = (getUserRole() === 'agent') ? getUserId() : null;
+// Filters
+$filterAgentId = (isset($_GET['agent_id']) && $_GET['agent_id'] !== '') ? (int)$_GET['agent_id'] : null;
+if (getUserRole() === 'agent') {
+    $filterAgentId = getUserId();
+}
 
+$dateFrom = $_GET['date_from'] ?? null;
+$dateTo = $_GET['date_to'] ?? null;
+
+$pipelineData = [];
 foreach ($stages as $stage) {
-    $leads = $leadModel->getLeadsByStage($orgId, $stage['id'], $agentId);
+    $leads = $leadModel->getLeadsByStage($orgId, $stage['id'], $filterAgentId, $dateFrom, $dateTo);
     $pipelineData[] = ['stage' => $stage, 'leads' => $leads];
 }
 
 // Also get unassigned leads (no pipeline stage)
 $unassignedSql = "SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.organization_id = :org AND (l.pipeline_stage_id IS NULL OR l.pipeline_stage_id = 0)";
 $unap = ['org' => $orgId];
-if ($agentId) {
+if ($filterAgentId) {
     $unassignedSql .= " AND l.assigned_to = :user_id";
-    $unap['user_id'] = $agentId;
+    $unap['user_id'] = $filterAgentId;
 }
 $unassignedSql .= " ORDER BY l.id DESC LIMIT 20";
 $unassignedStmt = $pdo->prepare($unassignedSql);
@@ -37,10 +46,28 @@ $unassignedLeads = $unassignedStmt->fetchAll();
 include '../../includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <p class="text-muted mb-0 small">Drag and drop leads between pipeline stages</p>
-    </div>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+    <form class="d-flex flex-wrap gap-2 align-items-center">
+        <?php if (getUserRole() !== 'agent'): ?>
+        <?php 
+        $stmtUsers = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = ? AND role IN ('agent', 'team_lead')");
+        $stmtUsers->execute([$orgId]);
+        $orgUsers = $stmtUsers->fetchAll();
+        ?>
+        <select name="agent_id" class="form-select form-select-sm" style="width:160px;">
+            <option value="">All Agents</option>
+            <?php foreach ($orgUsers as $u): ?>
+            <option value="<?= $u['id'] ?>" <?= $filterAgentId == $u['id'] ? 'selected' : '' ?>><?= e($u['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <?php endif; ?>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($dateFrom) ?>" style="width:140px;">
+        <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>" style="width:140px;">
+        <button type="submit" class="btn btn-sm btn-light border"><i class="bi bi-filter"></i></button>
+        <?php if ($filterAgentId || $dateFrom || $dateTo): ?>
+        <a href="index.php" class="btn btn-sm btn-link text-decoration-none text-danger">Clear</a>
+        <?php endif; ?>
+    </form>
     <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Lead</a>
 </div>
 

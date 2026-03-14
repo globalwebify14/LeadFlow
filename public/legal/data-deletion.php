@@ -1,9 +1,9 @@
 <?php
-require_once __DIR__ . '/config/auth.php';
+require_once __DIR__ . '/../../config/auth.php';
 ?>
 <?php 
 $pageTitle = 'Data Deletion Instructions';
-include_once __DIR__ . '/includes/landing_header.php'; 
+include_once __DIR__ . '/../../includes/landing_header.php'; 
 ?>
 
     <div class="legal-header">
@@ -29,7 +29,7 @@ include_once __DIR__ . '/includes/landing_header.php';
                         <p>To disconnect your Facebook Page and revoke our access to your Form payload webhooks, follow these steps natively on Facebook:</p>
                         
                         <div class="step-box">
-                            <strong>Step 1:</strong> Log into your Facebook account and navigate to <strong>Settings & Privacy</strong> &gt; <strong>Settings</strong>.
+                            <strong>Step 1:</strong> Log into your Facebook account and navigate to <strong>Settings &amp; Privacy</strong> &gt; <strong>Settings</strong>.
                         </div>
                         <div class="step-box">
                             <strong>Step 2:</strong> In the left-hand menu, click on <strong>Security and Login</strong>, then navigate to <strong>Business Integrations</strong>.
@@ -49,7 +49,7 @@ include_once __DIR__ . '/includes/landing_header.php';
                         <p>If you wish to permanently erase all leads, users, deals, and configurations associated with your Organization from Lead CRM's servers:</p>
                         <ul>
                             <li>Log into the Lead CRM Portal as the <strong>Organization Owner</strong>.</li>
-                            <li>Navigate to <strong>Settings</strong> > <strong>Organization</strong>.</li>
+                            <li>Navigate to <strong>Settings</strong> &gt; <strong>Organization</strong>.</li>
                             <li>Click the red <strong>Delete Organization</strong> button at the bottom of the page.</li>
                             <li>A prompt will require you to type your organization's name to confirm. Once confirmed, all databases linked to your <code>organization_id</code> are immediately decoupled and erased.</li>
                         </ul>
@@ -65,4 +65,4 @@ include_once __DIR__ . '/includes/landing_header.php';
         </div>
     </div>
 
-    <?php include_once __DIR__ . '/includes/landing_footer.php'; ?>
+    <?php include_once __DIR__ . '/../../includes/landing_footer.php'; ?>

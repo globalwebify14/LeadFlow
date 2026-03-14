@@ -32,9 +32,9 @@
                 <div class="col-lg-2 col-md-4">
                     <h5 class="footer-title">Legal</h5>
                     <ul class="footer-links">
-                        <li><a href="<?= BASE_URL ?>privacy.php">Privacy Policy</a></li>
-                        <li><a href="<?= BASE_URL ?>terms.php">Terms of Service</a></li>
-                        <li><a href="<?= BASE_URL ?>data-deletion.php">Data Deletion</a></li>
+                        <li><a href="<?= BASE_URL ?>legal/privacy.php">Privacy Policy</a></li>
+                        <li><a href="<?= BASE_URL ?>legal/terms.php">Terms of Service</a></li>
+                        <li><a href="<?= BASE_URL ?>legal/data-deletion.php">Data Deletion</a></li>
                     </ul>
                 </div>
             </div>

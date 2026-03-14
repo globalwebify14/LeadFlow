@@ -1,9 +1,9 @@
 <?php
-require_once __DIR__ . '/config/auth.php';
+require_once __DIR__ . '/../../config/auth.php';
 ?>
 <?php 
 $pageTitle = 'Terms of Service';
-include_once __DIR__ . '/includes/landing_header.php'; 
+include_once __DIR__ . '/../../includes/landing_header.php'; 
 ?>
 
     <div class="legal-header">
@@ -44,7 +44,7 @@ include_once __DIR__ . '/includes/landing_header.php';
                     </div>
 
                     <div class="legal-section">
-                        <h2>4. User Content & Rules of Conduct</h2>
+                        <h2>4. User Content &amp; Rules of Conduct</h2>
                         <p>You agree not to use the Service to:</p>
                         <ul>
                             <li>Upload, transmit, or distribute any data that contains viruses, malware, or malicious code.</li>
@@ -68,4 +68,4 @@ include_once __DIR__ . '/includes/landing_header.php';
         </div>
     </div>
 
-    <?php include_once __DIR__ . '/includes/landing_footer.php'; ?>
+    <?php include_once __DIR__ . '/../../includes/landing_footer.php'; ?>

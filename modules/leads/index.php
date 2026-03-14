@@ -57,13 +57,26 @@ $page = max(1, (int)($_GET['page'] ?? 1));
 $limit = 15;
 $offset = ($page - 1) * $limit;
 
-$leads = $leadModel->getAllLeads($orgId, $filters, $limit, $offset);
-$totalLeads = $leadModel->getTotalLeadsCount($orgId, $filters);
-$totalPages = ceil($totalLeads / $limit);
-$agents = $userModel->getAgents($orgId);
 $tags = $leadModel->getOrgTags($orgId);
 $sources = $leadModel->getSources($orgId);
 $fbPages = $leadModel->getFacebookPages($orgId);
+
+// Restrict Agents to only see their own leads
+$userRole = getUserRole();
+if ($userRole === 'agent') {
+    $filters['enforce_assigned_to'] = getUserId();
+}
+
+$leads = $leadModel->getAllLeads($orgId, $filters, $limit, $offset);
+$totalLeads = $leadModel->getTotalLeadsCount($orgId, $filters);
+$totalPages = ceil($totalLeads / $limit);
+$sources = $leadModel->getSources($orgId);
+$fbPages = $leadModel->getFacebookPages($orgId);
+
+// Fetch agents for the dropdowns
+$agentStmt = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = :org AND role IN ('org_admin', 'team_lead', 'agent') AND is_active = 1 ORDER BY name");
+$agentStmt->execute(['org' => $orgId]);
+$agents = $agentStmt->fetchAll();
 
 include '../../includes/header.php';
 ?>
@@ -99,11 +112,21 @@ include '../../includes/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
+            <?php if ($userRole !== 'agent'): ?>
             <div class="col-md-2">
                 <select class="form-select form-select-sm" name="assigned_to">
                     <option value="">All Agents</option>
                     <?php foreach ($agents as $agent): ?>
                         <option value="<?= $agent['id'] ?>" <?= $filters['assigned_to'] == $agent['id'] ? 'selected' : '' ?>><?= e($agent['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="tag_id">
+                    <option value="">All Tags</option>
+                    <?php foreach ($tags as $tag): ?>
+                        <option value="<?= $tag['id'] ?>" <?= $filters['tag_id'] == $tag['id'] ? 'selected' : '' ?>><?= e($tag['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -136,7 +159,9 @@ include '../../includes/header.php';
                 <span class="small fw-semibold text-muted" id="selectedCount">0 selected</span>
                 <select name="bulk_action" class="form-select form-select-sm" style="width:160px;">
                     <option value="">Bulk Action</option>
-                    <option value="delete">Delete Selected</option>
+                    <?php if ($userRole !== 'agent'): ?>
+                        <option value="delete">Delete Selected</option>
+                    <?php endif; ?>
                     <optgroup label="Change Status">
                         <option value="New Lead">New Lead</option>
                         <option value="Working">Working</option>
@@ -145,12 +170,14 @@ include '../../includes/header.php';
                         <option value="Rejected">Rejected</option>
                     </optgroup>
                 </select>
+                <?php if ($userRole !== 'agent'): ?>
                 <select name="bulk_agent" class="form-select form-select-sm" style="width:160px;">
                     <option value="">Assign To...</option>
                     <?php foreach ($agents as $a): ?>
                         <option value="<?= $a['id'] ?>"><?= e($a['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php endif; ?>
                 <button type="submit" class="btn btn-dark btn-sm" onclick="return confirm('Are you sure?')"><i class="bi bi-check2-all me-1"></i>Apply</button>
             </div>
 
@@ -202,6 +229,7 @@ include '../../includes/header.php';
                                 ?>
                             </td>
                             <td>
+                                <?php if ($userRole !== 'agent'): ?>
                                 <form method="POST" action="" class="m-0 p-0">
                                     <input type="hidden" name="lead_id" value="<?= $lead['id'] ?>">
                                     <div class="d-flex align-items-center">
@@ -219,6 +247,9 @@ include '../../includes/header.php';
                                     </div>
                                     <input type="hidden" name="single_assign" value="1">
                                 </form>
+                                <?php else: ?>
+                                    <span class="text-muted fw-semibold small">You</span>
+                                <?php endif; ?>
                             </td>
                             <td><span class="badge <?= getStatusBadgeClass($lead['status']) ?> rounded-pill px-2 py-1" style="font-size: 11px;"><?= e($lead['status']) ?></span></td>
                             <td>

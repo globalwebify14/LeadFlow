@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'agent_ids'       => json_encode(array_map('intval', $selectedAgents)),
             'is_active'       => isset($_POST['is_active']) ? 1 : 0,
         ]);
-        redirect(BASE_URL . 'modules/settings/assignment.php'', 'Assignment rule created!', 'success');
+        redirect(BASE_URL . 'modules/settings/assignment.php', 'Assignment rule created!', 'success');
     }
 
     if ($action === 'update_rule') {
@@ -42,22 +42,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'agent_ids'     => json_encode(array_map('intval', $selectedAgents)),
             'is_active'     => isset($_POST['is_active']) ? 1 : 0,
         ]);
-        redirect(BASE_URL . 'modules/settings/assignment.php'', 'Assignment rule updated!', 'success');
+        redirect(BASE_URL . 'modules/settings/assignment.php', 'Assignment rule updated!', 'success');
     }
 
     if ($action === 'delete_rule') {
         $ruleModel->delete((int)$_POST['rule_id']);
-        redirect(BASE_URL . 'modules/settings/assignment.php'', 'Rule deleted.', 'success');
+        redirect(BASE_URL . 'modules/settings/assignment.php', 'Rule deleted.', 'success');
     }
 
     if ($action === 'toggle_rule') {
         $ruleModel->toggleActive((int)$_POST['rule_id']);
-        redirect(BASE_URL . 'modules/settings/assignment.php'', 'Rule status toggled.', 'success');
+        redirect(BASE_URL . 'modules/settings/assignment.php', 'Rule status toggled.', 'success');
     }
 
     if ($action === 'reassign') {
         $count = $ruleModel->reassignLeads($orgId, (int)$_POST['from_agent'], (int)$_POST['to_agent']);
-        redirect(BASE_URL . 'modules/settings/assignment.php'', "$count leads reassigned!", 'success');
+        redirect(BASE_URL . 'modules/settings/assignment.php', "$count leads reassigned!", 'success');
     }
 
     if ($action === 'auto_assign_unassigned') {
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $assigned++;
             }
         }
-        redirect(BASE_URL . 'modules/settings/assignment.php'', "$assigned leads auto-assigned!", 'success');
+        redirect(BASE_URL . 'modules/settings/assignment.php', "$assigned leads auto-assigned!", 'success');
     }
 }
 

@@ -4,10 +4,17 @@
     # Prevent directory listing
     Options -Indexes
 
-    # Protect sensitive directories
+    # --- URL Routing: map clean public URLs to actual file locations ---
+    # legal/* → public/legal/*
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^legal/(.*)$ public/legal/$1 [L]
+
+    # Protect sensitive directories (must come AFTER routing rules)
     RewriteRule ^config/ - [F,L]
     RewriteRule ^includes/ - [F,L]
     RewriteRule ^core/ - [F,L]
+    RewriteRule ^database/ - [F,L]
 
     # Block access to error logs and database dumps
     <FilesMatch "\.(log|sql|bak|ini|env|sh)$">

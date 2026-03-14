@@ -11,7 +11,7 @@ $followupModel = new Followup($pdo);
 // Handle complete action
 if (isset($_GET['complete'])) {
     $followupModel->complete((int)$_GET['complete']);
-    redirect('followups.php', 'Follow-up completed!', 'success');
+    redirect('index.php', 'Follow-up completed!', 'success');
 }
 
 // Handle add followup
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'priority' => $_POST['priority'] ?? 'medium',
     ];
     $followupModel->create($data);
-    redirect('followups.php', 'Follow-up scheduled!', 'success');
+    redirect('index.php', 'Follow-up scheduled!', 'success');
 }
 
 $filter = $_GET['filter'] ?? 'today';

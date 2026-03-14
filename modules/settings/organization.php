@@ -42,8 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$error) {
-            $pdo->prepare("UPDATE organizations SET name=:name, email=:email, phone=:phone, address=:address, website=:website, logo=:logo WHERE id=:id")
-                ->execute(['name'=>$name,'email'=>$email,'phone'=>$phone,'address'=>$address,'website'=>$website,'logo'=>$logo,'id'=>$orgId]);
+            $assignment_mode = $_POST['assignment_mode'] ?? 'manual';
+            $pdo->prepare("UPDATE organizations SET name=:name, email=:email, phone=:phone, address=:address, website=:website, logo=:logo, assignment_mode=:assignment_mode WHERE id=:id")
+                ->execute(['name'=>$name,'email'=>$email,'phone'=>$phone,'address'=>$address,'website'=>$website,'logo'=>$logo,'assignment_mode'=>$assignment_mode,'id'=>$orgId]);
 
             // Update session org name
             $_SESSION['org_name'] = $name;
@@ -58,10 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Subscription info
-$sub = $pdo->prepare("SELECT s.*, p.name as plan_name, p.max_users, p.max_leads, p.max_deals FROM subscriptions s JOIN plans p ON s.plan_id=p.id WHERE s.organization_id=:org ORDER BY s.id DESC LIMIT 1");
-$sub->execute(['org' => $orgId]);
-$subscription = $sub->fetch();
+// Removed subscription query as it is no longer used here
 
 $userCount = $pdo->prepare("SELECT COUNT(*) FROM users WHERE organization_id=:o"); $userCount->execute(['o'=>$orgId]); $userCount = $userCount->fetchColumn();
 $leadCount = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE organization_id=:o"); $leadCount->execute(['o'=>$orgId]); $leadCount = $leadCount->fetchColumn();
@@ -145,47 +143,34 @@ include '../../includes/header.php';
 
     <!-- Sidebar: Subscription & Usage -->
     <div class="col-lg-4">
-        <!-- Subscription -->
-        <?php if ($userRole !== 'org_admin'): ?>
+        <!-- Lead Distribution Settings -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-0 pt-4 pb-0">
-                <h6 class="fw-bold mb-0"><i class="bi bi-credit-card me-2 text-success"></i>Subscription</h6>
+                <h6 class="fw-bold mb-0"><i class="bi bi-diagram-3 me-2 text-primary"></i>Lead Distribution</h6>
             </div>
             <div class="card-body">
-                <?php if ($subscription): ?>
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <h5 class="fw-bold mb-0"><?= e($subscription['plan_name']) ?></h5>
-                    <span class="badge bg-<?= $subscription['status']==='active'?'success':($subscription['status']==='trial'?'info':'danger') ?>">
-                        <?= ucfirst($subscription['status']) ?>
-                    </span>
-                </div>
-                <div class="mb-2">
-                    <div class="d-flex justify-content-between small mb-1">
-                        <span class="text-muted">Users</span>
-                        <span class="fw-semibold"><?= $userCount ?> / <?= $subscription['max_users'] ?></span>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Assignment Mode</label>
+                        <select name="assignment_mode" class="form-select form-select-sm">
+                            <option value="manual" <?= ($org['assignment_mode'] ?? 'manual') === 'manual' ? 'selected' : '' ?>>Manual Assignment</option>
+                            <option value="auto" <?= ($org['assignment_mode'] ?? 'manual') === 'auto' ? 'selected' : '' ?>>Auto (Round Robin)</option>
+                        </select>
+                        <div class="form-text small text-muted">Auto assigns new leads equally to active agents.</div>
                     </div>
-                    <div class="progress" style="height:5px;">
-                        <div class="progress-bar bg-primary" style="width:<?= min(100, round($userCount/$subscription['max_users']*100)) ?>%"></div>
-                    </div>
-                </div>
-                <div class="mb-2">
-                    <div class="d-flex justify-content-between small mb-1">
-                        <span class="text-muted">Leads</span>
-                        <span class="fw-semibold"><?= $leadCount ?> / <?= number_format($subscription['max_leads']) ?></span>
-                    </div>
-                    <div class="progress" style="height:5px;">
-                        <div class="progress-bar bg-success" style="width:<?= min(100, round($leadCount/$subscription['max_leads']*100)) ?>%"></div>
-                    </div>
-                </div>
-                <?php if ($subscription['expires_at']): ?>
-                <p class="text-muted small mt-3 mb-0"><i class="bi bi-calendar me-1"></i>Expires: <?= formatDate($subscription['expires_at']) ?></p>
-                <?php endif; ?>
-                <?php else: ?>
-                <p class="text-muted small">No active subscription. Contact your Super Admin.</p>
-                <?php endif; ?>
+                    <!-- Preserve other fields so they aren't erased on save -->
+                    <input type="hidden" name="name" value="<?= e($org['name']) ?>">
+                    <input type="hidden" name="email" value="<?= e($org['email'] ?? '') ?>">
+                    <input type="hidden" name="phone" value="<?= e($org['phone'] ?? '') ?>">
+                    <input type="hidden" name="website" value="<?= e($org['website'] ?? '') ?>">
+                    <input type="hidden" name="address" value="<?= e($org['address'] ?? '') ?>">
+                    
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Save Setting</button>
+                </form>
             </div>
         </div>
-        <?php endif; ?>
+
+
 
         <!-- Organization Info -->
         <div class="card shadow-sm border-0">
@@ -195,6 +180,7 @@ include '../../includes/header.php';
             <div class="card-body">
                 <table class="table table-borderless table-sm small mb-0">
                     <tr><td class="text-muted">Status</td><td><span class="badge bg-<?= $org['status']==='active'?'success':'danger' ?>"><?= ucfirst($org['status']) ?></span></td></tr>
+                    <tr><td class="text-muted">Assignment</td><td><span class="badge <?= ($org['assignment_mode'] ?? 'manual') === 'auto' ? 'bg-primary' : 'bg-secondary' ?>"><?= ucfirst($org['assignment_mode'] ?? 'manual') ?></span></td></tr>
                     <tr><td class="text-muted">Total Users</td><td class="fw-semibold"><?= $userCount ?></td></tr>
                     <tr><td class="text-muted">Total Leads</td><td class="fw-semibold"><?= $leadCount ?></td></tr>
                     <tr><td class="text-muted">Created</td><td class="fw-semibold"><?= formatDate($org['created_at']) ?></td></tr>

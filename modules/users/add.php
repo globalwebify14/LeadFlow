@@ -67,6 +67,14 @@ include '../../includes/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="mb-3">
+                <label class="form-label">Availability Status</label>
+                <select class="form-select" name="availability_status">
+                    <option value="active">Active (Receives Leads)</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="absent">Absent Today</option>
+                </select>
+            </div>
             <div class="d-flex gap-2"><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Create User</button><a href="<?= BASE_URL ?>modules/users/" class="btn btn-outline-secondary">Cancel</a></div>
         </form>
     </div>

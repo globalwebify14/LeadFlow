@@ -12,9 +12,9 @@ require_once '../../models/Deal.php';
 $orgId = getOrgId();
 $dealModel = new Deal($pdo);
 $userModel = new User($pdo);
-if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/deals/''); }
+if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/deals/'); }
 $deal = $dealModel->getDealById((int)$_GET['id'], $orgId);
-if (!$deal) { redirect(BASE_URL . 'modules/deals/'', 'Deal not found.', 'danger'); }
+if (!$deal) { redirect(BASE_URL . 'modules/deals/', 'Deal not found.', 'danger'); }
 
 $agents = $userModel->getAgents($orgId);
 $stagesStmt = $pdo->prepare("SELECT id, name FROM pipeline_stages WHERE organization_id = :org ORDER BY position");

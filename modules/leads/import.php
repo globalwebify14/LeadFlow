@@ -4,8 +4,8 @@ requireLogin();
 require_once '../../config/db.php';
 require_once '../../models/Lead.php';
 
-
-
+$orgId = getOrgId();
+$userId = getUserId();
 $error = '';
 $success = '';
 
@@ -37,7 +37,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                     $note = trim($data[4] ?? '');
 
                     if (!empty($name) && !empty($phone)) {
-                        $result = $leadModel->addLead($name, $phone, $email, '', $source, 'New Lead', $note);
+                        $result = $leadModel->addLead([
+                            'organization_id' => $orgId,
+                            'name' => $name,
+                            'phone' => $phone,
+                            'email' => $email,
+                            'source' => $source,
+                            'note' => $note,
+                            'status' => 'New Lead',
+                            'user_id' => $userId
+                        ]);
                         if ($result) {
                             $importedCount++;
                         }
@@ -51,9 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
             }
         } else {
             // Excel import via PhpSpreadsheet
-            if (file_exists('vendor/autoload.php')) {
-                require 'vendor/autoload.php';
+            $vendorPath = '../../vendor/autoload.php';
+            if (file_exists($vendorPath)) {
+                require $vendorPath;
                 try {
+                    if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+                        throw new Exception("PhpSpreadsheet library classes not found. Please run composer install.");
+                    }
                     $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name']);
                     $worksheet = $spreadsheet->getActiveSheet();
                     $rows = $worksheet->toArray();
@@ -68,7 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                         $note = trim($data[4] ?? '');
 
                         if (!empty($name) && !empty($phone)) {
-                            $result = $leadModel->addLead($name, $phone, $email, '', $source, 'New Lead', $note);
+                            $result = $leadModel->addLead([
+                                'organization_id' => $orgId,
+                                'name' => $name,
+                                'phone' => $phone,
+                                'email' => $email,
+                                'source' => $source,
+                                'note' => $note,
+                                'status' => 'New Lead',
+                                'user_id' => $userId
+                            ]);
                             if ($result) {
                                 $importedCount++;
                             }
@@ -76,10 +98,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                     }
                     $success = "Successfully imported $importedCount leads from Excel.";
                 } catch (Exception $e) {
-                    $error = "Error processing Excel file. You may need to use CSV format if PhpSpreadsheet is missing. Error: " . $e->getMessage();
+                    $error = "Error processing Excel file: " . $e->getMessage();
                 }
             } else {
-                $error = "PhpSpreadsheet library is not installed. Please install it via Composer or use the CSV format instead.";
+                $error = "PhpSpreadsheet library (vendor/autoload.php) is not found. Please install it via Composer or use the CSV format instead.";
             }
         }
     }
@@ -132,7 +154,7 @@ include '../../includes/header.php';
                     </table>
                 </div>
 
-                <form method="POST" action="import_leads.php" enctype="multipart/form-data">
+                <form method="POST" action="" enctype="multipart/form-data">
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Upload File (.csv, .xls, .xlsx)</label>
                         <input class="form-control mb-2" type="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" required>
@@ -148,5 +170,3 @@ include '../../includes/header.php';
 </div>
 
 <?php include '../../includes/footer.php'; ?>
-
-

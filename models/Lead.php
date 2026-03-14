@@ -42,8 +42,11 @@ class Lead {
             $params[':source'] = $filters['source'];
         }
 
-        // Assigned agent filter
-        if (!empty($filters['assigned_to'])) {
+        // Assigned agent filter (enforced or optional)
+        if (!empty($filters['enforce_assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['enforce_assigned_to'];
+        } elseif (!empty($filters['assigned_to'])) {
             $sql .= " AND l.assigned_to = :assigned_to";
             $params[':assigned_to'] = $filters['assigned_to'];
         }
@@ -106,7 +109,10 @@ class Lead {
             $sql .= " AND l.source = :source";
             $params[':source'] = $filters['source'];
         }
-        if (!empty($filters['assigned_to'])) {
+        if (!empty($filters['enforce_assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['enforce_assigned_to'];
+        } elseif (!empty($filters['assigned_to'])) {
             $sql .= " AND l.assigned_to = :assigned_to";
             $params[':assigned_to'] = $filters['assigned_to'];
         }
@@ -155,11 +161,52 @@ class Lead {
     }
 
     /**
+     * Determine agent assignment based on Org settings (Round Robin or Manual)
+     */
+    public function getAutoAssignAgentId($orgId) {
+        // Check organization assignment mode
+        $stmtOrg = $this->pdo->prepare("SELECT assignment_mode FROM organizations WHERE id = ?");
+        $stmtOrg->execute([$orgId]);
+        $mode = $stmtOrg->fetchColumn();
+
+        if ($mode === 'auto') {
+            // Fetch all active agents for this org, ordered by last assigned time (Round Robin logic)
+            // We use a subquery to find the newest lead assigned to each agent to determine who waited the longest
+            $sql = "SELECT u.id 
+                    FROM users u 
+                    WHERE u.organization_id = :org_id 
+                      AND u.role = 'agent' 
+                      AND u.status = 'active'
+                      AND u.availability_status = 'active'
+                    ORDER BY (
+                        SELECT COALESCE(MAX(created_at), '2000-01-01') 
+                        FROM leads 
+                        WHERE assigned_to = u.id
+                    ) ASC 
+                    LIMIT 1";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute(['org_id' => $orgId]);
+            $agentId = $stmt->fetchColumn();
+            return $agentId ?: null;
+        }
+
+        return null;
+    }
+
+    /**
      * Add a new lead
      */
     public function addLead($data) {
         $this->pdo->beginTransaction();
         try {
+            // Determine assignment
+            $assignedTo = $data['assigned_to'] ?: null;
+
+            // If not manually specified (e.g., from webhook), try auto-assign
+            if (!$assignedTo) {
+                $assignedTo = $this->getAutoAssignAgentId($data['organization_id']);
+            }
+
             $stmt = $this->pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note) 
                 VALUES (:org_id, :name, :phone, :email, :company, :source, :status, :priority, :assigned_to, :note)");
             $stmt->execute([
@@ -171,13 +218,31 @@ class Lead {
                 'source'      => $data['source'] ?? null,
                 'status'      => $data['status'] ?? 'New Lead',
                 'priority'    => $data['priority'] ?? 'Warm',
-                'assigned_to' => $data['assigned_to'] ?: null,
+                'assigned_to' => $assignedTo,
                 'note'        => $data['note'] ?? null,
             ]);
             $leadId = $this->pdo->lastInsertId();
 
+            // Notify assigned agent directly inside generic addLead if auto-assigned or manually assigned to someone else
+            if ($assignedTo && (!isset($data['user_id']) || $data['user_id'] != $assignedTo)) {
+                require_once __DIR__ . '/Notification.php';
+                $notifier = new Notification($this->pdo);
+                $notifier->create(
+                    $data['organization_id'], 
+                    $assignedTo, 
+                    'lead_assigned', 
+                    'New Lead Assigned: ' . $data['name'], 
+                    "You have been assigned a new lead from " . ($data['source'] ?? 'Direct Entry') . ".", 
+                    BASE_URL . "modules/leads/view.php?id={$leadId}"
+                );
+            }
+
             // Log initial activity
             $this->logActivity($leadId, 'status_change', 'Lead created with status: ' . ($data['status'] ?? 'New Lead'), null, $data['status'] ?? 'New Lead', $data['user_id'] ?? null);
+
+            if ($assignedTo) {
+                 $this->logActivity($leadId, 'assignment', 'Lead assigned upon creation', null, $assignedTo, $data['user_id'] ?? null);
+            }
 
             // Add initial note if present
             if (!empty($data['note'])) {
@@ -187,6 +252,18 @@ class Lead {
             // Handle tags
             if (!empty($data['tags'])) {
                 $this->syncTags($leadId, $data['tags']);
+            }
+
+            // Start Automation Sequence if active for org
+            $stmtAuto = $this->pdo->prepare("SELECT id FROM automation_sequences WHERE organization_id = :org AND is_active = 1 LIMIT 1");
+            $stmtAuto->execute(['org' => $data['organization_id']]);
+            $sequenceId = $stmtAuto->fetchColumn();
+            if ($sequenceId) {
+                // Log activity
+                $this->logActivity($leadId, 'status_change', 'Automation sequence started', null, null, $data['user_id'] ?? null);
+                // Start tracking progress
+                $stmtProg = $this->pdo->prepare("INSERT INTO lead_automation_progress (lead_id, sequence_id) VALUES (:lead, :seq)");
+                $stmtProg->execute(['lead' => $leadId, 'seq' => $sequenceId]);
             }
 
             $this->pdo->commit();
@@ -455,12 +532,20 @@ class Lead {
     /**
      * Get leads for pipeline view
      */
-    public function getLeadsByStage($orgId, $stageId, $userId = null) {
+    public function getLeadsByStage($orgId, $stageId, $userId = null, $dateFrom = null, $dateTo = null) {
         $sql = "SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.organization_id = :org_id AND l.pipeline_stage_id = :stage_id";
         $params = ['org_id' => $orgId, 'stage_id' => $stageId];
         if ($userId) {
             $sql .= " AND l.assigned_to = :user_id";
             $params['user_id'] = $userId;
+        }
+        if ($dateFrom) {
+            $sql .= " AND DATE(l.created_at) >= :date_from";
+            $params['date_from'] = $dateFrom;
+        }
+        if ($dateTo) {
+            $sql .= " AND DATE(l.created_at) <= :date_to";
+            $params['date_to'] = $dateTo;
         }
         $sql .= " ORDER BY l.updated_at DESC";
         $stmt = $this->pdo->prepare($sql);

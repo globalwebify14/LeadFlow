@@ -1,10 +1,22 @@
 <?php
-// config/db.php
+// config/db.php — auto environment detection
+// No need to manually swap credentials before pushing!
 
-$host = 'localhost';
-$username = 'u823573651_lead';
-$password = 'l|93mj3S:'; // Default XAMPP password is empty
-$database = 'u823573651_lead';
+$isLocal = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1', 'localhost:80', 'localhost:8080']);
+
+if ($isLocal) {
+    // ── LOCAL (XAMPP) ──────────────────────────
+    $host     = 'localhost';
+    $username = 'root';
+    $password = '';
+    $database = 'crm_leads';
+} else {
+    // ── LIVE SERVER ────────────────────────────
+    $host     = 'localhost';
+    $username = 'u823573651_lead';
+    $password = 'l|93mj3S:';
+    $database = 'u823573651_lead';
+}
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
@@ -15,3 +27,5 @@ try {
     die("Database Connection Failed: " . $e->getMessage());
 }
 ?>
+
+

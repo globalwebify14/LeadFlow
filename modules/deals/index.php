@@ -19,7 +19,7 @@ $filters = [
 ];
 
 if (getUserRole() === 'agent') {
-    $filters['assigned_to'] = getUserId();
+    $filters['enforce_assigned_to'] = getUserId();
 }
 $page = max(1, (int)($_GET['page'] ?? 1));
 $limit = 15;

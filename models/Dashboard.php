@@ -54,7 +54,9 @@ class Dashboard {
             'conversion_rate' => 0,
             'missed_followups' => 0,
             'team_members' => 0,
-            'leads_by_status' => []
+            'contacted_leads' => 0,
+            'leads_by_status' => [],
+            'leads_by_stage' => []
         ];
 
         // Team members count
@@ -84,6 +86,7 @@ class Dashboard {
             ];
             if ($row['status'] === 'New Lead') $stats['new_leads'] += $row['count'];
             if ($row['status'] === 'Follow Up') $stats['follow_up'] += $row['count'];
+            if ($row['status'] !== 'New Lead') $stats['contacted_leads'] += $row['count'];
             if (in_array($row['status'], ['Done', 'Closed Won'])) $stats['converted'] += $row['count'];
         }
 
@@ -134,15 +137,8 @@ class Dashboard {
         $stmtM->execute($leadParams);
         $stats['missed_followups'] = $stmtM->fetchColumn();
 
-        // Leads by Source
-        $sourceSql = "SELECT source, COUNT(*) as count FROM leads WHERE organization_id = :org_id";
-        if ($role === 'agent' && $userId) {
-            $sourceSql .= " AND assigned_to = :user_id";
-        }
-        $sourceSql .= " GROUP BY source";
-        $stmtSource = $this->pdo->prepare($sourceSql);
-        $stmtSource->execute($leadParams);
-        $stats['leads_by_source'] = $stmtSource->fetchAll();
+        // Leads by Stage
+        $stats['leads_by_stage'] = $this->getPipelineOverview($orgId, $userId, $role);
 
         return $stats;
     }

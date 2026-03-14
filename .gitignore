@@ -1,0 +1,8 @@
+vendor/
+.vscode/
+*.log
+uploads/
+config/db.php
+composer.phar
+.DS_Store
+Thumbs.db

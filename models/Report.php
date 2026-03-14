@@ -8,33 +8,74 @@ class Report {
         $this->pdo = $pdo;
     }
 
-    public function getLeadsByStatus($orgId) {
-        $stmt = $this->pdo->prepare("SELECT status, COUNT(*) as count FROM leads WHERE organization_id = :org GROUP BY status ORDER BY count DESC");
-        $stmt->execute(['org' => $orgId]);
+    private function applyDateFilter(&$sql, &$params, $tableAlias, $dateFrom, $dateTo, $dateCol = 'created_at') {
+        if ($dateFrom) {
+            $sql .= " AND DATE($tableAlias.$dateCol) >= :dateFrom";
+            $params['dateFrom'] = $dateFrom;
+        }
+        if ($dateTo) {
+            $sql .= " AND DATE($tableAlias.$dateCol) <= :dateTo";
+            $params['dateTo'] = $dateTo;
+        }
+    }
+
+    public function getLeadSummary($orgId, $agentId = null, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT 
+                    COUNT(*) as total_leads,
+                    SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as leads_today,
+                    SUM(CASE WHEN assigned_to IS NOT NULL THEN 1 ELSE 0 END) as assigned_leads,
+                    SUM(CASE WHEN assigned_to IS NULL THEN 1 ELSE 0 END) as unassigned_leads,
+                    SUM(CASE WHEN status != 'New Lead' THEN 1 ELSE 0 END) as contacted_leads,
+                    SUM(CASE WHEN status = 'New Lead' THEN 1 ELSE 0 END) as uncontacted_leads,
+                    SUM(CASE WHEN status IN ('Done', 'Closed Won') THEN 1 ELSE 0 END) as converted_leads
+                FROM leads WHERE organization_id = :org";
+        $params = ['org' => $orgId];
+        
+        if ($agentId) {
+            $sql .= " AND assigned_to = :userId";
+            $params['userId'] = $agentId;
+        }
+        $this->applyDateFilter($sql, $params, 'leads', $dateFrom, $dateTo);
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch();
+    }
+
+    public function getLeadsByStatus($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT status, COUNT(*) as count FROM leads WHERE organization_id = :org";
+        $params = ['org' => $orgId];
+        if ($userId) {
+            $sql .= " AND assigned_to = :userId";
+            $params['userId'] = $userId;
+        }
+        $this->applyDateFilter($sql, $params, 'leads', $dateFrom, $dateTo);
+        
+        $sql .= " GROUP BY status ORDER BY count DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
-    public function getLeadsBySource($orgId) {
-        $stmt = $this->pdo->prepare("SELECT COALESCE(source, 'Unknown') as source, COUNT(*) as count FROM leads WHERE organization_id = :org GROUP BY source ORDER BY count DESC");
-        $stmt->execute(['org' => $orgId]);
+    public function getLeadsBySource($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT COALESCE(source, 'Unknown') as source, COUNT(*) as count FROM leads WHERE organization_id = :org";
+        $params = ['org' => $orgId];
+        if ($userId) {
+            $sql .= " AND assigned_to = :userId";
+            $params['userId'] = $userId;
+        }
+        $this->applyDateFilter($sql, $params, 'leads', $dateFrom, $dateTo);
+        
+        $sql .= " GROUP BY source ORDER BY count DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
-    public function getLeadsByPriority($orgId) {
-        $stmt = $this->pdo->prepare("SELECT priority, COUNT(*) as count FROM leads WHERE organization_id = :org GROUP BY priority");
-        $stmt->execute(['org' => $orgId]);
-        return $stmt->fetchAll();
-    }
-
-    public function getConversionRate($orgId) {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM leads WHERE organization_id = :org");
-        $stmt->execute(['org' => $orgId]);
-        $total = $stmt->fetchColumn();
-
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM leads WHERE organization_id = :org AND status IN ('Done','Closed Won')");
-        $stmt->execute(['org' => $orgId]);
-        $converted = $stmt->fetchColumn();
-
+    public function getConversionRate($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
+        $summary = $this->getLeadSummary($orgId, $userId, $dateFrom, $dateTo);
+        $total = $summary['total_leads'] ?? 0;
+        $converted = $summary['converted_leads'] ?? 0;
         return [
             'total' => $total,
             'converted' => $converted,
@@ -42,51 +83,159 @@ class Report {
         ];
     }
 
-    public function getAgentPerformance($orgId) {
-        $stmt = $this->pdo->prepare(
-            "SELECT u.name, 
-                    COUNT(l.id) as total_leads,
-                    SUM(CASE WHEN l.status IN ('Done','Closed Won') THEN 1 ELSE 0 END) as converted,
-                    ROUND(SUM(CASE WHEN l.status IN ('Done','Closed Won') THEN 1 ELSE 0 END) / NULLIF(COUNT(l.id),0) * 100, 1) as conv_rate
-             FROM users u 
-             LEFT JOIN leads l ON l.assigned_to = u.id AND l.organization_id = :org
-             WHERE u.organization_id = :org2 AND u.role IN ('agent','manager')
-             GROUP BY u.id, u.name ORDER BY total_leads DESC"
-        );
-        $stmt->execute(['org' => $orgId, 'org2' => $orgId]);
+    public function getMonthlyGrowth($orgId, $userId = null) {
+        $sql = "SELECT DATE_FORMAT(created_at, '%b %d') as label, DATE_FORMAT(created_at, '%Y-%m-%d') as day, COUNT(*) as count 
+             FROM leads WHERE organization_id = :org AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+        $params = ['org' => $orgId];
+        if ($userId) {
+            $sql .= " AND assigned_to = :userId";
+            $params['userId'] = $userId;
+        }
+        $sql .= " GROUP BY label, day ORDER BY day";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
-    public function getMonthlyGrowth($orgId) {
-        $stmt = $this->pdo->prepare(
-            "SELECT DATE_FORMAT(created_at, '%b %Y') as label, DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count 
-             FROM leads WHERE organization_id = :org AND created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH) 
-             GROUP BY label, month ORDER BY month"
-        );
-        $stmt->execute(['org' => $orgId]);
+    public function getAgentAdvancedPerformance($orgId, $dateFrom = null, $dateTo = null) {
+        // We will sum up leads assigned in the period and deals closed in the period
+        $sql = "SELECT u.id, u.name, 
+                    (SELECT COUNT(*) FROM leads l WHERE l.assigned_to = u.id";
+        $params = ['org' => $orgId];
+        
+        $dateFilterLeads = "";
+        if ($dateFrom) { $dateFilterLeads .= " AND DATE(l.created_at) >= :dFrom"; $params['dFrom'] = $dateFrom; }
+        if ($dateTo) { $dateFilterLeads .= " AND DATE(l.created_at) <= :dTo"; $params['dTo'] = $dateTo; }
+        $sql .= $dateFilterLeads . ") as total_leads,";
+        
+        $sql .= "   (SELECT COUNT(*) FROM leads l WHERE l.assigned_to = u.id AND l.status NOT IN ('New Lead')";
+        $sql .= $dateFilterLeads . ") as contacted_leads,";
+        
+        $sql .= "   (SELECT COUNT(*) FROM deals d WHERE d.assigned_to = u.id AND d.status = 'won'";
+        $dateFilterDeals = "";
+        if ($dateFrom) { $dateFilterDeals .= " AND DATE(d.updated_at) >= :dFrom"; }
+        if ($dateTo) { $dateFilterDeals .= " AND DATE(d.updated_at) <= :dTo"; }
+        $sql .= $dateFilterDeals . ") as converted_deals";
+        
+        $sql .= " FROM users u
+                  WHERE u.organization_id = :org AND u.role IN ('agent','team_lead','org_admin') AND u.is_active = 1
+                  ORDER BY converted_deals DESC, total_leads DESC";
+                  
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $results = $stmt->fetchAll();
+        
+        foreach ($results as &$row) {
+            $row['conv_rate'] = $row['total_leads'] > 0 ? round(($row['converted_deals'] / $row['total_leads']) * 100, 1) : 0;
+        }
+        return $results;
+    }
+
+    public function getLeadDistribution($orgId, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT u.name as agent_name, COUNT(l.id) as assigned_count
+                FROM users u
+                LEFT JOIN leads l ON l.assigned_to = u.id";
+        $params = ['org' => $orgId];
+        $dateFilter = "";
+        if ($dateFrom) { $dateFilter .= " AND DATE(l.created_at) >= :dFrom"; $params['dFrom'] = $dateFrom; }
+        if ($dateTo) { $dateFilter .= " AND DATE(l.created_at) <= :dTo"; $params['dTo'] = $dateTo; }
+        
+        $sql .= $dateFilter;
+        $sql .= " WHERE u.organization_id = :org AND u.role IN ('agent','team_lead','org_admin') AND u.is_active = 1
+                  GROUP BY u.id, u.name
+                  ORDER BY assigned_count DESC";
+                  
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
-    public function getPipelinePerformance($orgId) {
-        $stmt = $this->pdo->prepare(
-            "SELECT ps.name, ps.color, COUNT(d.id) as deals_count, COALESCE(SUM(d.value), 0) as total_value
+    public function getAgentResponseTime($orgId, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT u.name as agent_name, 
+                       AVG(TIMESTAMPDIFF(MINUTE, l.created_at, (
+                           SELECT MIN(a.created_at) FROM lead_activities a WHERE a.lead_id = l.id AND a.user_id = u.id
+                       ))) as avg_response_minutes
+                FROM leads l
+                JOIN users u ON l.assigned_to = u.id
+                WHERE l.organization_id = :org AND l.assigned_to IS NOT NULL AND l.status != 'New Lead'";
+        
+        $params = ['org' => $orgId];
+        $this->applyDateFilter($sql, $params, 'l', $dateFrom, $dateTo);
+        
+        $sql .= " GROUP BY u.id, u.name ORDER BY avg_response_minutes ASC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function getDealsRevenueReport($orgId, $agentId = null, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT 
+                    SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END) as total_closed_deals,
+                    SUM(CASE WHEN status = 'won' THEN value ELSE 0 END) as total_revenue,
+                    AVG(CASE WHEN status = 'won' THEN value ELSE NULL END) as avg_deal_value
+                FROM deals WHERE organization_id = :org";
+        $params = ['org' => $orgId];
+        if ($agentId) { $sql .= " AND assigned_to = :uid"; $params['uid'] = $agentId; }
+        
+        $this->applyDateFilter($sql, $params, 'deals', $dateFrom, $dateTo, 'updated_at');
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch();
+    }
+
+    public function getFollowUpStatusReport($orgId, $agentId = null, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT 
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_tasks,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks,
+                    SUM(CASE WHEN status = 'pending' AND followup_date < CURDATE() THEN 1 ELSE 0 END) as overdue_tasks
+                FROM followups WHERE organization_id = :org";
+        $params = ['org' => $orgId];
+        if ($agentId) { $sql .= " AND user_id = :uid"; $params['uid'] = $agentId; }
+        
+        $this->applyDateFilter($sql, $params, 'followups', $dateFrom, $dateTo, 'followup_date');
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch();
+    }
+
+    public function getFacebookCampaignReport($orgId, $dateFrom = null, $dateTo = null) {
+        $sql = "SELECT 
+                    l.facebook_page_id,
+                    p.page_name,
+                    COALESCE(l.meta_campaign, 'Unknown Campaign') as campaign_name,
+                    COUNT(*) as lead_count
+                FROM leads l
+                LEFT JOIN facebook_pages p ON l.facebook_page_id = p.page_id
+                WHERE l.organization_id = :org AND l.source = 'facebook_ads'";
+        
+        $params = ['org' => $orgId];
+        $this->applyDateFilter($sql, $params, 'l', $dateFrom, $dateTo);
+        
+        $sql .= " GROUP BY l.facebook_page_id, p.page_name, l.meta_campaign
+                  ORDER BY lead_count DESC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function getPipelinePerformance($orgId, $userId = null) {
+        $sql = "SELECT ps.name, ps.color, COUNT(d.id) as deals_count, COALESCE(SUM(d.value), 0) as total_value
              FROM pipeline_stages ps
-             LEFT JOIN deals d ON d.stage_id = ps.id AND d.organization_id = :org
-             WHERE ps.organization_id = :org2
+             LEFT JOIN deals d ON d.stage_id = ps.id AND d.organization_id = :org";
+        $params = ['org' => $orgId, 'org2' => $orgId];
+        
+        if ($userId) {
+            $sql .= " AND d.assigned_to = :userId";
+            $params['userId'] = $userId;
+        }
+        
+        $sql .= " WHERE ps.organization_id = :org2
              GROUP BY ps.id, ps.name, ps.color
-             ORDER BY ps.position"
-        );
-        $stmt->execute(['org' => $orgId, 'org2' => $orgId]);
-        return $stmt->fetchAll();
-    }
-
-    public function getDealRevenueByMonth($orgId) {
-        $stmt = $this->pdo->prepare(
-            "SELECT DATE_FORMAT(updated_at, '%b %Y') as label, DATE_FORMAT(updated_at, '%Y-%m') as month, COALESCE(SUM(value),0) as revenue
-             FROM deals WHERE organization_id = :org AND status = 'won' AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-             GROUP BY label, month ORDER BY month"
-        );
-        $stmt->execute(['org' => $orgId]);
+             ORDER BY ps.position";
+             
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 }

@@ -10,9 +10,9 @@ require_once '../../models/Deal.php';
 $orgId = getOrgId();
 $dealModel = new Deal($pdo);
 
-if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/deals/''); }
+if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/deals/'); }
 $deal = $dealModel->getDealById((int)$_GET['id'], $orgId);
-if (!$deal) { redirect(BASE_URL . 'modules/deals/'', 'Deal not found.', 'danger'); }
+if (!$deal) { redirect(BASE_URL . 'modules/deals/', 'Deal not found.', 'danger'); }
 
 $activities = $dealModel->getActivities($deal['id']);
 

@@ -41,7 +41,7 @@ if ($isSuperAdmin) {
     // Org-level admin: only their org's users
     require_once '../../models/User.php';
     $userModel = new User($pdo);
-    $users = $userModel->getAllUsers($orgId);
+    $users = $userModel->getAllUsers($orgId, $search, $roleFilter);
     $orgs = [];
 }
 
@@ -58,30 +58,31 @@ include '../../includes/header.php';
     </a>
 </div>
 
-<?php if ($isSuperAdmin): ?>
-<!-- Super Admin Filters -->
+<!-- Filters -->
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body py-3">
         <form method="GET" class="row g-2 align-items-end">
-            <div class="col-md-4">
+            <div class="<?= $isSuperAdmin ? 'col-md-4' : 'col-md-6' ?>">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="search" value="<?= e($search) ?>" class="form-control border-start-0 bg-light" placeholder="Search name or email...">
+                    <input type="text" name="search" value="<?= e($search) ?>" class="form-control border-start-0 bg-light" placeholder="Search by name or email...">
                 </div>
             </div>
+            <?php if ($isSuperAdmin): ?>
             <div class="col-md-3">
                 <select name="org" class="form-select bg-light">
                     <option value="">All Organizations</option>
-                    <option value="-1" <?= $orgFilter === -1 ? 'selected':'' ?>>— No Organization (Super Admins) —</option>
+                    <option value="-1" <?= $orgFilter === -1 ? 'selected':'' ?>>— No Organization —</option>
                     <?php foreach ($orgs as $o): ?>
                     <option value="<?= $o['id'] ?>" <?= $orgFilter == $o['id'] ? 'selected':'' ?>><?= e($o['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-2">
+            <?php endif; ?>
+            <div class="<?= $isSuperAdmin ? 'col-md-2' : 'col-md-3' ?>">
                 <select name="role" class="form-select bg-light">
                     <option value="">All Roles</option>
-                    <option value="super_admin" <?= $roleFilter==='super_admin'?'selected':'' ?>>Super Admin</option>
+                    <?php if ($isSuperAdmin): ?><option value="super_admin" <?= $roleFilter==='super_admin'?'selected':'' ?>>Super Admin</option><?php endif; ?>
                     <option value="org_owner" <?= $roleFilter==='org_owner'?'selected':'' ?>>Org Owner</option>
                     <option value="org_admin" <?= $roleFilter==='org_admin'?'selected':'' ?>>Org Admin</option>
                     <option value="team_lead" <?= $roleFilter==='team_lead'?'selected':'' ?>>Team Lead</option>
@@ -89,13 +90,12 @@ include '../../includes/header.php';
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Filter</button>
                 <a href="<?= BASE_URL ?>modules/users/" class="btn btn-outline-secondary">Reset</a>
             </div>
         </form>
     </div>
 </div>
-<?php endif; ?>
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
@@ -107,7 +107,8 @@ include '../../includes/header.php';
                         <th>Email</th>
                         <?php if ($isSuperAdmin): ?><th>Organization</th><?php endif; ?>
                         <th>Role</th>
-                        <th>Status</th>
+                        <th>Account</th>
+                        <th>Availability</th>
                         <th>Last Login</th>
                         <th>Actions</th>
                     </tr>
@@ -143,6 +144,13 @@ include '../../includes/header.php';
                                 <span class="badge bg-<?= $roleBadge[$r] ?? 'secondary' ?> bg-opacity-10 text-<?= $roleBadge[$r] ?? 'secondary' ?>"><?= $roleLabel[$r] ?? $r ?></span>
                             </td>
                             <td><span class="badge bg-<?= $u['is_active'] ? 'success' : 'danger' ?> bg-opacity-10 text-<?= $u['is_active'] ? 'success' : 'danger' ?>"><?= $u['is_active'] ? 'Active' : 'Inactive' ?></span></td>
+                            <td>
+                                <select class="form-select form-select-sm border border-secondary border-opacity-25 fw-semibold" style="width: 165px; font-size: 12px; cursor: pointer; background-color: var(--bs-light);" onchange="updateAvailability(<?= $u['id'] ?>, this.value, this)">
+                                    <option value="active" <?= ($u['availability_status'] ?? 'active') === 'active' ? 'selected' : '' ?>>🟢 Receiving Leads</option>
+                                    <option value="absent" <?= ($u['availability_status'] ?? 'active') === 'absent' ? 'selected' : '' ?>>🟡 Absent Today</option>
+                                    <option value="inactive" <?= ($u['availability_status'] ?? 'active') === 'inactive' ? 'selected' : '' ?>>⚪ Inactive</option>
+                                </select>
+                            </td>
                             <td class="small text-muted"><?= $u['last_login'] ? timeAgo($u['last_login']) : 'Never' ?></td>
                             <td>
                                 <div class="btn-group btn-group-sm">
@@ -166,3 +174,36 @@ include '../../includes/header.php';
 </div>
 
 <?php include '../../includes/footer.php'; ?>
+
+<script>
+function updateAvailability(userId, status, selectElement) {
+    const originalValue = selectElement.getAttribute('data-original-value') || selectElement.querySelector('option[selected]')?.value || 'active';
+    selectElement.disabled = true;
+
+    fetch('<?= BASE_URL ?>modules/users/ajax_update_availability.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'user_id=' + userId + '&status=' + status
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.message || 'Failed to update availability. Please try again.');
+            selectElement.value = originalValue;
+        } else {
+            selectElement.setAttribute('data-original-value', status);
+            // Flash green border to indicate success
+            selectElement.classList.add('border-success', 'text-success');
+            setTimeout(() => selectElement.classList.remove('border-success', 'text-success'), 1500);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An network error occurred while updating availability.');
+        selectElement.value = originalValue;
+    })
+    .finally(() => {
+        selectElement.disabled = false;
+    });
+}
+</script>
