@@ -92,7 +92,7 @@ include '../../includes/header.php';
             <div class="stat-card-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i class="bi bi-check-circle"></i></div>
             <div class="stat-card-info">
                 <span class="stat-card-label">Active Forms</span>
-                <h3 class="stat-card-number"><?= count(array_filter($integrations, fn($i) => $i['is_active'])) ?></h3>
+                <h3 class="stat-card-number"><?= count(array_filter($integrations, function($i) { return $i['is_active']; })) ?></h3>
                 <span class="stat-card-change text-success"><i class="bi bi-broadcast me-1"></i>Syncing</span>
             </div>
         </div>

@@ -75,10 +75,10 @@ if ($lead['pipeline_stage_id']) {
 $taskModel = new Task($pdo);
 $leadTasks = $taskModel->getAllTasks($orgId, ['lead_id' => $lead['id']]);
 $allReminders = array_merge(
-    array_map(fn($f) => array_merge($f, ['type' => 'followup']), $followups),
-    array_map(fn($t) => array_merge($t, ['type' => 'task', 'followup_date' => $t['due_date'], 'title' => $t['task_title']]), $leadTasks)
+    array_map(function($f) { return array_merge($f, ['type' => 'followup']); }, $followups),
+    array_map(function($t) { return array_merge($t, ['type' => 'task', 'followup_date' => $t['due_date'], 'title' => $t['task_title']]); }, $leadTasks)
 );
-usort($allReminders, fn($a, $b) => strtotime($a['followup_date']) - strtotime($b['followup_date']));
+usort($allReminders, function($a, $b) { return strtotime($a['followup_date']) - strtotime($b['followup_date']); });
 
 include '../../includes/header.php';
 ?>

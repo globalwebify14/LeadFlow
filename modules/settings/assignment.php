@@ -87,7 +87,7 @@ include '../../includes/header.php';
             <div class="stat-card-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);"><i class="bi bi-shuffle"></i></div>
             <div class="stat-card-info">
                 <span class="stat-card-label">Active Rules</span>
-                <h3 class="stat-card-number"><?= count(array_filter($rules, fn($r) => $r['is_active'])) ?></h3>
+                <h3 class="stat-card-number"><?= count(array_filter($rules, function($r) { return $r['is_active']; })) ?></h3>
                 <span class="stat-card-change text-primary"><i class="bi bi-gear me-1"></i>Configured</span>
             </div>
         </div>
