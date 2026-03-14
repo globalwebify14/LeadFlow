@@ -31,7 +31,7 @@ $base = BASE_URL;
                         <i class="bi bi-building me-2"></i> Organizations
                     </a>
                     <a href="<?= $base ?>modules/users/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/users/') !== false ? 'active-link' : '' ?>">
-                        <i class="bi bi-people me-2"></i> Users
+                        <i class="bi bi-people me-2"></i> Team
                     </a>
                     <a href="<?= $base ?>modules/subscriptions/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/subscriptions/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-wallet2 me-2"></i> Plans
@@ -79,7 +79,7 @@ $base = BASE_URL;
                 <div class="sidebar-category mt-3">Management</div>
                 <div class="list-group list-group-flush">
                     <a href="<?= $base ?>modules/users/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/users/') !== false ? 'active-link' : '' ?>">
-                        <i class="bi bi-people-fill me-2"></i> Users
+                        <i class="bi bi-people-fill me-2"></i> Team
                     </a>
                     <a href="<?= $base ?>modules/reports/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/reports/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-bar-chart-fill me-2"></i> Reports

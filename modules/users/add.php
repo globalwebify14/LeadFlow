@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Add User';
+$pageTitle = 'Add Team Member';
 require_once '../../config/auth.php';
 requireLogin();
 requireRole(['super_admin', 'org_owner', 'org_admin']);
@@ -36,14 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Password must be at least 6 characters.';
     } else {
         $userModel->createUser($data);
-        redirect(BASE_URL . 'modules/users/', 'User created successfully!', 'success');
+        redirect(BASE_URL . 'modules/users/', 'Team member created successfully!', 'success');
     }
 }
 include '../../includes/header.php';
 ?>
 <div class="row justify-content-center"><div class="col-lg-6">
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white border-0 pt-4"><h5 class="fw-bold mb-0"><i class="bi bi-person-plus text-primary me-2"></i>Add User</h5></div>
+    <div class="card-header bg-white border-0 pt-4"><h5 class="fw-bold mb-0"><i class="bi bi-person-plus text-primary me-2"></i>Add Team Member</h5></div>
     <div class="card-body p-4">
         <?php if (!empty($error)): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
         <form method="POST">
@@ -75,7 +75,7 @@ include '../../includes/header.php';
                     <option value="absent">Absent Today</option>
                 </select>
             </div>
-            <div class="d-flex gap-2"><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Create User</button><a href="<?= BASE_URL ?>modules/users/" class="btn btn-outline-secondary">Cancel</a></div>
+            <div class="d-flex gap-2"><button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Create Team Member</button><a href="<?= BASE_URL ?>modules/users/" class="btn btn-outline-secondary">Cancel</a></div>
         </form>
     </div>
 </div>

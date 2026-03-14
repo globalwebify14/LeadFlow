@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Edit User';
+$pageTitle = 'Edit Team Member';
 require_once '../../config/auth.php';
 requireLogin();
 requireRole(['super_admin', 'org_owner', 'org_admin']);
@@ -14,7 +14,7 @@ $currentUserRole = getUserRole();
 
 if (!isset($_GET['id'])) { redirect(BASE_URL . 'modules/users/'); }
 $user = $userModel->getUserById((int)$_GET['id']);
-if (!$user) { redirect(BASE_URL . 'modules/users/', 'User not found.', 'danger'); }
+if (!$user) { redirect(BASE_URL . 'modules/users/', 'Team member not found.', 'danger'); }
 
 if ($currentUserRole === 'org_admin' && in_array($user['role'], ['super_admin', 'org_owner'])) {
     redirect(BASE_URL . 'modules/users/', 'Permission denied.', 'danger');
@@ -43,14 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Email already exists.';
     } else {
         $userModel->updateUser($user['id'], $data);
-        redirect(BASE_URL . 'modules/users/', 'User updated!', 'success');
+        redirect(BASE_URL . 'modules/users/', 'Team member updated!', 'success');
     }
 }
 include '../../includes/header.php';
 ?>
 <div class="row justify-content-center"><div class="col-lg-6">
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white border-0 pt-4"><h5 class="fw-bold mb-0"><i class="bi bi-pencil text-primary me-2"></i>Edit User</h5></div>
+    <div class="card-header bg-white border-0 pt-4"><h5 class="fw-bold mb-0"><i class="bi bi-pencil text-primary me-2"></i>Edit Team Member</h5></div>
     <div class="card-body p-4">
         <?php if (!empty($error)): ?><div class="alert alert-danger"><?= e($error) ?></div><?php endif; ?>
         <form method="POST">

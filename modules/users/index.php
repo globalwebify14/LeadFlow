@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'User Management';
+$pageTitle = 'Team Management';
 require_once '../../config/auth.php';
 requireLogin();
 requireRole(['super_admin', 'org_owner', 'org_admin']);
@@ -50,11 +50,11 @@ include '../../includes/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="bi bi-people me-2 text-primary"></i>User Management</h4>
-        <p class="text-muted small mb-0"><?= count($users) ?> user<?= count($users) !== 1 ? 's' : '' ?> found</p>
+        <h4 class="fw-bold mb-1"><i class="bi bi-people me-2 text-primary"></i>Team Management</h4>
+        <p class="text-muted small mb-0"><?= count($users) ?> member<?= count($users) !== 1 ? 's' : '' ?> found</p>
     </div>
     <a href="<?= BASE_URL ?>modules/users/add.php" class="btn btn-primary btn-sm fw-semibold">
-        <i class="bi bi-person-plus me-1"></i> Add User
+        <i class="bi bi-person-plus me-1"></i> Add Member
     </a>
 </div>
 
@@ -164,7 +164,7 @@ include '../../includes/header.php';
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr><td colspan="<?= $isSuperAdmin ? 7 : 6 ?>" class="text-center py-5 text-muted">
-                            <i class="bi bi-people fs-1 d-block mb-2"></i>No users found.
+                            <i class="bi bi-people fs-1 d-block mb-2"></i>No team members found.
                         </td></tr>
                     <?php endif; ?>
                 </tbody>
