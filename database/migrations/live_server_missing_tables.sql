@@ -224,3 +224,8 @@ CREATE TABLE IF NOT EXISTS `meta_integrations` (
   PRIMARY KEY (`id`),
   KEY `organization_id` (`organization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Organizations table updates
+ALTER TABLE `organizations`
+ADD COLUMN IF NOT EXISTS `logo` varchar(255) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `assignment_mode` enum('manual','auto') DEFAULT 'manual';
