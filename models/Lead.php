@@ -223,6 +223,9 @@ class Lead {
             ]);
             $leadId = $this->pdo->lastInsertId();
 
+            // Sync pipeline stage based on status
+            $this->syncPipelineStageWithStatus($leadId, $data['status'] ?? 'New Lead', $data['organization_id']);
+
             // Notify assigned agent directly inside generic addLead if auto-assigned or manually assigned to someone else
             if ($assignedTo && (!isset($data['user_id']) || $data['user_id'] != $assignedTo)) {
                 require_once __DIR__ . '/Notification.php';
@@ -295,6 +298,11 @@ class Lead {
                 'note'        => $data['note'] ?? null,
             ]);
 
+            // Sync pipeline stage if status changed
+            if ($currentLead && $currentLead['status'] !== $data['status']) {
+                $this->syncPipelineStageWithStatus($id, $data['status'], $currentLead['organization_id']);
+            }
+
             // Log status change
             if ($currentLead && $currentLead['status'] !== $data['status']) {
                 $this->logActivity($id, 'status_change', 'Status changed from ' . $currentLead['status'] . ' to ' . $data['status'], $currentLead['status'], $data['status'], $data['user_id'] ?? null);
@@ -336,6 +344,9 @@ class Lead {
             $stmt = $this->pdo->prepare("UPDATE leads SET status=:status WHERE id=:id");
             $stmt->execute(['status' => $status, 'id' => $id]);
 
+            // Sync pipeline stage
+            $this->syncPipelineStageWithStatus($id, $status, $currentLead['organization_id']);
+
             $desc = $note ?: 'Status changed from ' . ($currentLead['status'] ?? '') . ' to ' . $status;
             $this->logActivity($id, 'status_change', $desc, $currentLead['status'] ?? null, $status, $userId);
 
@@ -344,6 +355,35 @@ class Lead {
         } catch (Exception $e) {
             $this->pdo->rollBack();
             return false;
+        }
+    }
+
+    /**
+     * Helper to sync pipeline stage ID based on status name
+     */
+    private function syncPipelineStageWithStatus($leadId, $status, $orgId) {
+        $stageName = $status;
+        
+        // Mapping for statuses that don't match stage names exactly
+        $mapping = [
+            'Working'   => 'Contacted',
+            'Follow Up' => 'Contacted',
+            'Done'      => 'Closed Won',
+            'Rejected'  => 'Closed Lost'
+        ];
+
+        if (isset($mapping[$status])) {
+            $stageName = $mapping[$status];
+        }
+
+        // Find a pipeline stage that matches the stage name (case-insensitive and trimmed)
+        $stmt = $this->pdo->prepare("SELECT id FROM pipeline_stages WHERE organization_id = :org AND TRIM(LOWER(name)) = LOWER(:name) LIMIT 1");
+        $stmt->execute(['org' => $orgId, 'name' => trim($stageName)]);
+        $stageId = $stmt->fetchColumn();
+
+        if ($stageId) {
+            $update = $this->pdo->prepare("UPDATE leads SET pipeline_stage_id = :stage WHERE id = :id");
+            $update->execute(['stage' => $stageId, 'id' => $leadId]);
         }
     }
 
@@ -460,9 +500,15 @@ class Lead {
         $params = array_merge([$status], $ids);
         $result = $stmt->execute($params);
         
-        // Log activities
+        // Log activities and Sync pipeline stages
         foreach ($ids as $id) {
             $this->logActivity($id, 'status_change', "Bulk status change to $status", null, $status, $userId);
+            
+            // Get lead to know its org_id for sync (or we could assume all leads in $ids belong to same org if coming from list view, but safer to check)
+            $lead = $this->getLeadById($id);
+            if ($lead) {
+                $this->syncPipelineStageWithStatus($id, $status, $lead['organization_id']);
+            }
         }
         return $result;
     }

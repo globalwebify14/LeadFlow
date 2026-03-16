@@ -87,14 +87,10 @@ include '../../includes/header.php';
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between mb-1">
                         <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="fw-semibold text-dark text-decoration-none small"><?= e($lead['name']) ?></a>
-                        <span class="badge <?= getPriorityBadgeClass($lead['priority'] ?? 'Warm') ?>" style="font-size:10px;"><?= e($lead['priority'] ?? '') ?></span>
                     </div>
                     <div class="text-muted" style="font-size:12px;">
                         <i class="bi bi-telephone me-1"></i><?= e($lead['phone']) ?>
                     </div>
-                    <?php if ($lead['company']): ?>
-                    <div class="text-muted" style="font-size:12px;"><i class="bi bi-building me-1"></i><?= e($lead['company']) ?></div>
-                    <?php endif; ?>
                     <div class="d-flex justify-content-between align-items-center mt-2">
                         <span class="text-muted" style="font-size:11px;"><?= e($lead['agent_name'] ?: 'Unassigned') ?></span>
                         <span class="text-muted" style="font-size:11px;"><?= timeAgo($lead['updated_at'] ?? $lead['created_at']) ?></span>
