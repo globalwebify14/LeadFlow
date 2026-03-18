@@ -12,9 +12,10 @@ class Lead {
      * Get all leads with advanced filtering
      */
     public function getAllLeads($orgId, $filters = [], $limit = 10, $offset = 0) {
-        $sql = "SELECT l.*, u.name as agent_name
+        $sql = "SELECT l.*, u.name as agent_name, ps.name as stage_name, ps.color as stage_color
                 FROM leads l
                 LEFT JOIN users u ON l.assigned_to = u.id
+                LEFT JOIN pipeline_stages ps ON l.pipeline_stage_id = ps.id
                 WHERE l.organization_id = :org_id";
         $params = [':org_id' => $orgId];
 
@@ -207,19 +208,23 @@ class Lead {
                 $assignedTo = $this->getAutoAssignAgentId($data['organization_id']);
             }
 
-            $stmt = $this->pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note) 
-                VALUES (:org_id, :name, :phone, :email, :company, :source, :status, :priority, :assigned_to, :note)");
+            $stmt = $this->pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note, meta_campaign, meta_form_id, facebook_page_id, created_at) 
+                VALUES (:org_id, :name, :phone, :email, :company, :source, :status, :priority, :assigned_to, :note, :meta_campaign, :meta_form_id, :facebook_page_id, :created_at)");
             $stmt->execute([
-                'org_id'      => $data['organization_id'],
-                'name'        => $data['name'],
-                'phone'       => $data['phone'],
-                'email'       => $data['email'] ?? null,
-                'company'     => $data['company'] ?? null,
-                'source'      => $data['source'] ?? null,
-                'status'      => $data['status'] ?? 'New Lead',
-                'priority'    => $data['priority'] ?? 'Warm',
-                'assigned_to' => $assignedTo,
-                'note'        => $data['note'] ?? null,
+                'org_id'           => $data['organization_id'],
+                'name'             => $data['name'],
+                'phone'            => $data['phone'],
+                'email'            => $data['email'] ?? null,
+                'company'          => $data['company'] ?? null,
+                'source'           => $data['source'] ?? null,
+                'status'           => $data['status'] ?? 'New Lead',
+                'priority'         => $data['priority'] ?? 'Warm',
+                'assigned_to'      => $assignedTo,
+                'note'             => $data['note'] ?? null,
+                'meta_campaign'    => $data['meta_campaign'] ?? null,
+                'meta_form_id'     => $data['meta_form_id'] ?? null,
+                'facebook_page_id' => $data['facebook_page_id'] ?? null,
+                'created_at'       => $data['created_at'] ?? date('Y-m-d H:i:s')
             ]);
             $leadId = $this->pdo->lastInsertId();
 
@@ -362,9 +367,7 @@ class Lead {
      * Helper to sync pipeline stage ID based on status name
      */
     private function syncPipelineStageWithStatus($leadId, $status, $orgId) {
-        $stageName = $status;
-        
-        // Mapping for statuses that don't match stage names exactly
+        // Find a pipeline stage that matches the status name OR mapped stage name
         $mapping = [
             'Working'   => 'Contacted',
             'Follow Up' => 'Contacted',
@@ -372,14 +375,19 @@ class Lead {
             'Rejected'  => 'Closed Lost'
         ];
 
-        if (isset($mapping[$status])) {
-            $stageName = $mapping[$status];
-        }
+        $stageName = $status;
+        $mappedName = $mapping[$status] ?? null;
 
-        // Find a pipeline stage that matches the stage name (case-insensitive and trimmed)
+        // 1. Try to find stage matching status name directly
         $stmt = $this->pdo->prepare("SELECT id FROM pipeline_stages WHERE organization_id = :org AND TRIM(LOWER(name)) = LOWER(:name) LIMIT 1");
         $stmt->execute(['org' => $orgId, 'name' => trim($stageName)]);
         $stageId = $stmt->fetchColumn();
+
+        // 2. If not found, try the mapping name
+        if (!$stageId && $mappedName) {
+            $stmt->execute(['org' => $orgId, 'name' => trim($mappedName)]);
+            $stageId = $stmt->fetchColumn();
+        }
 
         if ($stageId) {
             $update = $this->pdo->prepare("UPDATE leads SET pipeline_stage_id = :stage WHERE id = :id");
@@ -599,23 +607,40 @@ class Lead {
         return $stmt->fetchAll();
     }
 
-    /**
-     * Update lead pipeline stage
-     */
     public function updatePipelineStage($leadId, $stageId, $userId = null) {
-        $stmt = $this->pdo->prepare("UPDATE leads SET pipeline_stage_id = :stage_id WHERE id = :id");
-        $result = $stmt->execute(['stage_id' => $stageId, 'id' => $leadId]);
-        $this->logActivity($leadId, 'status_change', 'Pipeline stage updated', null, $stageId, $userId);
-        return $result;
+        $this->pdo->beginTransaction();
+        try {
+            // Get stage name to update status string
+            $stmtStage = $this->pdo->prepare("SELECT name FROM pipeline_stages WHERE id = ?");
+            $stmtStage->execute([$stageId]);
+            $stageName = $stmtStage->fetchColumn();
+
+            if ($stageName) {
+                $stmt = $this->pdo->prepare("UPDATE leads SET pipeline_stage_id = :stage_id, status = :status WHERE id = :id");
+                $result = $stmt->execute(['stage_id' => $stageId, 'status' => $stageName, 'id' => $leadId]);
+                $this->logActivity($leadId, 'status_change', "Moved to pipeline stage: $stageName", null, $stageName, $userId);
+            } else {
+                $stmt = $this->pdo->prepare("UPDATE leads SET pipeline_stage_id = :stage_id WHERE id = :id");
+                $result = $stmt->execute(['stage_id' => $stageId, 'id' => $leadId]);
+                $this->logActivity($leadId, 'status_change', 'Pipeline stage updated', null, $stageId, $userId);
+            }
+
+            $this->pdo->commit();
+            return $result;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return false;
+        }
     }
 
     /**
      * Get filtered leads for export without pagination
      */
     public function getFilteredLeadsForExport($orgId, $filters = []) {
-        $sql = "SELECT l.*, u.name as agent_name
+        $sql = "SELECT l.*, u.name as agent_name, ps.name as stage_name
                 FROM leads l
                 LEFT JOIN users u ON l.assigned_to = u.id
+                LEFT JOIN pipeline_stages ps ON l.pipeline_stage_id = ps.id
                 WHERE l.organization_id = :org_id";
         $params = [':org_id' => $orgId];
 

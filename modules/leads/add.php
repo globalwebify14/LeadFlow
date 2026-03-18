@@ -102,7 +102,12 @@ include '../../includes/header.php';
                         <div class="col-md-6">
                             <label class="form-label">Status</label>
                             <select class="form-select" name="status">
-                                <?php foreach (['New Lead','Contacted','Working','Qualified','Follow Up','Not Picked'] as $s): ?>
+                                <?php 
+                                $stagesStmt = $pdo->prepare("SELECT name FROM pipeline_stages WHERE organization_id = ? ORDER BY position");
+                                $stagesStmt->execute([getOrgId()]);
+                                $pipelineStages = $stagesStmt->fetchAll(PDO::FETCH_COLUMN);
+                                
+                                foreach ($pipelineStages as $s): ?>
                                     <option value="<?= $s ?>" <?= ($data['status'] ?? 'New Lead') === $s ? 'selected' : '' ?>><?= $s ?></option>
                                 <?php endforeach; ?>
                             </select>

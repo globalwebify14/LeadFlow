@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute(['org' => $orgId, 'name' => $oName, 'email' => $oEmail, 'pass' => $hash, 'phone' => $oPhone]);
         $ownerId = $pdo->lastInsertId();
         $orgModel->setOwner($orgId, $ownerId);
+        $orgModel->seedDefaultStages($orgId);
 
         // Log activity
         ActivityLog::write($pdo, 'org_created', "Organization '{$name}' created with owner '{$oName}'");

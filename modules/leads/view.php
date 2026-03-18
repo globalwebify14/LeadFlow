@@ -85,6 +85,11 @@ $allReminders = array_merge(
 );
 usort($allReminders, function($a, $b) { return strtotime($a['followup_date']) - strtotime($b['followup_date']); });
 
+// Get pipeline stages for quick status
+$stagesStmt = $pdo->prepare("SELECT name FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
+$stagesStmt->execute(['org' => $orgId]);
+$pipelineStages = $stagesStmt->fetchAll(PDO::FETCH_COLUMN);
+
 include '../../includes/header.php';
 ?>
 
@@ -347,7 +352,7 @@ include '../../includes/header.php';
         <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,0.08);">
             <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Quick Status</div>
             <form method="POST" class="d-flex flex-wrap gap-2">
-                <?php foreach (['New Lead','Contacted','Working','Qualified','Follow Up','Done','Rejected'] as $s): ?>
+                <?php foreach ($pipelineStages as $s): ?>
                 <button type="submit" name="quick_status" value="<?= $s ?>"
                     class="status-pill-btn <?= $lead['status'] === $s ? 'active' : '' ?>">
                     <?= $s ?>

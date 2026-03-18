@@ -566,6 +566,7 @@ function dashColor($i) {
                             <th>Name</th>
                             <th>Phone</th>
                             <th>Status</th>
+                            <th>Pipeline</th>
                             <th>Priority</th>
                             <th>Source</th>
                             <th>Assigned</th>
@@ -597,6 +598,15 @@ function dashColor($i) {
                                 <span style="width:6px;height:6px;border-radius:50%;background:<?= $sc[0] ?>;display:inline-block;"></span>
                                 <?= e($lead['status']) ?>
                             </span>
+                        </td>
+                        <td>
+                            <?php if ($lead['stage_name']): ?>
+                                <span class="badge rounded-pill text-white" style="background: <?= e($lead['stage_color'] ?: '#64748b') ?>; font-size: 10px; padding: 4px 10px; font-weight: 600;">
+                                    <?= e($lead['stage_name']) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="text-muted" style="font-size:12px;">—</span>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:<?= $pc ?>;">

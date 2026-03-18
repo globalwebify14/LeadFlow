@@ -105,19 +105,21 @@ try {
 
                     // Insert into CRM leads table with ALL fields, including exact Facebook submission time
                     $createdAt = isset($leadRaw['created_time']) ? date('Y-m-d H:i:s', strtotime($leadRaw['created_time'])) : date('Y-m-d H:i:s');
-                    $stmtLead = $pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, company, source, status, priority, assigned_to, note, meta_campaign, meta_form_id, created_at) VALUES (:org, :name, :phone, :email, :company, :source, 'New Lead', 'Hot', :assign, :note, :campaign, :form, :created)");
-                    $stmtLead->execute([
-                        'org' => $orgId,
-                        'name' => $parsed['name'],
-                        'phone' => $parsed['phone'],
-                        'email' => $parsed['email'],
-                        'company' => $parsed['company'],
-                        'source' => 'facebook_ads',
-                        'assign' => $agentId,
-                        'note' => $parsed['note'],
-                        'campaign' => $leadRaw['campaign_name'] ?? $f['name'],
-                        'form' => $f['id'],
-                        'created' => $createdAt
+                    require_once '../../models/Lead.php';
+                    $leadModel = new Lead($pdo);
+                    $leadDbId = $leadModel->addLead([
+                        'organization_id'  => $orgId,
+                        'name'             => $parsed['name'],
+                        'phone'            => $parsed['phone'],
+                        'email'            => $parsed['email'],
+                        'company'          => $parsed['company'],
+                        'source'           => 'facebook_ads',
+                        'assigned_to'      => $agentId,
+                        'note'             => $parsed['note'],
+                        'meta_campaign'    => $leadRaw['campaign_name'] ?? $f['name'],
+                        'meta_form_id'     => $f['id'],
+                        'created_at'       => $createdAt,
+                        'status'           => 'New Lead'
                     ]);
 
                     $totalLeads++;

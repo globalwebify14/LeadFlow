@@ -37,8 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'update_status') {
         $status = $_POST['status'] ?? '';
-        $validStatuses = ['New Lead', 'Contacted', 'Working', 'Qualified', 'Processing', 'Proposal Sent', 'Follow Up', 'Negotiation', 'Not Picked', 'Done', 'Closed Won', 'Closed Lost', 'Rejected'];
         
+        // Fetch valid pipeline stages for this organization
+        $stmtS = $pdo->prepare("SELECT name FROM pipeline_stages WHERE organization_id = ?");
+        $stmtS->execute([$orgId]);
+        $validStatuses = $stmtS->fetchAll(PDO::FETCH_COLUMN);
+        
+        // Add default mapping support if needed, or just allow any standard stage
         if (in_array($status, $validStatuses)) {
             $success = $leadModel->updateStatus($leadId, $status, 'Status updated via Agent Quick Action', $userId);
             if ($success) {

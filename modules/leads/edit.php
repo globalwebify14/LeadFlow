@@ -74,33 +74,25 @@ include '../../includes/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-6"><label class="form-label">Status</label>
+                <div class="col-md-6"><label class="form-label">Pipeline Stage (Status)</label>
                     <select class="form-select" name="status">
-                        <?php foreach (['New Lead','Contacted','Working','Qualified','Processing','Proposal Sent','Follow Up','Negotiation','Not Picked','Done','Closed Won','Closed Lost','Rejected'] as $s): ?>
-                            <option value="<?= $s ?>" <?= $lead['status'] === $s ? 'selected' : '' ?>><?= $s ?></option>
+                        <?php foreach ($stages as $s): ?>
+                            <option value="<?= $s['name'] ?>" <?= $lead['status'] === $s['name'] ? 'selected' : '' ?>><?= e($s['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4"><label class="form-label">Priority</label>
+                <div class="col-md-6"><label class="form-label">Priority</label>
                     <select class="form-select" name="priority">
                         <option value="Hot" <?= ($lead['priority']??'') === 'Hot' ? 'selected' : '' ?>>🔥 Hot</option>
                         <option value="Warm" <?= ($lead['priority']??'Warm') === 'Warm' ? 'selected' : '' ?>>☀️ Warm</option>
                         <option value="Cold" <?= ($lead['priority']??'') === 'Cold' ? 'selected' : '' ?>>❄️ Cold</option>
                     </select>
                 </div>
-                <div class="col-md-4"><label class="form-label">Assign To</label>
+                <div class="col-md-12"><label class="form-label">Assign To</label>
                     <select class="form-select" name="assigned_to">
                         <option value="">Unassigned</option>
                         <?php foreach ($agents as $agent): ?>
                             <option value="<?= $agent['id'] ?>" <?= $lead['assigned_to'] == $agent['id'] ? 'selected' : '' ?>><?= e($agent['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-4"><label class="form-label">Pipeline Stage</label>
-                    <select class="form-select" name="pipeline_stage_id">
-                        <option value="">None</option>
-                        <?php foreach ($stages as $s): ?>
-                            <option value="<?= $s['id'] ?>" <?= ($lead['pipeline_stage_id'] ?? '') == $s['id'] ? 'selected' : '' ?>><?= e($s['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

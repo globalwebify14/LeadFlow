@@ -120,6 +120,22 @@ class Organization {
         )->fetchAll();
     }
 
+    public function seedDefaultStages($orgId) {
+        $stages = [
+            ['New Lead', '#6366f1', 1],
+            ['Contacted', '#06b6d4', 2],
+            ['Qualified', '#10b981', 3],
+            ['Proposal Sent', '#f59e0b', 4],
+            ['Negotiation', '#84cc16', 5],
+            ['Closed Won', '#10b981', 6],
+            ['Closed Lost', '#ef4444', 7]
+        ];
+        $stmt = $this->pdo->prepare("INSERT INTO pipeline_stages (organization_id, name, color, position) VALUES (?, ?, ?, ?)");
+        foreach ($stages as $s) {
+            $stmt->execute([$orgId, $s[0], $s[1], $s[2]]);
+        }
+    }
+
     private function makeSlug($name) {
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name)));
         $base = $slug;

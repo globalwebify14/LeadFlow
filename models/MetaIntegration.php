@@ -98,19 +98,21 @@ class MetaIntegration {
      * Create lead from Meta data
      */
     public function createLeadFromMeta($orgId, $leadData, $integration) {
-        $stmt = $this->pdo->prepare("INSERT INTO leads (organization_id, name, phone, email, source, status, priority, assigned_to, note, meta_campaign, meta_form_id, created_at) VALUES (:org, :name, :phone, :email, :source, 'New Lead', 'Warm', :assign, :note, :campaign, :form_id, NOW())");
-        $stmt->execute([
-            'org'      => $orgId,
-            'name'     => $leadData['name'] ?? 'Meta Lead',
-            'phone'    => $leadData['phone'] ?? '',
-            'email'    => $leadData['email'] ?? null,
-            'source'   => 'Facebook',
-            'assign'   => $integration['auto_assign_to'],
-            'note'     => 'Auto-imported from Meta Lead Ads',
-            'campaign' => $leadData['campaign_name'] ?? $integration['page_name'],
-            'form_id'  => $integration['form_id'],
+        require_once __DIR__ . '/Lead.php';
+        $leadModel = new Lead($this->pdo);
+        return $leadModel->addLead([
+            'organization_id'  => $orgId,
+            'name'             => $leadData['name'] ?? 'Meta Lead',
+            'phone'            => $leadData['phone'] ?? '',
+            'email'            => $leadData['email'] ?? null,
+            'source'           => 'Facebook',
+            'assigned_to'      => $integration['auto_assign_to'],
+            'note'             => 'Auto-imported from Meta Lead Ads',
+            'meta_campaign'    => $leadData['campaign_name'] ?? $integration['page_name'],
+            'meta_form_id'     => $integration['form_id'],
+            'facebook_page_id' => $integration['page_id'] ?? null,
+            'status'           => 'New Lead'
         ]);
-        return $this->pdo->lastInsertId();
     }
 
     /**

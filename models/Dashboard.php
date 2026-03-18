@@ -56,7 +56,8 @@ class Dashboard {
             'team_members' => 0,
             'contacted_leads' => 0,
             'leads_by_status' => [],
-            'leads_by_stage' => []
+            'leads_by_stage' => [],
+            'deals_in_progress' => 0
         ];
 
         // Team members count
@@ -144,7 +145,11 @@ class Dashboard {
     }
 
     public function getRecentLeads($orgId, $limit = 10, $userId = null, $role = 'org_owner') {
-        $sql = "SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.organization_id = :org_id";
+        $sql = "SELECT l.*, u.name as agent_name, ps.name as stage_name, ps.color as stage_color 
+                FROM leads l 
+                LEFT JOIN users u ON l.assigned_to = u.id 
+                LEFT JOIN pipeline_stages ps ON l.pipeline_stage_id = ps.id
+                WHERE l.organization_id = :org_id";
         $params = ['org_id' => $orgId];
         if ($role === 'agent' && $userId) {
             $sql .= " AND l.assigned_to = :user_id";

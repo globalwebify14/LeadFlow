@@ -71,14 +71,14 @@ include '../../includes/header.php';
     <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Lead</a>
 </div>
 
-<div class="pipeline-board d-flex gap-3 pb-3" style="min-height:70vh;">
+<div class="pipeline-board d-flex gap-4 pb-3">
     <?php foreach ($pipelineData as $pd): ?>
     <div class="pipeline-column" data-stage-id="<?= $pd['stage']['id'] ?>">
-        <div class="pipeline-header rounded-top p-3 text-white fw-bold d-flex justify-content-between align-items-center" style="background:<?= e($pd['stage']['color']) ?>;">
+        <div class="pipeline-header rounded-top p-3 text-white fw-bold d-flex justify-content-between align-items-center" style="background:<?= e($pd['stage']['color']) ?>; flex: 0 0 auto;">
             <span><?= e($pd['stage']['name']) ?></span>
             <span class="badge bg-white bg-opacity-25 rounded-pill"><?= count($pd['leads']) ?></span>
         </div>
-        <div class="pipeline-cards p-2 rounded-bottom" style="background:#f1f5f9;min-height:400px;" 
+        <div class="pipeline-cards p-2 rounded-bottom" style="background:#f1f5f9; flex: 1; overflow-y: auto;" 
              ondragover="event.preventDefault();this.classList.add('drag-over')" 
              ondragleave="this.classList.remove('drag-over')" 
              ondrop="dropLead(event,<?= $pd['stage']['id'] ?>)">
@@ -104,7 +104,7 @@ include '../../includes/header.php';
 </div>
 
 <?php if (count($unassignedLeads) > 0): ?>
-<div class="card shadow-sm border-0 mt-4">
+<div class="card shadow-sm border-0 mt-4 mb-5">
     <div class="card-header bg-white border-0 pt-4"><h6 class="fw-bold"><i class="bi bi-inbox me-2 text-muted"></i>Unassigned to Pipeline (<?= count($unassignedLeads) ?>)</h6></div>
     <div class="card-body">
         <div class="d-flex flex-wrap gap-2">
@@ -122,14 +122,45 @@ include '../../includes/header.php';
 <?php endif; ?>
 
 <style>
-.pipeline-board { overflow-x: hidden; }
-.pipeline-column { flex: 1; min-width: 0; }
-.pipeline-card { cursor: grab; transition: transform 0.15s, box-shadow 0.15s; border-radius: 10px !important; }
+/* Constrain the main wrapper to prevent dashboard horizontal scroll */
+#page-content-wrapper { overflow-x: hidden; }
+
+.pipeline-board { 
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto; 
+    height: calc(100vh - 210px);
+    padding-bottom: 15px;
+    align-items: stretch;
+    width: 100%; /* Ensure it doesn't exceed container */
+}
+.pipeline-board::-webkit-scrollbar {
+    height: 8px;
+}
+.pipeline-board::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+.pipeline-column { 
+    flex: 0 0 240px; /* Further reduced width from 270px */
+    display: flex; 
+    flex-direction: column; 
+    height: 100%;
+}
+.pipeline-card { cursor: grab; transition: transform 0.15s, box-shadow 0.15s; border-radius: 12px !important; }
 .pipeline-card:active { cursor: grabbing; }
 .pipeline-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; }
 .drag-over { background: #dbeafe !important; border: 2px dashed #3b82f6; }
 .pipeline-header { font-size: 13px; border-radius: 12px 12px 0 0 !important; }
 .pipeline-cards { border-radius: 0 0 12px 12px !important; }
+/* Custom scrollbar for cards */
+.pipeline-cards::-webkit-scrollbar {
+    width: 6px;
+}
+.pipeline-cards::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
 </style>
 
 <script>
