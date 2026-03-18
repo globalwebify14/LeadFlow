@@ -12,9 +12,7 @@ $orgId = getOrgId();
 $leadModel = new Lead($pdo);
 
 // Get pipeline stages
-$stagesStmt = $pdo->prepare("SELECT * FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
-$stagesStmt->execute(['org' => $orgId]);
-$stages = $stagesStmt->fetchAll();
+$stages = $leadModel->getOrInitializeStages($orgId);
 
 // Filters
 $filterAgentId = (isset($_GET['agent_id']) && $_GET['agent_id'] !== '') ? (int)$_GET['agent_id'] : null;

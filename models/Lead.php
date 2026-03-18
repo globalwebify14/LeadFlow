@@ -396,6 +396,43 @@ class Lead {
     }
 
     /**
+     * Gets pipeline stages for an organization, or initializes defaults if none exist.
+     */
+    public function getOrInitializeStages($orgId) {
+        $stmt = $this->pdo->prepare("SELECT * FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
+        $stmt->execute(['org' => $orgId]);
+        $stages = $stmt->fetchAll();
+
+        if (empty($stages)) {
+            // Define default stages
+            $defaults = [
+                ['name' => 'New Lead', 'color' => '#3b82f6', 'pos' => 1],
+                ['name' => 'Contacted', 'color' => '#6366f1', 'pos' => 2],
+                ['name' => 'Qualified', 'color' => '#8b5cf6', 'pos' => 3],
+                ['name' => 'Negotiation', 'color' => '#f59e0b', 'pos' => 4],
+                ['name' => 'Closed Won', 'color' => '#10b981', 'pos' => 5],
+                ['name' => 'Closed Lost', 'color' => '#ef4444', 'pos' => 6]
+            ];
+
+            foreach ($defaults as $d) {
+                $ins = $this->pdo->prepare("INSERT INTO pipeline_stages (organization_id, name, color, position) VALUES (:org, :name, :color, :pos)");
+                $ins->execute([
+                    'org'   => $orgId,
+                    'name'  => $d['name'],
+                    'color' => $d['color'],
+                    'pos'   => $d['pos']
+                ]);
+            }
+
+            // Fetch again after insertion
+            $stmt->execute(['org' => $orgId]);
+            $stages = $stmt->fetchAll();
+        }
+
+        return $stages;
+    }
+
+    /**
      * Log an activity for a lead
      */
     public function logActivity($leadId, $type, $description, $oldValue = null, $newValue = null, $userId = null) {

@@ -11,9 +11,8 @@ $leadModel = new Lead($pdo);
 $userModel = new User($pdo);
 
 // Get pipeline stages for status dropdowns/filters
-$stagesStmt = $pdo->prepare("SELECT name FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
-$stagesStmt->execute(['org' => $orgId]);
-$pipelineStages = $stagesStmt->fetchAll(PDO::FETCH_COLUMN);
+$stages = $leadModel->getOrInitializeStages($orgId);
+$pipelineStages = array_column($stages, 'name');
 
 $filterStatus  = $_GET['status'] ?? '';
 
