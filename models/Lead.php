@@ -367,7 +367,6 @@ class Lead {
      * Helper to sync pipeline stage ID based on status name
      */
     private function syncPipelineStageWithStatus($leadId, $status, $orgId) {
-        // Find a pipeline stage that matches the status name OR mapped stage name
         $mapping = [
             'Working'   => 'Contacted',
             'Follow Up' => 'Contacted',
@@ -375,7 +374,7 @@ class Lead {
             'Rejected'  => 'Closed Lost'
         ];
 
-        $stageName = $status;
+        $stageName = $status ?: 'New Lead';
         $mappedName = $mapping[$status] ?? null;
 
         // 1. Try to find stage matching status name directly
@@ -389,9 +388,30 @@ class Lead {
             $stageId = $stmt->fetchColumn();
         }
 
+        // 3. FALLBACK: Use the first stage if still not found
+        if (!$stageId) {
+            $firstStmt = $this->pdo->prepare("SELECT id FROM pipeline_stages WHERE organization_id = :org ORDER BY position ASC LIMIT 1");
+            $firstStmt->execute(['org' => $orgId]);
+            $stageId = $firstStmt->fetchColumn();
+        }
+
         if ($stageId) {
             $update = $this->pdo->prepare("UPDATE leads SET pipeline_stage_id = :stage WHERE id = :id");
             $update->execute(['stage' => $stageId, 'id' => $leadId]);
+        }
+    }
+
+    /**
+     * Finds leads with missing pipeline stage IDs and repairs them.
+     */
+    public function repairOrphanedLeads($orgId) {
+        // Limit to 50 at a time to prevent heavy loads on large orgs
+        $stmt = $this->pdo->prepare("SELECT id, status FROM leads WHERE organization_id = :org AND (pipeline_stage_id IS NULL OR pipeline_stage_id = 0) LIMIT 50");
+        $stmt->execute(['org' => $orgId]);
+        $orphans = $stmt->fetchAll();
+
+        foreach ($orphans as $orphan) {
+            $this->syncPipelineStageWithStatus($orphan['id'], $orphan['status'], $orgId);
         }
     }
 
@@ -428,6 +448,9 @@ class Lead {
             $stmt->execute(['org' => $orgId]);
             $stages = $stmt->fetchAll();
         }
+
+        // Proactive Repair: Ensure leads are mapped to stages
+        $this->repairOrphanedLeads($orgId);
 
         return $stages;
     }
