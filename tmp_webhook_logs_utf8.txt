@@ -1,0 +1,29 @@
+﻿
+
+
+Warning: Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\LeadGen\config\db.php:32) in C:\xampp\htdocs\LeadGen\tmp_dump_logs.php on line 4
+ID: 25
+Event: form_sync_error
+Time: 2026-03-18 11:42:45
+Payload: {"page_id":"367752726426724","page_name":"Chasing Tranquilitys","http_code":0,"curl_error":"Could not resolve host: graph.facebook.com","response":false}...
+------------------------------------------
+ID: 26
+Event: form_sync_error
+Time: 2026-03-18 11:42:45
+Payload: {"page_id":"390923925029671","page_name":"Little Angel's Nursery School","http_code":0,"curl_error":"Could not resolve host: graph.facebook.com","response":false}...
+------------------------------------------
+ID: 22
+Event: form_sync_error
+Time: 2026-03-11 15:25:59
+Payload: {"page_id":"495742080286377","page_name":"Global webify Institute","http_code":403,"curl_error":"","response":"{\"error\":{\"message\":\"(#200) Requires pages_manage_ads permission to manage the object\",\"type\":\"OAuthException\",\"code\":200,\"fbtrace_id\":\"AdUL2wHGiSYNXX2mhWzWyI8\"}}"}...
+------------------------------------------
+ID: 23
+Event: form_sync_error
+Time: 2026-03-11 15:25:59
+Payload: {"page_id":"498083486711173","page_name":"Quotation studio","http_code":403,"curl_error":"","response":"{\"error\":{\"message\":\"(#200) Requires pages_manage_ads permission to manage the object\",\"type\":\"OAuthException\",\"code\":200,\"fbtrace_id\":\"AKS5hNz2rYR4d737KFgxad_\"}}"}...
+------------------------------------------
+ID: 24
+Event: form_sync_error
+Time: 2026-03-11 15:25:59
+Payload: {"page_id":"516544668198716","page_name":"The Corporate House Hotel","http_code":403,"curl_error":"","response":"{\"error\":{\"message\":\"(#200) Requires pages_manage_ads permission to manage the object\",\"type\":\"OAuthException\",\"code\":200,\"fbtrace_id\":\"AHLX0JRLg0eSCcEqEycwu48\"}}"}...
+------------------------------------------

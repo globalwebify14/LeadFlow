@@ -8,10 +8,11 @@ require_once '../../config/db.php';
 $orgId = getOrgId();
 
 // Fetch System Configs required for OAuth
-$stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('facebook_app_id', 'facebook_app_secret')");
+$stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('facebook_app_id', 'facebook_app_secret', 'webhook_verify_token')");
 $settingsRow = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $appId = $settingsRow['facebook_app_id'] ?? '';
 $appSecret = $settingsRow['facebook_app_secret'] ?? '';
+$verifyToken = $settingsRow['webhook_verify_token'] ?? 'rand0m_v3r1fy_t0k3n_2024';
 
 // Check if System Settings are configured
 if (empty($appId) || empty($appSecret)) {
@@ -93,6 +94,36 @@ include '../../includes/header.php';
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- Webhook Configuration -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h6 class="fw-bold mb-0">Webhook Configuration</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Copy these to your <strong>Meta App Dashboard > Webhooks</strong> (Page Object) to enable real-time leads.</p>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted mb-1">Callback URL</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm bg-light" value="<?= BASE_URL ?>modules/facebook_integration/facebook_webhook.php" readonly id="webhookUrl">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard('webhookUrl')"><i class="bi bi-clipboard"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase text-muted mb-1">Verify Token</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm bg-light" value="<?= e($verifyToken) ?>" readonly id="verifyToken">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard('verifyToken')"><i class="bi bi-clipboard"></i></button>
+                    </div>
+                </div>
+                <div class="alert alert-info border-0 py-2 small mb-0">
+                    <i class="bi bi-info-circle me-1"></i> Ensure <code>leadgen</code> field is subscribed.
+                </div>
+                <div class="mt-3 text-center">
+                    <a href="<?= BASE_URL ?>modules/facebook_integration/debug_webhook.php" class="text-decoration-none small fw-bold"><i class="bi bi-bug me-1"></i>Debug Configuration & Logs</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Active Configurations -->
@@ -163,4 +194,18 @@ include '../../includes/header.php';
     </div>
 </div>
 
+<script>
+function copyToClipboard(id) {
+    var copyText = document.getElementById(id);
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    
+    // Simple feedback
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    icon.classList.replace('bi-clipboard', 'bi-check');
+    setTimeout(() => icon.classList.replace('bi-check', 'bi-clipboard'), 2000);
+}
+</script>
 <?php include '../../includes/footer.php'; ?>
