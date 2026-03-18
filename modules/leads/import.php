@@ -4,6 +4,11 @@ requireLogin();
 require_once '../../config/db.php';
 require_once '../../models/Lead.php';
 
+// Optional: include vendor autoload if it exists (for Excel support)
+if (file_exists('../../vendor/autoload.php')) {
+    require_once '../../vendor/autoload.php';
+}
+
 $orgId = getOrgId();
 $userId = getUserId();
 $error = '';
@@ -60,14 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
             }
         } else {
             // Excel import via PhpSpreadsheet
-            $vendorPath = '../../vendor/autoload.php';
-            if (file_exists($vendorPath)) {
-                require $vendorPath;
-                try {
-                    if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
-                        throw new Exception("PhpSpreadsheet library classes not found. Please run composer install.");
-                    }
-                    $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name']);
+            try {
+                if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+                    throw new Exception("PhpSpreadsheet library not found. Please run 'composer install' in the project root.");
+                }
+                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name']);
                     $worksheet = $spreadsheet->getActiveSheet();
                     $rows = $worksheet->toArray();
                     
@@ -100,9 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                 } catch (Exception $e) {
                     $error = "Error processing Excel file: " . $e->getMessage();
                 }
-            } else {
-                $error = "PhpSpreadsheet library (vendor/autoload.php) is not found. Please install it via Composer or use the CSV format instead.";
-            }
         }
     }
 }

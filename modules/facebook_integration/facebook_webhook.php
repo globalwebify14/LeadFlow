@@ -117,39 +117,28 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     $parsed = parseAllLeadFields($leadData);
     $campaign = $leadData['campaign_name'] ?? 'Facebook Ads';
 
-    // E + F + G. Inject into CRM leads table using Model (Handles Auto-Assign, Notifications, Logs, tags)
+    // E + F + G. Inject into CRM leads table using Model (Handles Auto-Assign, Notifications, Logs, tags, synced pipeline)
     require_once '../../models/Lead.php';
     $leadModel = new Lead($pdo);
     
     $createdAt = isset($leadData['created_time']) ? date('Y-m-d H:i:s', strtotime($leadData['created_time'])) : date('Y-m-d H:i:s');
     
     $leadModel->addLead([
-        'organization_id' => $orgId,
-        'name'            => $parsed['name'],
-        'phone'           => $parsed['phone'],
-        'email'           => $parsed['email'] ?: null,
-        'company'         => $parsed['company'] ?: null,
-        'source'          => 'facebook_ads',
-        'status'          => 'New Lead',
-        'priority'        => 'Hot',
-        'assigned_to'     => null, // Let the model handle Auto-Assignment (Round Robin)
-        'note'            => $parsed['note'],
-        // We need to inject these specifically but Model's addLead doesn't take meta_ fields yet, so let's update after insertion.
+        'organization_id'  => $orgId,
+        'name'             => $parsed['name'],
+        'phone'            => $parsed['phone'],
+        'email'            => $parsed['email'] ?: null,
+        'company'          => $parsed['company'] ?: null,
+        'source'           => 'facebook_ads',
+        'status'           => 'New Lead',
+        'priority'         => 'Hot',
+        'assigned_to'      => null, // Handle Auto-Assignment (Round Robin)
+        'note'             => $parsed['note'],
+        'meta_campaign'    => $campaign,
+        'meta_form_id'     => $formId,
+        'facebook_page_id' => $pageId,
+        'created_at'       => $createdAt
     ]);
-    
-    // We get the last insert ID since addLead returns it
-    $leadDbId = $pdo->lastInsertId();
-    
-    if ($leadDbId) {
-        $stmtUpdate = $pdo->prepare("UPDATE leads SET meta_campaign = :campaign, meta_form_id = :form, facebook_page_id = :page_id, created_at = :created WHERE id = :id");
-        $stmtUpdate->execute([
-            'campaign' => $campaign,
-            'form'     => $formId,
-            'page_id'  => $pageId,
-            'created'  => $createdAt,
-            'id'       => $leadDbId
-        ]);
-    }
 }
 
 /**

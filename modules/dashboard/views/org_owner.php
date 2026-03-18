@@ -551,7 +551,7 @@ function dashColor($i) {
 <?php if (!empty($recentLeads)): ?>
 <div class="row mb-4">
     <div class="col-12">
-        <div class="dash-card">
+        <div class="dash-card" id="dashboardLeadsCard">
             <div class="dash-card-header">
                 <div class="section-title">
                     <div class="st-icon" style="background:#fdf4ff;color:#a855f7;"><i class="bi bi-person-vcard-fill"></i></div>
@@ -725,5 +725,29 @@ if (statusCtx && statusData.length > 0) {
             }
         }
     });
+}
+
+function refreshLeadData() {
+    const card = document.getElementById('dashboardLeadsCard');
+    if (!card) return;
+    
+    card.style.opacity = '0.6';
+    card.style.transition = 'opacity 0.3s ease';
+    
+    fetch(window.location.href)
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('dashboardLeadsCard');
+            if (newContent) {
+                card.innerHTML = newContent.innerHTML;
+            }
+            card.style.opacity = '1';
+        })
+        .catch(err => {
+            console.error("Dashboard refresh failed:", err);
+            card.style.opacity = '1';
+        });
 }
 </script>

@@ -18,6 +18,11 @@
                 .then(data => {
                     if (data.success && data.has_new) {
                         const lead = data.lead;
+
+                        // Trigger table/dashboard refresh if function exists
+                        if (typeof refreshLeadData === 'function') {
+                            refreshLeadData();
+                        }
                         
                         Swal.fire({
                             title: '🔔 New Lead Assigned!',

@@ -58,14 +58,22 @@ class Automation {
     }
 
     public function deleteSequence($id) {
-        $this->pdo->beginTransaction();
+        $startedTransaction = false;
+        if (!$this->pdo->inTransaction()) {
+            $this->pdo->beginTransaction();
+            $startedTransaction = true;
+        }
         try {
             $this->pdo->prepare("DELETE FROM automation_steps WHERE sequence_id = :id")->execute(['id' => $id]);
             $this->pdo->prepare("DELETE FROM automation_sequences WHERE id = :id")->execute(['id' => $id]);
-            $this->pdo->commit();
+            if ($startedTransaction) {
+                $this->pdo->commit();
+            }
             return true;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($startedTransaction) {
+                $this->pdo->rollBack();
+            }
             return false;
         }
     }

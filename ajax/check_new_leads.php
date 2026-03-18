@@ -16,14 +16,13 @@ $userId = getUserId();
 
 try {
     // Check for unnotified leads assigned to this user
-    // We get the oldest unnotified lead to ensure they see them one by one if there are multiple.
-    $stmt = $pdo->prepare("SELECT id, name, phone, source, created_at FROM leads WHERE organization_id = :org_id AND assigned_to = :user_id AND is_notified = 0 ORDER BY created_at ASC LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id, name, phone, source, created_at FROM leads WHERE organization_id = :org_id AND assigned_to = :user_id AND is_seen = 0 ORDER BY created_at ASC LIMIT 1");
     $stmt->execute(['org_id' => $orgId, 'user_id' => $userId]);
     $lead = $stmt->fetch();
 
     if ($lead) {
         // Mark as notified immediately to prevent duplicate popups
-        $updateStmt = $pdo->prepare("UPDATE leads SET is_notified = 1 WHERE id = :id");
+        $updateStmt = $pdo->prepare("UPDATE leads SET is_seen = 1 WHERE id = :id");
         $updateStmt->execute(['id' => $lead['id']]);
 
         echo json_encode([

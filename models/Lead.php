@@ -198,7 +198,12 @@ class Lead {
      * Add a new lead
      */
     public function addLead($data) {
-        $this->pdo->beginTransaction();
+        $startedTransaction = false;
+        if (!$this->pdo->inTransaction()) {
+            $this->pdo->beginTransaction();
+            $startedTransaction = true;
+        }
+
         try {
             // Determine assignment
             $assignedTo = $data['assigned_to'] ?: null;
@@ -274,10 +279,14 @@ class Lead {
                 $stmtProg->execute(['lead' => $leadId, 'seq' => $sequenceId]);
             }
 
-            $this->pdo->commit();
+            if ($startedTransaction) {
+                $this->pdo->commit();
+            }
             return $leadId;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($startedTransaction) {
+                $this->pdo->rollBack();
+            }
             return false;
         }
     }
@@ -287,7 +296,13 @@ class Lead {
      */
     public function updateLead($id, $data) {
         $currentLead = $this->getLeadById($id);
-        $this->pdo->beginTransaction();
+        
+        $startedTransaction = false;
+        if (!$this->pdo->inTransaction()) {
+            $this->pdo->beginTransaction();
+            $startedTransaction = true;
+        }
+
         try {
             $stmt = $this->pdo->prepare("UPDATE leads SET name=:name, phone=:phone, email=:email, company=:company, source=:source, status=:status, priority=:priority, assigned_to=:assigned_to, note=:note WHERE id=:id");
             $stmt->execute([
@@ -323,10 +338,14 @@ class Lead {
                 $this->syncTags($id, $data['tags']);
             }
 
-            $this->pdo->commit();
+            if ($startedTransaction) {
+                $this->pdo->commit();
+            }
             return true;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($startedTransaction) {
+                $this->pdo->rollBack();
+            }
             return false;
         }
     }
@@ -344,7 +363,13 @@ class Lead {
      */
     public function updateStatus($id, $status, $note = '', $userId = null) {
         $currentLead = $this->getLeadById($id);
-        $this->pdo->beginTransaction();
+        
+        $startedTransaction = false;
+        if (!$this->pdo->inTransaction()) {
+            $this->pdo->beginTransaction();
+            $startedTransaction = true;
+        }
+
         try {
             $stmt = $this->pdo->prepare("UPDATE leads SET status=:status WHERE id=:id");
             $stmt->execute(['status' => $status, 'id' => $id]);
@@ -355,10 +380,14 @@ class Lead {
             $desc = $note ?: 'Status changed from ' . ($currentLead['status'] ?? '') . ' to ' . $status;
             $this->logActivity($id, 'status_change', $desc, $currentLead['status'] ?? null, $status, $userId);
 
-            $this->pdo->commit();
+            if ($startedTransaction) {
+                $this->pdo->commit();
+            }
             return true;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($startedTransaction) {
+                $this->pdo->rollBack();
+            }
             return false;
         }
     }
@@ -668,7 +697,12 @@ class Lead {
     }
 
     public function updatePipelineStage($leadId, $stageId, $userId = null) {
-        $this->pdo->beginTransaction();
+        $startedTransaction = false;
+        if (!$this->pdo->inTransaction()) {
+            $this->pdo->beginTransaction();
+            $startedTransaction = true;
+        }
+
         try {
             // Get stage name to update status string
             $stmtStage = $this->pdo->prepare("SELECT name FROM pipeline_stages WHERE id = ?");
@@ -685,10 +719,14 @@ class Lead {
                 $this->logActivity($leadId, 'status_change', 'Pipeline stage updated', null, $stageId, $userId);
             }
 
-            $this->pdo->commit();
+            if ($startedTransaction) {
+                $this->pdo->commit();
+            }
             return $result;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($startedTransaction) {
+                $this->pdo->rollBack();
+            }
             return false;
         }
     }

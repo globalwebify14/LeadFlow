@@ -354,7 +354,7 @@ include '../../includes/header.php';
 </div>
 
 <!-- Leads Datatable -->
-<div class="card leads-table-card border-0 bg-white">
+<div class="card leads-table-card border-0 bg-white" id="leadsTableCard">
     <div class="card-header bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
         <div>
             <span class="fs-5 fw-bold text-dark">All Leads</span>
@@ -579,89 +579,97 @@ include '../../includes/header.php';
             <div class="py-3"></div> <!-- Bottom spacing when no pagination -->
         <?php endif; ?>
         <script>
-document.getElementById('selectAll').addEventListener('change', function() {
-    document.querySelectorAll('.lead-check').forEach(cb => cb.checked = this.checked);
-    updateBulkBar();
-});
-document.querySelectorAll('.lead-check').forEach(cb => cb.addEventListener('change', updateBulkBar));
+function rebindLeadEvents() {
+    // Select All
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            document.querySelectorAll('.lead-check').forEach(cb => cb.checked = this.checked);
+            updateBulkBar();
+        });
+    }
+    document.querySelectorAll('.lead-check').forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+    // Agent Quick Actions
+    document.querySelectorAll('.agent-quick-status').forEach(select => {
+        select.addEventListener('change', function() {
+            const leadId = this.getAttribute('data-lead-id');
+            const status = this.value;
+            const selectEl = this;
+            selectEl.disabled = true;
+            
+            fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ 'action': 'update_status', 'lead_id': leadId, 'status': status })
+            })
+            .then(res => res.json())
+            .then(data => {
+                selectEl.disabled = false;
+                if (data.success) {
+                    selectEl.style.boxShadow = '0 0 0 0.25rem rgba(25, 135, 84, 0.25)';
+                    selectEl.style.borderColor = '#198754';
+                    setTimeout(() => { selectEl.style.boxShadow = ''; selectEl.style.borderColor = ''; }, 1000);
+                } else { alert(data.message || 'Error updating status'); }
+            })
+            .catch(err => { selectEl.disabled = false; alert('A network error occurred'); });
+        });
+    });
+}
 
 function updateBulkBar() {
     const checked = document.querySelectorAll('.lead-check:checked').length;
     const bar = document.getElementById('bulkBar');
+    if (!bar) return;
     
     if (checked > 0) {
         bar.style.display = 'flex';
         bar.style.setProperty('display', 'flex', 'important');
-        // Small delay to allow display flex to apply before adding opacity class
-        setTimeout(() => {
-            bar.classList.add('active');
-        }, 10);
+        setTimeout(() => { bar.classList.add('active'); }, 10);
     } else {
         bar.classList.remove('active');
-        setTimeout(() => {
-            bar.style.display = 'none';
-        }, 300); // match transition duration
+        setTimeout(() => { bar.style.display = 'none'; }, 300);
     }
-    
     document.getElementById('selectedCount').textContent = checked + ' selected';
 }
+
+function refreshLeadData() {
+    const card = document.getElementById('leadsTableCard');
+    if (!card) return;
+    
+    card.style.opacity = '0.6';
+    card.style.transition = 'opacity 0.3s ease';
+    
+    fetch(window.location.href)
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('leadsTableCard');
+            if (newContent) {
+                card.innerHTML = newContent.innerHTML;
+                rebindLeadEvents();
+                // Play a subtle notification sound if you like
+            }
+            card.style.opacity = '1';
+        })
+        .catch(err => {
+            console.error("Refresh failed:", err);
+            card.style.opacity = '1';
+        });
+}
+
+// Initial binding
+rebindLeadEvents();
 
 // Fix z-index overlap for assignment dropdowns in table
 document.addEventListener('show.bs.dropdown', function (event) {
     let tr = event.target.closest('tr');
-    if (tr) {
-        tr.style.position = 'relative';
-        tr.style.zIndex = '1050';
-    }
+    if (tr) { tr.style.position = 'relative'; tr.style.zIndex = '1050'; }
 });
 document.addEventListener('hide.bs.dropdown', function (event) {
     let tr = event.target.closest('tr');
-    if (tr) {
-        tr.style.zIndex = '';
-        setTimeout(() => { tr.style.position = ''; }, 300); // Wait for transition
-    }
-});
-
-// Agent Quick Actions
-// ----------------------------------------------------------------------
-document.querySelectorAll('.agent-quick-status').forEach(select => {
-    select.addEventListener('change', function() {
-        const leadId = this.getAttribute('data-lead-id');
-        const status = this.value;
-        const selectEl = this;
-        
-        // Show loading state
-        this.disabled = true;
-        
-        fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                'action': 'update_status',
-                'lead_id': leadId,
-                'status': status
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            selectEl.disabled = false;
-            if (data.success) {
-                // Flash green outline to show success
-                selectEl.style.boxShadow = '0 0 0 0.25rem rgba(25, 135, 84, 0.25)';
-                selectEl.style.borderColor = '#198754';
-                setTimeout(() => {
-                    selectEl.style.boxShadow = '';
-                    selectEl.style.borderColor = '';
-                }, 1000);
-            } else {
-                alert(data.message || 'Error updating status');
-            }
-        })
-        .catch(err => {
-            selectEl.disabled = false;
-            alert('A network error occurred');
-        });
-    });
+    if (tr) { tr.style.zIndex = ''; setTimeout(() => { tr.style.position = ''; }, 300); }
 });
 
 function openQuickNote(leadId) {
@@ -670,24 +678,14 @@ function openQuickNote(leadId) {
         fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                'action': 'add_note',
-                'lead_id': leadId,
-                'note': noteText.trim()
-            })
+            body: new URLSearchParams({ 'action': 'add_note', 'lead_id': leadId, 'note': noteText.trim() })
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // Instantly update the UI snippet
                 const noteDiv = document.getElementById('note_text_' + leadId);
-                if (noteDiv) {
-                    noteDiv.textContent = noteText.trim();
-                    noteDiv.title = noteText.trim();
-                }
-            } else {
-                alert(data.message || 'Error adding note');
-            }
+                if (noteDiv) { noteDiv.textContent = noteText.trim(); noteDiv.title = noteText.trim(); }
+            } else { alert(data.message || 'Error adding note'); }
         })
         .catch(err => alert('A network error occurred. Note not saved.'));
     }

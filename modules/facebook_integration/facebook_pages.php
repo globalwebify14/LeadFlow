@@ -45,11 +45,38 @@ try {
             'name' => $p['name'],
             'token' => $p['access_token']
         ]);
+
+        // [CRITICAL] Subscribe Page to Webhooks
+        subscribePageToApp($p['id'], $p['access_token']);
     }
     $pdo->commit();
 } catch (Exception $e) {
     $pdo->rollBack();
-    redirect(BASE_URL . 'modules/facebook_integration/facebook_integration_settings.php', 'Database error syncing pages.', 'danger');
+    error_log("FB Sync Error: " . $e->getMessage());
+    redirect(BASE_URL . 'modules/facebook_integration/facebook_integration_settings.php', 'Database error syncing pages: ' . $e->getMessage(), 'danger');
+}
+
+/**
+ * Automates the POST /PAGE_ID/subscribed_apps call to activate webhooks.
+ */
+function subscribePageToApp($pageId, $pageToken) {
+    $url = "https://graph.facebook.com/v19.0/{$pageId}/subscribed_apps";
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'subscribed_fields' => 'leadgen',
+        'access_token' => $pageToken
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $response = curl_exec($ch);
+    $info = curl_getinfo($ch);
+    curl_close($ch);
+
+    $res = json_decode($response, true);
+    if ($info['http_code'] !== 200 || !($res['success'] ?? false)) {
+        error_log("Failed to subscribe page {$pageId} to webhooks: " . $response);
+    }
 }
 
 // Instantly cascade and fetch forms now that pages exist

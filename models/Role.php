@@ -30,8 +30,12 @@ class Role {
      * Create a new role with permissions
      */
     public function createRole($orgId, $name, $permissions, $createdBy) {
-        try {
+        $startedTransaction = false;
+        if (!$this->pdo->inTransaction()) {
             $this->pdo->beginTransaction();
+            $startedTransaction = true;
+        }
+        try {
 
             // Insert role
             $stmt = $this->pdo->prepare("INSERT INTO roles (organization_id, name, created_by) VALUES (:org, :name, :created_by)");
@@ -45,10 +49,14 @@ class Role {
             // Insert permissions
             $this->savePermissions($roleId, $permissions);
 
-            $this->pdo->commit();
+            if ($startedTransaction) {
+                $this->pdo->commit();
+            }
             return $roleId;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($startedTransaction) {
+                $this->pdo->rollBack();
+            }
             error_log($e->getMessage());
             return false;
         }
@@ -58,8 +66,12 @@ class Role {
      * Update a role and its permissions
      */
     public function updateRole($id, $orgId, $name, $permissions) {
-        try {
+        $startedTransaction = false;
+        if (!$this->pdo->inTransaction()) {
             $this->pdo->beginTransaction();
+            $startedTransaction = true;
+        }
+        try {
 
             // Check if role is system
             $role = $this->getRoleById($id, $orgId);
@@ -77,10 +89,14 @@ class Role {
 
             $this->savePermissions($id, $permissions);
 
-            $this->pdo->commit();
+            if ($startedTransaction) {
+                $this->pdo->commit();
+            }
             return true;
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            if ($startedTransaction) {
+                $this->pdo->rollBack();
+            }
             error_log($e->getMessage());
             return false;
         }
