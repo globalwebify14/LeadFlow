@@ -19,7 +19,7 @@ include_once __DIR__ . '/includes/landing_header.php';
                     <div class="hero-badge">
                         <i class="bi bi-megaphone-fill me-2 text-primary"></i> <span>Official Meta Partner SaaS Integration</span>
                     </div>
-                    <h1 class="hero-title">Automate wewgartyju your sales with <span>Advanced CRM</span></h1>
+                    <h1 class="hero-title">Automate your sales with <span>Advanced CRM</span></h1>
                     <p class="hero-subtitle">The ultimate multi-tenant CRM designed for organizations to seamlessly connect Meta Ads, manage role-based pipelines, and close more deals autonomously.</p>
                     <div class="d-flex flex-wrap gap-3">
                         <a href="<?= BASE_URL ?>login.php" class="btn-primary-custom">Get Started Now <i class="bi bi-arrow-right ms-2"></i></a>
