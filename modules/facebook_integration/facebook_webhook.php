@@ -95,14 +95,27 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     $orgId = $orgBinding['organization_id'];
 
     // C. Fetch raw lead data from Meta Graph API
-    $graphUrl = "https://graph.facebook.com/v19.0/{$leadgenId}?access_token=" . urlencode($accessToken);
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $graphUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    // [SIMULATION BYPASS] For testing, skip real API call if id starts with 'sim_'
+    if (strpos($leadgenId, 'sim_') === 0) {
+        $response = json_encode([
+            'id' => $leadgenId,
+            'created_time' => date('c'),
+            'field_data' => [
+                ['name' => 'full_name', 'values' => ['Simulated Test Lead']],
+                ['name' => 'phone_number', 'values' => ['+10000000000']],
+                ['name' => 'email', 'values' => ['test@simulation.com']]
+            ]
+        ]);
+        $httpCode = 200;
+    } else {
+        $graphUrl = "https://graph.facebook.com/v19.0/{$leadgenId}?access_token=" . urlencode($accessToken);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $graphUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+    }
 
     if ($httpCode !== 200) {
         throw new Exception("Graph API returned {$httpCode}: {$response}");
