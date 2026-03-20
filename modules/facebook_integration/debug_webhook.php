@@ -8,9 +8,26 @@ $pageTitle = 'Webhook Debugger';
 include '../../includes/header.php';
 ?>
 
-<div class="mb-4">
-    <h4 class="fw-bold">Webhook Diagnostic Tool</h4>
-    <p class="text-muted">Use this to verify if your server can reach Meta and if webhooks are arriving.</p>
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="fw-bold">Webhook Diagnostic Tool</h4>
+        <p class="text-muted">Use this to verify if your server can reach Meta and if webhooks are arriving.</p>
+    </div>
+    <?php
+    // Find a valid form/page to use for simulation
+    $stmtSim = $pdo->prepare("SELECT form_id, page_id FROM facebook_forms WHERE organization_id = ? LIMIT 1");
+    $stmtSim->execute([getOrgId()]);
+    $simData = $stmtSim->fetch();
+    ?>
+    <?php if ($simData): ?>
+        <button class="btn btn-dark fw-bold" onclick="simulateLead('<?= $simData['form_id'] ?>', '<?= $simData['page_id'] ?>')">
+            <i class="bi bi-play-circle me-1"></i> Simulate Live Lead
+        </button>
+    <?php else: ?>
+        <button class="btn btn-secondary fw-bold" disabled title="Sync forms first to enable simulation">
+            <i class="bi bi-play-circle me-1"></i> Simulate Live Lead
+        </button>
+    <?php endif; ?>
 </div>
 
 <div class="row g-4">
@@ -110,6 +127,44 @@ function viewPayload(payload) {
         document.getElementById('payloadContent').textContent = payload;
     }
     new bootstrap.Modal(document.getElementById('payloadModal')).show();
+}
+
+function simulateLead(formId, pageId) {
+    if (!confirm("This will send a fake 'leadgen' event to your webhook to test the real-time update. Proceed?")) return;
+    
+    // Construct Meta-standard leadgen payload
+    const payload = {
+        "object": "page",
+        "entry": [{
+            "id": pageId,
+            "time": Math.floor(Date.now() / 1000),
+            "changes": [{
+                "field": "leadgen",
+                "value": {
+                    "ad_id": "0",
+                    "adgroup_id": "0",
+                    "campaign_id": "0",
+                    "form_id": formId,
+                    "leadgen_id": "sim_" + Math.random().toString(36).substring(7),
+                    "page_id": pageId
+                }
+            }]
+        }]
+    };
+
+    fetch('facebook_webhook.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.text())
+    .then(data => {
+        alert("Simulation sent! Now check your Dashboard tab. It should show a new lead notification within 5 seconds.");
+        location.reload(); // Refresh logs
+    })
+    .catch(err => {
+        alert("Simulation failed: " + err);
+    });
 }
 </script>
 
