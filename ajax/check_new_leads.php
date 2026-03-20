@@ -28,6 +28,9 @@ try {
     $lead = $stmt->fetch();
 
     if ($lead) {
+        // Log it for antigravity debug
+        file_put_contents('../tmp_ajax_debug.txt', date('H:i:s') . " - Found lead for User $userId: " . $lead['id'] . "\n", FILE_APPEND);
+        
         // Mark as notified immediately to prevent duplicate popups
         $updateStmt = $pdo->prepare("UPDATE leads SET is_seen = 1 WHERE id = :id");
         $updateStmt->execute(['id' => $lead['id']]);

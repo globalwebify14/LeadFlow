@@ -153,6 +153,10 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
         'facebook_page_id'   => $pageId,
         'created_at'         => $createdAt
     ]);
+    
+    if ($leadId && strpos($leadgenId, 'sim_') === 0) {
+        file_put_contents('../../tmp_ajax_debug.txt', date('H:i:s') . " - SIMULATION SUCCESS: Lead $leadId created for Org $orgId. is_seen=0.\n", FILE_APPEND);
+    }
 }
 
 /**
