@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_followup'])) {
     $followupModel->create([
         'organization_id' => $orgId,
         'lead_id'         => $lead['id'],
+        'deal_id'         => null,
         'user_id'         => getUserId(),
         'title'           => trim($_POST['title']),
         'description'     => trim($_POST['description']),

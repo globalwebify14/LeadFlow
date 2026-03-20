@@ -120,8 +120,8 @@ class Dashboard {
             if ($d['status'] === 'open') $stats['deals_in_progress'] += $d['cnt'];
         }
 
-        // Pending follow-ups
-        $fSql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org_id AND status = 'pending' AND followup_date = CURDATE()";
+        // Pending follow-ups (Today + Future)
+        $fSql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org_id AND status = 'pending' AND followup_date >= CURDATE()";
         if ($role === 'agent' && $userId) {
             $fSql .= " AND user_id = :user_id";
         }

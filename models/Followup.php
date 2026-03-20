@@ -37,8 +37,7 @@ class Followup {
 
         $sql .= " ORDER BY f.followup_date ASC, f.followup_time ASC";
         $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => &$val) { $stmt->bindParam($key, $val); }
-        $stmt->execute();
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
@@ -52,13 +51,13 @@ class Followup {
         $stmt = $this->pdo->prepare("INSERT INTO followups (organization_id, lead_id, deal_id, user_id, title, description, followup_date, followup_time, priority) VALUES (:org, :lead, :deal, :user, :title, :desc, :date, :time, :priority)");
         $result = $stmt->execute([
             'org' => $data['organization_id'],
-            'lead' => $data['lead_id'] ?: null,
-            'deal' => $data['deal_id'] ?: null,
+            'lead' => $data['lead_id'] ?? null,
+            'deal' => $data['deal_id'] ?? null,
             'user' => $data['user_id'],
             'title' => $data['title'],
             'desc' => $data['description'] ?? null,
             'date' => $data['followup_date'],
-            'time' => $data['followup_time'] ?: null,
+            'time' => $data['followup_time'] ?? null,
             'priority' => $data['priority'] ?? 'medium',
         ]);
         return $result ? $this->pdo->lastInsertId() : false;
