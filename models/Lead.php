@@ -209,7 +209,7 @@ class Lead {
             $assignedTo = $data['assigned_to'] ?: null;
 
             // If not manually specified (e.g., from webhook), try auto-assign
-            if (!$assignedTo) {
+            if (!$assignedTo && empty($data['ignore_auto_assign'])) {
                 $assignedTo = $this->getAutoAssignAgentId($data['organization_id']);
             }
 

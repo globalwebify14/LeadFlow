@@ -137,20 +137,21 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     $createdAt = isset($leadData['created_time']) ? date('Y-m-d H:i:s', strtotime($leadData['created_time'])) : date('Y-m-d H:i:s');
     
     $leadModel->addLead([
-        'organization_id'  => $orgId,
-        'name'             => $parsed['name'],
-        'phone'            => $parsed['phone'],
-        'email'            => $parsed['email'] ?: null,
-        'company'          => $parsed['company'] ?: null,
-        'source'           => 'facebook_ads',
-        'status'           => 'New Lead',
-        'priority'         => 'Hot',
-        'assigned_to'      => null, // Handle Auto-Assignment (Round Robin)
-        'note'             => $parsed['note'],
-        'meta_campaign'    => $campaign,
-        'meta_form_id'     => $formId,
-        'facebook_page_id' => $pageId,
-        'created_at'       => $createdAt
+        'organization_id'    => $orgId,
+        'name'               => $parsed['name'],
+        'phone'              => $parsed['phone'],
+        'email'              => $parsed['email'] ?: null,
+        'company'            => $parsed['company'] ?: null,
+        'source'             => 'facebook_ads',
+        'status'             => 'New Lead',
+        'priority'           => 'Hot',
+        'assigned_to'        => null, // Handle Auto-Assignment (Round Robin)
+        'ignore_auto_assign' => (strpos($leadgenId, 'sim_') === 0), // [SIM_FIX] Keep test leads unassigned
+        'note'               => $parsed['note'],
+        'meta_campaign'      => $campaign,
+        'meta_form_id'       => $formId,
+        'facebook_page_id'   => $pageId,
+        'created_at'         => $createdAt
     ]);
 }
 
