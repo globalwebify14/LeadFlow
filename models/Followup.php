@@ -27,7 +27,7 @@ class Followup {
         }
         if (!empty($filters['date'])) {
             if ($filters['date'] === 'today') {
-                $sql .= " AND f.followup_date = CURDATE()";
+                $sql .= " AND f.followup_date <= CURDATE() AND f.status = 'pending'";
             } elseif ($filters['date'] === 'overdue') {
                 $sql .= " AND f.followup_date < CURDATE() AND f.status = 'pending'";
             } elseif ($filters['date'] === 'upcoming') {
@@ -92,7 +92,7 @@ class Followup {
     }
 
     public function getTodayCount($orgId, $userId = null) {
-        $sql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org AND followup_date = CURDATE() AND status = 'pending'";
+        $sql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org AND followup_date <= CURDATE() AND status = 'pending'";
         $params = ['org' => $orgId];
         if ($userId) {
             $sql .= " AND user_id = :uid";
