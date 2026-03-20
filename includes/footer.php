@@ -10,7 +10,7 @@
             document.getElementById('wrapper').classList.toggle('toggled');
         });
 
-        <?php if (in_array(getUserRole(), ['agent', 'team_lead'])): ?>
+        <?php if (in_array(getUserRole(), ['agent', 'team_lead', 'org_owner'])): ?>
         // Instant Lead Popup Poller
         function checkNewLeads() {
             fetch('<?= BASE_URL ?>ajax/check_new_leads.php')
