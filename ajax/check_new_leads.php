@@ -4,9 +4,9 @@ require_once '../config/auth.php';
 requireLogin();
 require_once '../config/db.php';
 
-// Only agents should receive these specific popups (or team leads if they take leads)
+// Allow agents, team leads, and organization owners to receive alerts
 $role = getUserRole();
-if (!in_array($role, ['agent', 'team_lead'])) {
+if (!in_array($role, ['agent', 'team_lead', 'org_owner'])) {
     echo json_encode(['success' => false, 'message' => 'Not applicable for this role.']);
     exit;
 }
@@ -15,8 +15,15 @@ $orgId = getOrgId();
 $userId = getUserId();
 
 try {
-    // Check for unnotified leads assigned to this user
-    $stmt = $pdo->prepare("SELECT id, name, phone, source, created_at FROM leads WHERE organization_id = :org_id AND assigned_to = :user_id AND is_seen = 0 ORDER BY created_at ASC LIMIT 1");
+    // Determine the query based on role
+    // Agents/Team Leads only see leads assigned to them.
+    // Owners see leads assigned to them OR unassigned leads.
+    if ($role === 'org_owner') {
+        $stmt = $pdo->prepare("SELECT id, name, phone, source, created_at FROM leads WHERE organization_id = :org_id AND (assigned_to = :user_id OR assigned_to IS NULL) AND is_seen = 0 ORDER BY created_at ASC LIMIT 1");
+    } else {
+        $stmt = $pdo->prepare("SELECT id, name, phone, source, created_at FROM leads WHERE organization_id = :org_id AND assigned_to = :user_id AND is_seen = 0 ORDER BY created_at ASC LIMIT 1");
+    }
+    
     $stmt->execute(['org_id' => $orgId, 'user_id' => $userId]);
     $lead = $stmt->fetch();
 
