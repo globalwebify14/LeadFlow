@@ -35,6 +35,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_task'])) {
     redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Task added!', 'success');
 }
 
+// Handle add followup
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_followup'])) {
+    $followupModel = new Followup($pdo);
+    $followupModel->create([
+        'organization_id' => $orgId,
+        'lead_id'         => $lead['id'],
+        'user_id'         => getUserId(),
+        'title'           => trim($_POST['title']),
+        'description'     => trim($_POST['description']),
+        'followup_date'   => $_POST['followup_date'],
+        'followup_time'   => $_POST['followup_time'] ?: null,
+        'priority'        => $_POST['priority'] ?? 'medium'
+    ]);
+    $leadModel->logActivity($lead['id'], 'note', 'Follow-up scheduled: ' . trim($_POST['title']), null, null, getUserId());
+    redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Follow-up scheduled!', 'success');
+}
+
+// Handle sync tags
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sync_tags'])) {
+    $tagIds = $_POST['tag_ids'] ?? [];
+    $leadModel->syncTags($lead['id'], $tagIds);
+    redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Tags updated!', 'success');
+}
+
 // Handle add note
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_note'])) {
     $note = trim($_POST['note']);
@@ -58,7 +82,8 @@ if (isset($_GET['delete']) && $_GET['delete'] === 'confirm') {
 
 $activities = $leadModel->getActivities($lead['id']);
 $notes      = $leadModel->getNotes($lead['id']);
-$tags       = $leadModel->getTags($lead['id']);
+$currentTags = $leadModel->getTags($lead['id']);
+$allOrgTags = $leadModel->getOrgTags($orgId);
 
 $followupModel  = new Followup($pdo);
 $followupsStmt  = $pdo->prepare("SELECT * FROM followups WHERE lead_id = :lead AND organization_id = :org ORDER BY followup_date ASC");
@@ -79,11 +104,11 @@ if ($lead['pipeline_stage_id']) {
 
 $taskModel = new Task($pdo);
 $leadTasks = $taskModel->getAllTasks($orgId, ['lead_id' => $lead['id']]);
-$allReminders = array_merge(
-    array_map(function($f) { return array_merge($f, ['type' => 'followup']); }, $followups),
-    array_map(function($t) { return array_merge($t, ['type' => 'task', 'followup_date' => $t['due_date'], 'title' => $t['task_title']]); }, $leadTasks)
-);
-usort($allReminders, function($a, $b) { return strtotime($a['followup_date']) - strtotime($b['followup_date']); });
+
+// No longer merging them, we want them separate
+// But we can still sort them for their respective sections if needed
+usort($followups, function($a, $b) { return strtotime($a['followup_date']) - strtotime($b['followup_date']); });
+usort($leadTasks, function($a, $b) { return strtotime($a['due_date']) - strtotime($b['due_date']); });
 
 // Get pipeline stages for quick status
 $stagesStmt = $pdo->prepare("SELECT name FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
@@ -562,9 +587,9 @@ include '../../includes/header.php';
                 </button>
             </div>
             <div class="ld-card-body">
-                <?php if (!empty($tags)): ?>
+                <?php if (!empty($currentTags)): ?>
                 <div class="d-flex flex-wrap gap-2">
-                    <?php foreach ($tags as $tag): ?>
+                    <?php foreach ($currentTags as $tag): ?>
                     <span class="tag-chip" style="background:<?= e($tag['color']) ?>18;color:<?= e($tag['color']) ?>;border:1px solid <?= e($tag['color']) ?>35;">
                         <i class="bi bi-circle-fill" style="font-size:6px;"></i><?= e($tag['name']) ?>
                     </span>
@@ -578,24 +603,22 @@ include '../../includes/header.php';
             </div>
         </div>
 
-        <!-- ── Tasks & Follow-ups ── -->
+        <!-- ── Follow-ups ── -->
         <div class="ld-card">
             <div class="ld-card-header">
                 <div class="ld-section-title">
-                    <div class="icon-wrap" style="background:#fdf4ff;color:#a855f7;"><i class="bi bi-check2-square"></i></div>
-                    Tasks & Follow-ups <span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;"><?= count($allReminders) ?></span>
+                    <div class="icon-wrap" style="background:#ecfeff;color:#06b6d4;"><i class="bi bi-telephone-outbound"></i></div>
+                    Follow-ups <span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;"><?= count($followups) ?></span>
                 </div>
-                <button type="button" class="btn-add-floating" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <button type="button" class="btn-add-floating" data-bs-toggle="modal" data-bs-target="#addFollowupModal">
                     <i class="bi bi-plus"></i> Add
                 </button>
             </div>
             <div class="ld-card-body">
-                <?php if (!empty($allReminders)): ?>
-                    <?php foreach ($allReminders as $r):
-                        $isDone = in_array($r['status'] ?? '', ['completed', 'Done']);
-                        $isOverdue = !$isDone && strtotime($r['followup_date']) < strtotime('today');
-                        $typeColor = $r['type'] === 'followup' ? '#06b6d4' : '#a855f7';
-                        $typeBg    = $r['type'] === 'followup' ? '#ecfeff' : '#fdf4ff';
+                <?php if (!empty($followups)): ?>
+                    <?php foreach ($followups as $f):
+                        $isDone = $f['status'] === 'completed';
+                        $isOverdue = !$isDone && strtotime($f['followup_date']) < strtotime('today');
                     ?>
                     <div class="reminder-item">
                         <div class="rem-check <?= $isDone ? 'done' : '' ?>">
@@ -603,13 +626,13 @@ include '../../includes/header.php';
                         </div>
                         <div class="flex-grow-1">
                             <div style="font-size:13px;font-weight:600;color:<?= $isDone ? '#94a3b8' : '#0f172a' ?>;<?= $isDone ? 'text-decoration:line-through;' : '' ?>">
-                                <?= e($r['title']) ?>
+                                <?= e($f['title']) ?>
                             </div>
                             <div class="d-flex align-items-center gap-2 mt-1">
-                                <span class="rem-type-badge" style="background:<?= $typeBg ?>;color:<?= $typeColor ?>;"><?= ucfirst($r['type']) ?></span>
                                 <span class="rem-due <?= $isOverdue ? 'rem-overdue' : '' ?>">
                                     <?php if ($isOverdue): ?><i class="bi bi-exclamation-triangle-fill me-1"></i><?php endif; ?>
-                                    <?= formatDate($r['followup_date']) ?>
+                                    <i class="bi bi-calendar3 me-1"></i><?= formatDate($f['followup_date']) ?>
+                                    <?php if ($f['followup_time']): ?> &bull; <i class="bi bi-clock me-1"></i><?= date('h:i A', strtotime($f['followup_time'])) ?><?php endif; ?>
                                 </span>
                             </div>
                         </div>
@@ -617,8 +640,51 @@ include '../../includes/header.php';
                     <?php endforeach; ?>
                 <?php else: ?>
                 <div class="text-center py-4">
-                    <i class="bi bi-calendar-check" style="font-size:2rem;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
-                    <span style="font-size:13px;color:#94a3b8;">No tasks or follow-ups yet</span>
+                    <i class="bi bi-telephone-x" style="font-size:2rem;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
+                    <span style="font-size:13px;color:#94a3b8;">No follow-ups scheduled</span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- ── Tasks ── -->
+        <div class="ld-card">
+            <div class="ld-card-header">
+                <div class="ld-section-title">
+                    <div class="icon-wrap" style="background:#fdf4ff;color:#a855f7;"><i class="bi bi-check2-square"></i></div>
+                    Internal Tasks <span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;"><?= count($leadTasks) ?></span>
+                </div>
+                <button type="button" class="btn-add-floating" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                    <i class="bi bi-plus"></i> Add
+                </button>
+            </div>
+            <div class="ld-card-body">
+                <?php if (!empty($leadTasks)): ?>
+                    <?php foreach ($leadTasks as $t):
+                        $isDone = $t['status'] === 'completed';
+                        $isOverdue = !$isDone && strtotime($t['due_date']) < strtotime('today');
+                    ?>
+                    <div class="reminder-item">
+                        <div class="rem-check <?= $isDone ? 'done' : '' ?>">
+                            <?php if ($isDone): ?><i class="bi bi-check"></i><?php endif; ?>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div style="font-size:13px;font-weight:600;color:<?= $isDone ? '#94a3b8' : '#0f172a' ?>;<?= $isDone ? 'text-decoration:line-through;' : '' ?>">
+                                <?= e($t['task_title']) ?>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <span class="rem-due <?= $isOverdue ? 'rem-overdue' : '' ?>">
+                                    <?php if ($isOverdue): ?><i class="bi bi-exclamation-triangle-fill me-1"></i><?php endif; ?>
+                                    <i class="bi bi-calendar3 me-1"></i>Due <?= formatDate($t['due_date']) ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                <div class="text-center py-4">
+                    <i class="bi bi-list-task" style="font-size:2rem;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
+                    <span style="font-size:13px;color:#94a3b8;">No internal tasks yet</span>
                 </div>
                 <?php endif; ?>
             </div>
@@ -669,24 +735,24 @@ include '../../includes/header.php';
 <!-- ═══════════════ ADD TASK MODAL ═══════════════ -->
 <div class="modal fade" id="addTaskModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <form action="" method="POST" class="modal-content" style="border-radius:20px;border:none;">
+        <form action="" method="POST" class="modal-content" style="border-radius:20px;border:none;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title fw-bold" style="font-size:1.1rem;">Add Task</h5>
+                <h5 class="modal-title fw-bold">Internal Task</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body px-4 py-3">
                 <input type="hidden" name="add_task" value="1">
                 <div class="mb-3">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Task Title</label>
-                    <input type="text" class="form-control" name="task_title" placeholder="What needs to be done?" required style="border-radius:10px;font-size:13px;padding:10px 14px;">
+                    <label class="form-label fw-semibold small">Task Title</label>
+                    <input type="text" class="form-control" name="task_title" placeholder="e.g. Prepare proposal" required style="border-radius:12px;">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Due Date</label>
-                    <input type="date" class="form-control" name="due_date" value="<?= date('Y-m-d') ?>" required style="border-radius:10px;font-size:13px;padding:10px 14px;">
+                    <label class="form-label fw-semibold small">Due Date</label>
+                    <input type="date" class="form-control" name="due_date" value="<?= date('Y-m-d') ?>" required style="border-radius:12px;">
                 </div>
-                <div class="mb-1">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Description <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
-                    <textarea class="form-control" name="description" rows="2" style="border-radius:10px;font-size:13px;padding:10px 14px;"></textarea>
+                <div class="mb-0">
+                    <label class="form-label fw-semibold small">Notes</label>
+                    <textarea class="form-control" name="description" rows="2" style="border-radius:12px;"></textarea>
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0 pb-4 px-4">
@@ -696,5 +762,108 @@ include '../../includes/header.php';
         </form>
     </div>
 </div>
+
+<!-- ═══════════════ ADD FOLLOW-UP MODAL ═══════════════ -->
+<div class="modal fade" id="addFollowupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="" method="POST" class="modal-content" style="border-radius:20px;border:none;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Schedule Follow-up</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <input type="hidden" name="add_followup" value="1">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Interaction Title</label>
+                    <input type="text" class="form-control" name="title" placeholder="e.g. Call to discuss pricing" required style="border-radius:12px;">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Date</label>
+                        <input type="date" class="form-control" name="followup_date" value="<?= date('Y-m-d') ?>" required style="border-radius:12px;">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Time</label>
+                        <input type="time" class="form-control" name="followup_time" style="border-radius:12px;">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Priority</label>
+                    <select class="form-select" name="priority" style="border-radius:12px;">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label fw-semibold small">Description</label>
+                    <textarea class="form-control" name="description" rows="2" style="border-radius:12px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" style="background:linear-gradient(135deg,#06b6d4,#0891b2);border:none;">Set Reminder</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═══════════════ EDIT TAGS MODAL ═══════════════ -->
+<div class="modal fade" id="editTagsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="" method="POST" class="modal-content" style="border-radius:20px;border:none;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Manage Tags</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <input type="hidden" name="sync_tags" value="1">
+                <p class="text-secondary small mb-3">Select tags to categorize this lead.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <?php 
+                        $leadTagIds = array_column($currentTags, 'id');
+                        foreach ($allOrgTags as $tag): 
+                            $isActive = in_array($tag['id'], $leadTagIds);
+                    ?>
+                        <label class="btn btn-sm btn-outline-secondary rounded-pill tag-selector <?= $isActive ? 'active' : '' ?>" style="border-color:<?= e($tag['color']) ?>;color:<?= $isActive ? '#fff' : e($tag['color']) ?>;background:<?= $isActive ? e($tag['color']) : 'transparent' ?>;">
+                            <input type="checkbox" name="tag_ids[]" value="<?= $tag['id'] ?>" class="d-none" <?= $isActive ? 'checked' : '' ?>>
+                            <?= e($tag['name']) ?>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <?php if (empty($allOrgTags)): ?>
+                    <div class="text-center py-3">
+                        <p class="small text-muted mb-0">No tags configured for your organization.</p>
+                        <a href="<?= BASE_URL ?>modules/settings/tags.php" class="small text-primary fw-bold">Create Tags</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;">Save Tags</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.tag-selector').forEach(label => {
+    label.addEventListener('click', function() {
+        const checkbox = this.querySelector('input');
+        // Toggle background and color based on active state
+        setTimeout(() => {
+            if (checkbox.checked) {
+                this.classList.add('active');
+                this.style.background = this.style.borderColor;
+                this.style.color = '#fff';
+            } else {
+                this.classList.remove('active');
+                this.style.background = 'transparent';
+                this.style.color = this.style.borderColor;
+            }
+        }, 10);
+    });
+});
+</script>
 
 <?php include '../../includes/footer.php'; ?>
