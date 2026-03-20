@@ -1,8 +1,13 @@
 <?php
 header('Content-Type: application/json');
-require_once '../config/auth.php';
-requireLogin();
 require_once '../config/db.php';
+require_once '../core/helpers.php';
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Session expired.']);
+    exit;
+}
 
 // Allow agents, team leads, and organization owners to receive alerts
 $role = getUserRole();
