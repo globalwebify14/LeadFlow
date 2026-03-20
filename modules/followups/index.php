@@ -118,14 +118,21 @@ include '../../includes/header.php';
                             <?php endif; ?>
                         </div>
                         <div class="flex-grow-1">
-                            <div class="fw-semibold"><?= e($f['title']) ?></div>
-                            <div class="text-muted small">
+                            <div class="fw-semibold mb-1"><?= e($f['title']) ?></div>
+                            <div class="text-muted small mb-1">
                                 <?php if ($f['lead_name']): ?><i class="bi bi-person me-1"></i><?= e($f['lead_name']) ?> • <?php endif; ?>
                                 <i class="bi bi-calendar me-1"></i><?= formatDate($f['followup_date']) ?>
                                 <?php if ($f['followup_time']): ?> at <?= date('h:i A', strtotime($f['followup_time'])) ?><?php endif; ?>
                             </div>
-                            <?php if ($f['description']): ?><div class="text-muted small mt-1"><?= e($f['description']) ?></div><?php endif; ?>
-                            <div class="text-muted" style="font-size:11px;">Assigned to <?= e($f['user_name']) ?></div>
+                            <?php if ($f['description']): ?><div class="text-muted small mt-1 mb-2"><?= e($f['description']) ?></div><?php endif; ?>
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <span class="badge rounded-pill bg-light text-dark border px-2 py-1" style="font-size:10px; font-weight:600;">
+                                    <i class="bi bi-person-badge text-primary me-1"></i><?= e($f['user_name'] ?? 'Admin') ?>
+                                </span>
+                                <span class="badge rounded-pill bg-light text-dark border px-2 py-1" style="font-size:10px; font-weight:600; text-transform: uppercase;">
+                                    <i class="bi bi-flag-fill <?= $f['priority']==='high'?'text-danger':($f['priority']==='medium'?'text-warning':'text-info') ?> me-1"></i><?= $f['priority'] ?>
+                                </span>
+                            </div>
                         </div>
                         <?php if ($f['status'] === 'pending'): ?>
                         <a href="?complete=<?= $f['id'] ?>" class="btn btn-sm btn-outline-success ms-2" title="Mark Complete"><i class="bi bi-check-lg"></i></a>

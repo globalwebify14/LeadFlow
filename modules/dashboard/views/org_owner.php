@@ -3,6 +3,7 @@
 $stats         = $dashboard->getStatistics($orgId, null, 'org_owner');
 $recentLeads   = $dashboard->getRecentLeads($orgId, 8, null, 'org_owner');
 $recentActivities = $dashboard->getRecentActivities($orgId, 10, null, 'org_owner');
+$todayFollowups= $dashboard->getTodayFollowups($orgId, null);
 $monthlyGrowth = $dashboard->getMonthlyLeadGrowth($orgId, null, 'org_owner');
 $pipelineOverview = $dashboard->getPipelineOverview($orgId, null, 'org_owner');
 $agentPerf     = $dashboard->getAgentPerformance($orgId);
@@ -427,6 +428,57 @@ function dashColor($i) {
      ROW 3 — Pipeline + Agent Performance + Activity Feed
      ============================================================ -->
 <div class="row g-4 mb-4">
+
+    <!-- Team Follow-ups (Added as requested) -->
+    <div class="col-xl-5 col-lg-6">
+        <div class="dash-card h-100" style="min-height:350px;">
+            <div class="dash-card-header">
+                <div class="section-title">
+                    <div class="st-icon" style="background:#fff1f2;color:#e11d48;"><i class="bi bi-calendar-check-fill"></i></div>
+                    Team Schedule (Today)
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="<?= BASE_URL ?>modules/followups/" class="btn btn-sm btn-light border" style="font-size:11px;font-weight:700;">View All</a>
+                    <a href="<?= BASE_URL ?>modules/followups/" class="btn btn-sm btn-primary" style="font-size:11px;font-weight:700;border:none;">+ New</a>
+                </div>
+            </div>
+            <div class="dash-card-body scroll-y pt-0" style="max-height:400px;">
+                <?php if (!empty($todayFollowups)):
+                    foreach ($todayFollowups as $f):
+                        $isUrgent = (strtotime($f['followup_time']) < time()) && $f['followup_date'] == date('Y-m-d');
+                        $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
+                ?>
+                <div class="feed-item px-3 py-3" style="border-bottom: 1px solid #f8fafc;">
+                    <div class="feed-dot-wrap">
+                        <div class="feed-dot" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;"><i class="bi bi-telephone"></i></div>
+                    </div>
+                    <div class="feed-content">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="feed-who"><?= e($f['title']) ?></div>
+                            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:<?= $pColor ?>15;color:<?= $pColor ?>;text-transform:uppercase;">
+                                <?= $f['priority'] ?>
+                            </span>
+                        </div>
+                        <div class="feed-desc mt-1">
+                            <i class="bi bi-person me-1"></i><?= e($f['lead_name'] ?? 'General') ?>
+                            <span class="mx-1">•</span>
+                            <span style="color:#6366f1;font-weight:600;"><i class="bi bi-person-badge me-1"></i><?= e($f['agent_name'] ?? 'Admin') ?></span>
+                        </div>
+                        <div class="feed-time mt-2 d-flex justify-content-between">
+                            <span><i class="bi bi-clock me-1"></i><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
+                            <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="text-primary text-decoration-none small fw-bold">View Lead <i class="bi bi-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; else: ?>
+                <div class="text-center py-5">
+                    <i class="bi bi-calendar-x fs-1 d-block mb-2" style="color:#e2e8f0;"></i>
+                    <span class="text-muted" style="font-size:13px;">No follow-ups scheduled for today.</span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 
     <!-- Pipeline Overview -->
     <div class="col-xl-3 col-lg-4">

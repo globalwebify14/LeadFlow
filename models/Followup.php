@@ -15,15 +15,15 @@ class Followup {
                 LEFT JOIN deals d ON f.deal_id = d.id
                 LEFT JOIN users u ON f.user_id = u.id
                 WHERE f.organization_id = :org_id";
-        $params = [':org_id' => $orgId];
+        $params = ['org_id' => $orgId];
 
         if ($userId) {
             $sql .= " AND f.user_id = :user_id";
-            $params[':user_id'] = $userId;
+            $params['user_id'] = $userId;
         }
         if (!empty($filters['status'])) {
             $sql .= " AND f.status = :status";
-            $params[':status'] = $filters['status'];
+            $params['status'] = $filters['status'];
         }
         if (!empty($filters['date'])) {
             if ($filters['date'] === 'today') {
@@ -36,6 +36,7 @@ class Followup {
         }
 
         $sql .= " ORDER BY f.followup_date ASC, f.followup_time ASC";
+        
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();

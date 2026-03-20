@@ -162,9 +162,10 @@ class Dashboard {
     }
 
     public function getTodayFollowups($orgId, $userId = null) {
-        $sql = "SELECT f.*, l.name as lead_name, l.phone as lead_phone 
+        $sql = "SELECT f.*, l.name as lead_name, l.phone as lead_phone, u.name as agent_name 
                 FROM followups f 
                 LEFT JOIN leads l ON f.lead_id = l.id 
+                LEFT JOIN users u ON f.user_id = u.id
                 WHERE f.organization_id = :org_id AND f.followup_date = CURDATE() AND f.status = 'pending'";
         $params = ['org_id' => $orgId];
         if ($userId) {
