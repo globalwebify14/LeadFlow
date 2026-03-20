@@ -232,7 +232,15 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                 <div class="hero-stat-pill" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">
                     <span class="hval" style="color:#f87171;"><?= $overdueCount ?></span>
                     <span class="hlbl">OVERDUE</span>
-                    <span class="hdlt warn"><i class="bi bi-exclamation-circle"></i> Tasks</span>
+                    <span class="hdlt warn"><i class="bi bi-exclamation-circle text-danger"></i> Missed</span>
+                </div>
+                <?php endif; ?>
+
+                <?php if (($stats['upcoming_followups'] ?? 0) > 0): ?>
+                <div class="hero-stat-pill" style="border-color:rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);">
+                    <span class="hval" style="color:#818cf8;"><?= $stats['upcoming_followups'] ?></span>
+                    <span class="hlbl">UPCOMING</span>
+                    <span class="hdlt info"><i class="bi bi-calendar-check text-primary"></i> Future</span>
                 </div>
                 <?php endif; ?>
             </div>

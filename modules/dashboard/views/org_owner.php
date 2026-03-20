@@ -360,9 +360,14 @@ function dashColor($i) {
         </div>
         <div class="kpi-label">Due Follow-ups</div>
         <div class="kpi-value"><?= $stats['pending_followups'] ?></div>
-        <a href="<?= BASE_URL ?>modules/followups/" class="kpi-sub text-decoration-none" style="color:#ef4444;">
-            <i class="bi bi-arrow-right-circle-fill"></i> <?= $stats['missed_followups'] ?> Missed
-        </a>
+        <div class="d-flex flex-column gap-1 mt-2">
+            <a href="<?= BASE_URL ?>modules/followups/?filter=overdue" class="kpi-sub text-decoration-none d-flex align-items-center gap-1" style="color:#ef4444; font-size: 11px;">
+                <i class="bi bi-exclamation-circle-fill"></i> <?= $stats['missed_followups'] ?> Missed
+            </a>
+            <a href="<?= BASE_URL ?>modules/followups/?filter=upcoming" class="kpi-sub text-decoration-none d-flex align-items-center gap-1" style="color:#6366f1; font-size: 11px;">
+                <i class="bi bi-calendar-event-fill"></i> <?= $stats['upcoming_followups'] ?> Upcoming
+            </a>
+        </div>
     </div>
 
     <!-- Assigned Today -->

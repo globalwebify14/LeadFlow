@@ -50,6 +50,7 @@ class Dashboard {
             'won_deals' => 0,
             'lost_deals' => 0,
             'pending_followups' => 0,
+            'upcoming_followups' => 0,
             'assigned_today' => 0,
             'conversion_rate' => 0,
             'missed_followups' => 0,
@@ -130,6 +131,7 @@ class Dashboard {
         $stats['pending_followups'] = $stmtF->fetchColumn();
 
         // Missed follow-ups
+        // Missed follow-ups
         $mSql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org_id AND status = 'pending' AND followup_date < CURDATE()";
         if ($role === 'agent' && $userId) {
             $mSql .= " AND user_id = :user_id";
@@ -137,6 +139,15 @@ class Dashboard {
         $stmtM = $this->pdo->prepare($mSql);
         $stmtM->execute($leadParams);
         $stats['missed_followups'] = $stmtM->fetchColumn();
+
+        // Upcoming follow-ups
+        $uSql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org_id AND status = 'pending' AND followup_date > CURDATE()";
+        if ($role === 'agent' && $userId) {
+            $uSql .= " AND user_id = :user_id";
+        }
+        $stmtU = $this->pdo->prepare($uSql);
+        $stmtU->execute($leadParams);
+        $stats['upcoming_followups'] = $stmtU->fetchColumn();
 
         // Leads by Stage
         $stats['leads_by_stage'] = $this->getPipelineOverview($orgId, $userId, $role);
