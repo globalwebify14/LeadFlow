@@ -1,5 +1,9 @@
 <?php
 // team_lead.php view
+/** @var Dashboard $dashboard */
+/** @var int $orgId */
+/** @var array $stats */
+
 $stats = $dashboard->getStatistics($orgId, null, 'team_lead');
 $todayFollowups = $dashboard->getTodayFollowups($orgId, null);
 $agentPerf = $dashboard->getAgentPerformance($orgId);

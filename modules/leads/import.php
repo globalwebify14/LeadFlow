@@ -1,4 +1,6 @@
 <?php
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 require_once '../../config/auth.php';
 requireLogin();
 require_once '../../config/db.php';
@@ -66,10 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
         } else {
             // Excel import via PhpSpreadsheet
             try {
-                if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+                if (!class_exists(IOFactory::class)) {
                     throw new Exception("PhpSpreadsheet library not found. Please run 'composer install' in the project root.");
                 }
-                $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name']);
+                $spreadsheet = IOFactory::load($file['tmp_name']);
                     $worksheet = $spreadsheet->getActiveSheet();
                     $rows = $worksheet->toArray();
                     
