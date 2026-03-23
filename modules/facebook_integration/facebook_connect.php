@@ -19,12 +19,13 @@ $_SESSION['fb_oauth_state'] = $stateStr;
 // The Callback URI must match EXACTLY what is saved in the Facebook Developer Portal App settings.
 $redirectUri = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . BASE_URL . 'modules/facebook_integration/facebook_callback.php';
 
-$configId = '1983815745501889';
+$permissions = ['pages_show_list', 'pages_read_engagement', 'leads_retrieval', 'pages_manage_metadata'];
+$scope = implode(',', $permissions);
 
 $loginUrl = "https://www.facebook.com/v19.0/dialog/oauth" . 
     "?client_id=" . urlencode($appId) . 
     "&redirect_uri=" . urlencode($redirectUri) . 
-    "&config_id=" . urlencode($configId) . 
+    "&scope=" . urlencode($scope) . 
     "&state=" . urlencode($stateStr) .
     "&auth_type=rerequest";
 
