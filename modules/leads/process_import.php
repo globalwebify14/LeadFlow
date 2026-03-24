@@ -30,7 +30,9 @@ class ExcelImporter {
         $columnMap = []; // format: 'name' => index (0, 1, 2, etc)
 
         foreach ($headerRow as $index => $colName) {
-            $colClean = strtolower(trim((string)$colName));
+            // Strip hidden Excel UTF-8 BOM bytes (\xEF\xBB\xBF) and invisible spaces
+            $colClean = preg_replace('/^[\xef\xbb\xbf]+/', '', trim((string)$colName));
+            $colClean = strtolower($colClean);
             
             // Search mapping aliases
             foreach ($mapping as $targetField => $aliases) {
@@ -40,6 +42,18 @@ class ExcelImporter {
                 }
             }
         }
+        
+        // Fallback: If absolutely no known headers were found, assume standard 0=Name, 1=Phone format
+        if (!isset($columnMap['name']) || !isset($columnMap['phone'])) {
+            if (count($headerRow) >= 2) {
+                // If the first row looks like data instead of headers, map by index
+                $columnMap['name'] = 0;
+                $columnMap['phone'] = 1;
+                $columnMap['email'] = count($headerRow) > 2 ? 2 : null;
+                $columnMap['company'] = count($headerRow) > 3 ? 3 : null;
+            }
+        }
+        
         return $columnMap;
     }
 
@@ -65,14 +79,23 @@ class ExcelImporter {
         $columnMap = $this->mapHeaders($headerRow);
 
         if (!isset($columnMap['name']) || !isset($columnMap['phone'])) {
-            $stats['errors'][] = "Critical Columns Missing: Could not auto-detect 'Name' and 'Phone' columns. Please ensure your headers match common names.";
+            $stats['errors'][] = "Critical Columns Missing: Could not auto-detect the 'Name' and 'Phone' columns. Please ensure your headers match common names, or that column 1 is Name and column 2 is Phone.";
             return $stats;
         }
 
         $stats['total'] = count($rows) - 1;
 
-        // Start processing records (Row 2 onwards)
-        for ($i = 1; $i < count($rows); $i++) {
+        // Start processing records (Row 2 onwards if headers matched, or Row 1 if we had to fallback to indices)
+        // If we defaulted to indices (0,1) and the first row is NOT "name", it's probably actual data.
+        $startIndex = 1;
+        $firstCell = strtolower(trim((string)($headerRow[0] ?? '')));
+        if (!in_array($firstCell, ['name', 'full name', 'first name', 'customer name'])) {
+            // It's likely actual data row 1 without headers
+            $startIndex = 0;
+            $stats['total'] = count($rows);
+        }
+
+        for ($i = $startIndex; $i < count($rows); $i++) {
             $row = $rows[$i];
             
             // Map values
