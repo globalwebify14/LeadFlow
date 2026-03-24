@@ -106,8 +106,8 @@ try {
                 foreach ($rawLeads as $leadRaw) {
                     $leadgenId = $leadRaw['id'];
 
-                    // Duplicate check inside our new sync table
-                    $chkStmt = $pdo->prepare("SELECT id FROM facebook_leads WHERE lead_id = ?");
+                    // Duplicate check inside our native sync table
+                    $chkStmt = $pdo->prepare("SELECT id FROM facebook_leads WHERE leadgen_id = ?");
                     $chkStmt->execute([$leadgenId]);
                     if ($chkStmt->fetch()) continue; // Skip existing
 
@@ -136,9 +136,9 @@ try {
                     
                     $note = "--- Facebook Lead Form Data ---\n" . implode("\n", $allFields);
 
-                    // Insert to facebook_leads parallel sync table
-                    $pdo->prepare("INSERT INTO facebook_leads (lead_id, name, email, phone, ad_name, form_id, created_time, source, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pull', NOW())")
-                        ->execute([$leadgenId, $name, $email, $phone, $adName, $f['form_id'], $createdAt]);
+                    // Insert to facebook_leads parallel sync table using native legacy schema
+                    $pdo->prepare("INSERT IGNORE INTO facebook_leads (organization_id, page_id, form_id, leadgen_id, raw_data) VALUES (?, ?, ?, ?, ?)")
+                        ->execute([$orgId, $pageId, $f['form_id'], $leadgenId, json_encode($leadRaw)]);
 
                     // Route to CRM via Lead Model directly
                     $stmtAgent = $pdo->prepare("SELECT id FROM users WHERE organization_id = ? AND role = 'agent' AND is_active = 1 ORDER BY RAND() LIMIT 1");
