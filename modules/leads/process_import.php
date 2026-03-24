@@ -62,10 +62,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['temp_file'])) {
             }
 
             if (count($rows) > 1) {
-                $stats['total'] = count($rows) - 1; // Assuming row 0 was headers
+                // If we defaulted to indices (0,1) and the first row is NOT "name", it's probably actual data.
+                $startIndex = 1;
+                $firstCell = strtolower(trim((string)($rows[0][0] ?? '')));
+                if (!in_array($firstCell, ['name', 'full name', 'first name', 'customer name', 'id'])) {
+                    $startIndex = 0;
+                }
                 
-                // Process from Row 1
-                for ($i = 1; $i < count($rows); $i++) {
+                $stats['total'] = count($rows) - $startIndex; 
+                
+                // Process from the VERY BOTTOM of the file to the TOP.
+                // This guarantees that Row 1 is inserted LAST into the database,
+                // which means it becomes the most "Recent" record and shows up FIRST on the UI!
+                for ($i = count($rows) - 1; $i >= $startIndex; $i--) {
                     $row = $rows[$i];
                     
                     $name    = trim((string)($row[$mapName] ?? ''));

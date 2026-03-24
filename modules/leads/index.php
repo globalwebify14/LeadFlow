@@ -442,6 +442,14 @@ include '../../includes/header.php';
                                             <?php if($lead['priority']): ?>
                                                 <span class="<?= strtolower($lead['priority']) === 'hot' ? 'priority-badge-hot' : 'badge bg-light text-muted border' ?>" style="font-size: 9px;"><?= strtoupper($lead['priority']) ?></span>
                                             <?php endif; ?>
+                                            
+                                            <?php if ($lead['source'] === 'facebook'): ?>
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1" style="font-size: 9px;"><i class="bi bi-facebook me-1"></i>Facebook</span>
+                                            <?php elseif ($lead['source'] === 'import'): ?>
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle ms-1" style="font-size: 9px;"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Import</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle ms-1" style="font-size: 9px;"><i class="bi bi-person-lines-fill me-1"></i>Manual</span>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="text-muted d-flex align-items-center" style="font-size: 11px;">
                                             <i class="bi bi-calendar3 me-1"></i><?= date('M d, Y', strtotime($lead['created_at'])) ?>
@@ -459,16 +467,6 @@ include '../../includes/header.php';
                                             <?= e($lead['email']) ?>
                                         </div>
                                     <?php endif; ?>
-                                    
-                                    <div class="mt-1">
-                                        <?php if ($lead['source'] === 'facebook'): ?>
-                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle" style="font-size: 9px;"><i class="bi bi-facebook me-1"></i>Facebook</span>
-                                        <?php elseif ($lead['source'] === 'import'): ?>
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle" style="font-size: 9px;"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Import</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle" style="font-size: 9px;"><i class="bi bi-person-lines-fill me-1"></i>Manual</span>
-                                        <?php endif; ?>
-                                    </div>
                                     
                                     <?php if ($lead['phone']): ?>
                                         <div class="d-flex gap-2 mt-2">
@@ -492,14 +490,18 @@ include '../../includes/header.php';
                                 <div class="text-muted mb-1" style="font-size: 12.5px; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="note_text_<?= $lead['id'] ?>" title="<?= e($previewNote) ?>">
                                     <?= e($previewNote ?: '—') ?>
                                 </div>
-                                <div class="d-flex align-items-center gap-3">
+                                <div class="d-flex flex-column gap-2 mt-2">
                                     <?php if ($lead['company']): ?>
-                                        <div class="text-dark fw-semibold" style="font-size: 11.5px;"><i class="bi bi-building me-1 text-primary-emphasis"></i><?= e($lead['company']) ?></div>
+                                        <div class="text-dark fw-semibold text-truncate" style="font-size: 11.5px; max-width: 200px;" title="<?= e($lead['company']) ?>">
+                                            <i class="bi bi-building me-1 text-primary-emphasis"></i><?= e($lead['company']) ?>
+                                        </div>
                                     <?php endif; ?>
                                     
-                                    <a href="javascript:void(0)" class="btn-add-note-modern" onclick="openQuickNote(<?= $lead['id'] ?>)">
-                                        <i class="bi bi-plus-circle"></i> Add Note
-                                    </a>
+                                    <div>
+                                        <a href="javascript:void(0)" class="btn-add-note-modern" onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                            <i class="bi bi-plus-circle"></i> Add Note
+                                        </a>
+                                    </div>
                                 </div>
                             </td>
                             <?php if ($userRole !== 'agent'): ?>
