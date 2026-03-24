@@ -4,6 +4,18 @@
 
 require_once '../../config/db.php';
 
+// Safe Logging Directory Setup
+$logDir = __DIR__ . '/logs';
+if (!is_dir($logDir)) {
+    mkdir($logDir, 0755, true);
+}
+$logFile = $logDir . '/facebook_sync.log';
+
+function writeLog($msg) {
+    global $logFile;
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " - " . $msg . "\n", FILE_APPEND);
+}
+
 // Define BASE_URL locally (cannot use auth.php because session_start() conflicts with raw webhook)
 $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
 $dirRoot = str_replace('\\', '/', dirname(dirname(__DIR__)));
@@ -22,11 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $hubMode        = $_GET['hub_mode']         ?? '';
 
     if ($hubMode === 'subscribe' && $hubVerifyToken === $verifyTokenDB) {
-        // Verification success
+        writeLog("WEBHOOK VERIFIED successfully via hub_challenge.");
         http_response_code(200);
         echo $hubChallenge;
         exit;
     } else {
+        writeLog("WEBHOOK VERIFICATION FAILED. Token mismatch.");
         http_response_code(403);
         echo 'Forbidden';
         exit;
@@ -38,11 +51,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $inputRaw = file_get_contents('php://input');
     $data = json_decode($inputRaw, true);
 
-    // Log the raw webhook for debugging
-    $logStmt = $pdo->prepare("INSERT INTO webhook_logs (event_type, payload) VALUES ('leadgen', ?)");
-    $logStmt->execute([$inputRaw]);
+    writeLog("WEBHOOK PAYLOAD RECEIVED: " . $inputRaw);
+    
+    // Also log to DB if needed
+    $pdo->prepare("INSERT INTO webhook_logs (event_type, payload) VALUES ('leadgen', ?)")->execute([$inputRaw]);
 
     if (!isset($data['object']) || $data['object'] !== 'page') {
+        writeLog("WEBHOOK ERROR: Invalid object type.");
         http_response_code(400);
         exit('Invalid object type');
     }
@@ -59,9 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if ($leadgenId && $formId) {
                         try {
+                            writeLog("Processing Leadgen ID: {$leadgenId} from Form: {$formId}");
                             processLead($pdo, $leadgenId, $formId, $pageId);
+                            writeLog("Successfully processed Leadgen ID: {$leadgenId}");
                         } catch (Exception $e) {
-                            // Log processing fail but keep 200 to prevent Facebook from backing off
+                            writeLog("WEBHOOK PROCESSING ERROR: " . $e->getMessage());
                             $pdo->prepare("INSERT INTO webhook_logs (event_type, payload) VALUES ('error', ?)")->execute([json_encode(['error' => $e->getMessage(), 'leadgen_id' => $leadgenId])]);
                         }
                     }
@@ -80,7 +97,10 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     // A. Verify if we already processed this lead
     $stmt = $pdo->prepare("SELECT id FROM facebook_leads WHERE leadgen_id = ?");
     $stmt->execute([$leadgenId]);
-    if ($stmt->fetch()) return; // Already processed
+    if ($stmt->fetch()) {
+        writeLog("Leadgen ID {$leadgenId} skipped. Already exists in DB.");
+        return; // Already processed
+    }
 
     // B. Auto-Discovery: If form is unknown, let's save it instantly so pull-sync can track it later
     $stmtPage = $pdo->prepare("SELECT organization_id FROM facebook_pages WHERE page_id = ?");
@@ -90,6 +110,8 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     if ($webhookOrgId) {
         $stmtForm = $pdo->prepare("INSERT IGNORE INTO facebook_forms (organization_id, page_id, form_id, form_name, created_at) VALUES (?, ?, ?, 'Auto-detected Form', NOW())");
         $stmtForm->execute([$webhookOrgId, $pageId, $formId]);
+    } else {
+        writeLog("Warning: Page ID {$pageId} not found in CRM. Bypassing Auto-Discovery.");
     }
 
     // C. Find the Page Access Token for this form
@@ -98,34 +120,20 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     $orgBinding = $stmt->fetch();
 
     if (!$orgBinding) {
-        throw new Exception("Form/Page pair not registered in CRM databases.");
+        throw new Exception("Form/Page pair ({$formId}/{$pageId}) not registered in CRM databases.");
     }
     
     $accessToken = $orgBinding['page_access_token'];
     $orgId = $orgBinding['organization_id'];
 
-    // C. Fetch raw lead data from Meta Graph API
-    // [SIMULATION BYPASS] For testing, skip real API call if id starts with 'sim_'
-    if (strpos($leadgenId, 'sim_') === 0) {
-        $response = json_encode([
-            'id' => $leadgenId,
-            'created_time' => date('c'),
-            'field_data' => [
-                ['name' => 'full_name', 'values' => ['Simulated Test Lead']],
-                ['name' => 'phone_number', 'values' => ['+10000000000']],
-                ['name' => 'email', 'values' => ['test@simulation.com']]
-            ]
-        ]);
-        $httpCode = 200;
-    } else {
-        $graphUrl = "https://graph.facebook.com/v19.0/{$leadgenId}?access_token=" . urlencode($accessToken);
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $graphUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-    }
+    // D. Fetch raw lead data from Meta Graph API
+    $graphUrl = "https://graph.facebook.com/v19.0/{$leadgenId}?access_token=" . urlencode($accessToken);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $graphUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
     if ($httpCode !== 200) {
         throw new Exception("Graph API returned {$httpCode}: {$response}");
@@ -133,44 +141,45 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
 
     $leadData = json_decode($response, true);
     
-    // D. Parse ALL form fields BEFORE inserting into facebook_leads
+    // E. Parse ALL form fields BEFORE inserting into facebook_leads
     $parsed = parseAllLeadFields($leadData);
     $campaign = $leadData['campaign_name'] ?? 'Facebook Ads';
+    $adName = $leadData['ad_name'] ?? 'Facebook Ads';
     $createdAt = isset($leadData['created_time']) ? date('Y-m-d H:i:s', strtotime($leadData['created_time'])) : date('Y-m-d H:i:s');
 
     // Store into unified parallel sync tracker
     $stmtInsert = $pdo->prepare("
         INSERT IGNORE INTO facebook_leads 
-        (lead_id, name, email, phone, ad_name, form_id, created_time, source, fetched_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'webhook', NOW())
+        (organization_id, page_id, form_id, leadgen_id, raw_data) 
+        VALUES (?, ?, ?, ?, ?)
     ");
-    $stmtInsert->execute([$leadgenId, $parsed['name'], $parsed['email'], $parsed['phone'], $campaign, $formId, $createdAt]);
+    $stmtInsert->execute([$orgId, $pageId, $formId, $leadgenId, json_encode($leadData)]);
 
-    // E + F + G. Inject into CRM leads table using Model
+    // F. Route to random active agent
+    $stmtAgent = $pdo->prepare("SELECT id FROM users WHERE organization_id = ? AND role = 'agent' AND is_active = 1 ORDER BY RAND() LIMIT 1");
+    $stmtAgent->execute([$orgId]);
+    $agentId = $stmtAgent->fetchColumn() ?: null;
+
+    // G. Inject into CRM leads table using Model
     require_once '../../models/Lead.php';
     $leadModel = new Lead($pdo);
     
     $leadModel->addLead([
         'organization_id'    => $orgId,
-        'name'               => $parsed['name'],
+        'name'               => $parsed['name'] ?: 'Unknown Meta Lead',
         'phone'              => $parsed['phone'],
         'email'              => $parsed['email'] ?: null,
         'company'            => $parsed['company'] ?: null,
         'source'             => 'facebook_ads',
         'status'             => 'New Lead',
         'priority'           => 'Hot',
-        'assigned_to'        => null, // Handle Auto-Assignment (Round Robin)
-        'ignore_auto_assign' => (strpos($leadgenId, 'sim_') === 0), // [SIM_FIX] Keep test leads unassigned
+        'assigned_to'        => $agentId,
         'note'               => $parsed['note'],
         'meta_campaign'      => $campaign,
         'meta_form_id'       => $formId,
         'facebook_page_id'   => $pageId,
         'created_at'         => $createdAt
     ]);
-    
-    if ($leadId && strpos($leadgenId, 'sim_') === 0) {
-        file_put_contents('../../tmp_ajax_debug.txt', date('H:i:s') . " - SIMULATION SUCCESS: Lead $leadId created for Org $orgId. is_seen=0.\n", FILE_APPEND);
-    }
 }
 
 /**
@@ -220,4 +229,4 @@ function parseAllLeadFields($leadRaw) {
         'note' => $note
     ];
 }
-
+?>
