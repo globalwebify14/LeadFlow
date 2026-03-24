@@ -170,7 +170,7 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
         'phone'              => $parsed['phone'],
         'email'              => $parsed['email'],
         'company'            => $parsed['company'],
-        'source'             => 'facebook_ads',
+        'source'             => 'facebook',
         'status'             => 'New Lead',
         'assigned_to'        => $agentId,
         'note'               => $parsed['note'],

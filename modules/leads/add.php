@@ -93,10 +93,9 @@ include '../../includes/header.php';
                         <div class="col-md-6">
                             <label class="form-label">Lead Source</label>
                             <select class="form-select" name="source">
-                                <option value="">Select Source</option>
-                                <?php foreach (['Website','Meta Ads','Google Ads','Referral','Walk-in','Phone Call','Email','Other'] as $s): ?>
-                                    <option value="<?= $s ?>" <?= ($data['source'] ?? '') === $s ? 'selected' : '' ?>><?= $s ?></option>
-                                <?php endforeach; ?>
+                                <option value="manual" <?= ($data['source'] ?? '') === 'manual' ? 'selected' : '' ?>>Manual</option>
+                                <option value="facebook" <?= ($data['source'] ?? '') === 'facebook' ? 'selected' : '' ?>>Facebook Ads</option>
+                                <option value="import" <?= ($data['source'] ?? '') === 'import' ? 'selected' : '' ?>>Excel Import</option>
                             </select>
                         </div>
                         <div class="col-md-6">

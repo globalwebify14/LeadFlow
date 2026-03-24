@@ -159,7 +159,7 @@ try {
                             'phone'            => $phone,
                             'email'            => $email,
                             'company'          => $company,
-                            'source'           => 'facebook_ads',
+                            'source'           => 'facebook',
                             'assigned_to'      => $agentId,
                             'note'             => $note,
                             'meta_campaign'    => $campaign,

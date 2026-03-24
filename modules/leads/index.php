@@ -288,8 +288,11 @@ include '../../includes/header.php';
         <p class="mb-0 text-white-50" style="font-size: 14px;">View, organize, and assign your leads to drive conversions.</p>
     </div>
     <div class="d-flex gap-2" style="z-index: 1;">
+        <button type="button" class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm" style="font-weight: 500;" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-file-earmark-excel me-1"></i> Import Leads
+        </button>
         <a href="<?= BASE_URL ?>modules/leads/export.php?<?= http_build_query($filters) ?>" class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm" style="font-weight: 500;">
-            <i class="bi bi-file-earmark-excel me-1"></i> Export
+            <i class="bi bi-download me-1"></i> Export
         </a>
         <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-light text-primary shadow-sm" style="font-weight: 600;">
             <i class="bi bi-plus-lg me-1"></i> Add Lead
@@ -323,6 +326,15 @@ include '../../includes/header.php';
                     <option value="Hot" <?= $filters['priority']==='Hot'?'selected':'' ?>>🔥 Hot</option>
                     <option value="Warm" <?= $filters['priority']==='Warm'?'selected':'' ?>>☀️ Warm</option>
                     <option value="Cold" <?= $filters['priority']==='Cold'?'selected':'' ?>>❄️ Cold</option>
+                </select>
+            </div>
+            
+            <div class="col-6 col-md-2">
+                <select class="form-select filter-input" name="source">
+                    <option value="">Source: All</option>
+                    <option value="facebook" <?= $filters['source']==='facebook'?'selected':'' ?>>Facebook Ads</option>
+                    <option value="manual" <?= $filters['source']==='manual'?'selected':'' ?>>Manual Entry</option>
+                    <option value="import" <?= $filters['source']==='import'?'selected':'' ?>>Excel Import</option>
                 </select>
             </div>
             
@@ -447,6 +459,16 @@ include '../../includes/header.php';
                                             <?= e($lead['email']) ?>
                                         </div>
                                     <?php endif; ?>
+                                    
+                                    <div class="mt-1">
+                                        <?php if ($lead['source'] === 'facebook'): ?>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle" style="font-size: 9px;"><i class="bi bi-facebook me-1"></i>Facebook</span>
+                                        <?php elseif ($lead['source'] === 'import'): ?>
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle" style="font-size: 9px;"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Import</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle" style="font-size: 9px;"><i class="bi bi-person-lines-fill me-1"></i>Manual</span>
+                                        <?php endif; ?>
+                                    </div>
                                     
                                     <?php if ($lead['phone']): ?>
                                         <div class="d-flex gap-2 mt-2">
@@ -690,7 +712,41 @@ function openQuickNote(leadId) {
         .catch(err => alert('A network error occurred. Note not saved.'));
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Relocate modal to body to prevent Bootstrap z-index trapping in fixed/relative layout wrappers
+    var mod = document.getElementById('importModal');
+    if (mod) document.body.appendChild(mod);
+});
 </script>
+
+<!-- Import Leads Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form action="<?= BASE_URL ?>modules/leads/import_leads.php" method="POST" enctype="multipart/form-data">
+                <div class="modal-header bg-light border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel text-success me-2"></i>Import Leads</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info border-0 rounded bg-info bg-opacity-10 text-dark" style="font-size:13px;">
+                        <i class="bi bi-info-circle-fill text-info me-2"></i><strong>Smart Columns Detection:</strong><br>
+                        Upload your CSV or Excel file. Our system will automatically map common column names (like "Customer Name", "Phone", "Mobile", "Email Address").
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select File (.csv, .xlsx)</label>
+                        <input class="form-control" type="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-upload me-2"></i>Upload File</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <?php include '../../includes/footer.php'; ?>
 
