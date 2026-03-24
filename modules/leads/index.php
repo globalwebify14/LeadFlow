@@ -413,12 +413,12 @@ include '../../includes/header.php';
                             <th>Contact Info</th>
                             <th>Context / Notes</th>
                             <?php if ($userRole !== 'agent'): ?>
-                                <th width="120">Pipeline</th>
+                                <th width="90">Pipeline</th>
                             <?php endif; ?>
                             <?php if ($userRole !== 'agent'): ?>
-                                <th width="150">Assignment</th>
+                                <th width="130">Assignment</th>
                             <?php endif; ?>
-                            <th width="120">Status</th>
+                            <th width="100">Status</th>
                             <th width="80" class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
@@ -435,7 +435,7 @@ include '../../includes/header.php';
                                     </div>
                                     <div>
                                         <div class="d-flex align-items-center gap-2 mb-1">
-                                            <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="lead-name-modern text-truncate" style="max-width: 180px;">
+                                            <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="lead-name-modern text-truncate" style="max-width: 140px;">
                                                 <?= e($lead['name']) ?>
                                             </a>
                                             <?php if($lead['priority']): ?>
@@ -458,11 +458,11 @@ include '../../includes/header.php';
                             </td>
                             <td>
                                 <div class="d-flex flex-column gap-1">
-                                    <div class="phone-number">
+                                    <div class="phone-number text-truncate" style="max-width: 140px;">
                                         <?= trim(e($lead['phone'] ?: '—')) ?>
                                     </div>
                                     <?php if($lead['email']): ?>
-                                        <div class="text-muted text-truncate" style="font-size: 11px; max-width: 180px;" title="<?= e($lead['email']) ?>">
+                                        <div class="text-muted text-truncate" style="font-size: 11px; max-width: 140px;" title="<?= e($lead['email']) ?>">
                                             <?= e($lead['email']) ?>
                                         </div>
                                     <?php endif; ?>
@@ -486,12 +486,12 @@ include '../../includes/header.php';
                                 $previewNote = preg_replace('/(Full Name|Phone|Email):\s*.*?\n/i', '', $previewNote); // Strip redundant FB fields
                                 $previewNote = str_replace("\n", " • ", trim($previewNote));
                                 ?>
-                                <div class="text-muted mb-1" style="font-size: 12.5px; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="note_text_<?= $lead['id'] ?>" title="<?= e($previewNote) ?>">
+                                <div class="text-muted mb-1 text-truncate" style="font-size: 12px; max-width: 180px;" id="note_text_<?= $lead['id'] ?>" title="<?= e($previewNote) ?>">
                                     <?= e($previewNote ?: '—') ?>
                                 </div>
                                 <div class="d-flex flex-column gap-2 mt-2">
                                     <?php if ($lead['company']): ?>
-                                        <div class="text-dark fw-semibold text-truncate" style="font-size: 11.5px; max-width: 200px;" title="<?= e($lead['company']) ?>">
+                                        <div class="text-dark fw-semibold text-truncate" style="font-size: 11.5px; max-width: 140px;" title="<?= e($lead['company']) ?>">
                                             <i class="bi bi-building me-1 text-primary-emphasis"></i><?= e($lead['company']) ?>
                                         </div>
                                     <?php endif; ?>
