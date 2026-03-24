@@ -21,18 +21,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
     } elseif ($file['error'] !== UPLOAD_ERR_OK) {
         $errorMsg = "Upload failed. Code: " . $file['error'];
     } else {
-        // Attempt to parse via PhpSpreadsheet
+        // Attempt to parse via Native PHP or PhpSpreadsheet
         try {
-            if (file_exists('../../vendor/autoload.php')) {
-                require_once '../../vendor/autoload.php';
+            if ($ext === 'csv') {
+                // EXTREMELY FAST NATIVE PURE PHP PARSER (ZERO DEPENDENCIES!)
+                $rows = [];
+                if (($handle = fopen($file['tmp_name'], "r")) !== false) {
+                    while (($data = fgetcsv($handle, 10000, ",")) !== false) {
+                        $rows[] = $data;
+                    }
+                    fclose($handle);
+                }
+            } else {
+                // FALLBACK TO PHPSPREADSHEET ONLY FOR COMPLEX .XLSX FILES
+                if (file_exists('../../vendor/autoload.php')) {
+                    require_once '../../vendor/autoload.php';
+                }
+                if (!class_exists(IOFactory::class)) {
+                    throw new Exception("To upload advanced .xlsx files, PhpSpreadsheet must be installed on the server. PLEASE OPEN YOUR EXCEL FILE AND CLICK 'SAVE AS -> CSV'. CSV files upload instantly with zero server requirements!");
+                }
+    
+                $spreadsheet = IOFactory::load($file['tmp_name']);
+                $worksheet = $spreadsheet->getActiveSheet();
+                $rows = $worksheet->toArray();
             }
-            if (!class_exists(IOFactory::class)) {
-                throw new Exception("PhpSpreadsheet is missing. Please run 'composer require phpoffice/phpspreadsheet' on the server.");
-            }
-
-            $spreadsheet = IOFactory::load($file['tmp_name']);
-            $worksheet = $spreadsheet->getActiveSheet();
-            $rows = $worksheet->toArray();
             
             // Execute Business Logic
             $importer = new ExcelImporter($pdo, $orgId, $userId);
