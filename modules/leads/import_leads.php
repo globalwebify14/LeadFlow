@@ -29,7 +29,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
             try {
             if ($ext === 'csv') {
                 if (($handle = fopen($tempFilePath, "r")) !== false) {
-                    $headers = fgetcsv($handle, 10000, ",");
+                    // Auto-detect Regional Excel Delimiters (; vs , vs TAB)
+                    $firstLine = fgets($handle);
+                    rewind($handle);
+                    $delimiter = ',';
+                    $maxCount = 0;
+                    foreach ([',', ';', "\t", '|'] as $delim) {
+                        $count = substr_count($firstLine, $delim);
+                        if ($count > $maxCount) {
+                            $maxCount = $count;
+                            $delimiter = $delim;
+                        }
+                    }
+                    
+                    $headers = fgetcsv($handle, 10000, $delimiter);
+                    
+                    // Strip hidden BOM characters from the very first header
+                    if (!empty($headers[0])) {
+                        $headers[0] = preg_replace('/^[\xef\xbb\xbf]+/', '', trim((string)$headers[0]));
+                    }
+                    
                     fclose($handle);
                 }
             } else {

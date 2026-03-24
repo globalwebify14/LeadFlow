@@ -37,7 +37,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['temp_file'])) {
 
             if ($ext === 'csv') {
                 if (($handle = fopen($tempFile, "r")) !== false) {
-                    while (($data = fgetcsv($handle, 10000, ",")) !== false) {
+                    // Auto-detect Regional Excel Delimiters (; vs , vs TAB)
+                    $firstLine = fgets($handle);
+                    rewind($handle);
+                    $delimiter = ',';
+                    $maxCount = 0;
+                    foreach ([',', ';', "\t", '|'] as $delim) {
+                        $count = substr_count($firstLine, $delim);
+                        if ($count > $maxCount) {
+                            $maxCount = $count;
+                            $delimiter = $delim;
+                        }
+                    }
+
+                    while (($data = fgetcsv($handle, 10000, $delimiter)) !== false) {
                         $rows[] = $data;
                     }
                     fclose($handle);
