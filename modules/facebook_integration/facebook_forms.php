@@ -17,8 +17,9 @@ if (empty($pages)) {
 
 $totalForms = 0;
 $totalLeads = 0;
+$skippedLeads = 0; // Track exactly how many leads were skipped due to duplication
 $fallbackUsed = false;
-$errors = [];
+$apiErrors = []; // Track actual Graph API errors
 
 $pdo->beginTransaction();
 try {
@@ -114,7 +115,10 @@ try {
                     // Duplicate check inside our native sync table
                     $chkStmt = $pdo->prepare("SELECT id FROM facebook_leads WHERE leadgen_id = ?");
                     $chkStmt->execute([$leadgenId]);
-                    if ($chkStmt->fetch()) continue; // Skip existing
+                    if ($chkStmt->fetch()) {
+                        $skippedLeads++; // Track skips correctly
+                        continue; 
+                    }
 
                     // Parse Custom Fields
                     $name = ''; $email = ''; $phone = ''; $company = '';
@@ -170,6 +174,9 @@ try {
 
                     $totalLeads++;
                 }
+            } else {
+                $errData = json_decode($leadsResponse, true);
+                $apiErrors[] = $errData['error']['message'] ?? "HTTP {$leadsHttpCode}";
             }
         }
     }
@@ -181,10 +188,11 @@ try {
 
 // Ensure clean User Experience
 if ($fallbackUsed) {
-    $msg = "Fallback Mode Used: Synced {$totalLeads} leads from {$totalForms} known auto-detected forms. (Initial form sync skipped due to missing permissions)";
-    redirect(BASE_URL . 'modules/facebook_integration/facebook_integration_settings.php', $msg, 'warning');
+    $msg = "Fallback Mode Used: Synced {$totalLeads} new leads (Skipped {$skippedLeads} duplicates) from {$totalForms} known auto-detected forms. (Initial form sync skipped due to permissions)";
+    if (!empty($apiErrors)) $msg .= " | Error: " . substr(implode(', ', $apiErrors), 0, 100);
+    redirect(BASE_URL . 'modules/facebook_integration/facebook_integration_settings.php', $msg, (!empty($apiErrors) ? 'danger' : 'warning'));
 } else {
-    $msg = "Forms Synced Successfully! Auto-detected {$totalForms} forms and explicitly imported {$totalLeads} leads from Facebook.";
+    $msg = "Forms Synced Successfully! Auto-detected {$totalForms} forms and explicitly imported {$totalLeads} leads from Facebook. (Skipped {$skippedLeads} duplicates).";
     redirect(BASE_URL . 'modules/facebook_integration/facebook_integration_settings.php', $msg, 'success');
 }
 exit;
