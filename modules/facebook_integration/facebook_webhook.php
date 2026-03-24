@@ -82,7 +82,17 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     $stmt->execute([$leadgenId]);
     if ($stmt->fetch()) return; // Already processed
 
-    // B. Find the Page Access Token and Org ID for this form
+    // B. Auto-Discovery: If form is unknown, let's save it instantly so pull-sync can track it later
+    $stmtPage = $pdo->prepare("SELECT organization_id FROM facebook_pages WHERE page_id = ?");
+    $stmtPage->execute([$pageId]);
+    $webhookOrgId = $stmtPage->fetchColumn();
+
+    if ($webhookOrgId) {
+        $stmtForm = $pdo->prepare("INSERT IGNORE INTO facebook_forms (organization_id, page_id, form_id, form_name, created_at) VALUES (?, ?, ?, 'Auto-detected Form', NOW())");
+        $stmtForm->execute([$webhookOrgId, $pageId, $formId]);
+    }
+
+    // C. Find the Page Access Token for this form
     $stmt = $pdo->prepare("SELECT p.page_access_token, f.organization_id FROM facebook_forms f INNER JOIN facebook_pages p ON f.page_id = p.page_id AND f.organization_id = p.organization_id WHERE f.form_id = ? AND f.page_id = ? LIMIT 1");
     $stmt->execute([$formId, $pageId]);
     $orgBinding = $stmt->fetch();
@@ -123,18 +133,22 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
 
     $leadData = json_decode($response, true);
     
-    // Store exact raw JSON backup
-    $pdo->prepare("INSERT INTO facebook_leads (organization_id, page_id, form_id, leadgen_id, raw_data) VALUES (?, ?, ?, ?, ?)")->execute([$orgId, $pageId, $formId, $leadgenId, $response]);
-
-    // D. Parse ALL form fields
+    // D. Parse ALL form fields BEFORE inserting into facebook_leads
     $parsed = parseAllLeadFields($leadData);
     $campaign = $leadData['campaign_name'] ?? 'Facebook Ads';
+    $createdAt = isset($leadData['created_time']) ? date('Y-m-d H:i:s', strtotime($leadData['created_time'])) : date('Y-m-d H:i:s');
 
-    // E + F + G. Inject into CRM leads table using Model (Handles Auto-Assign, Notifications, Logs, tags, synced pipeline)
+    // Store into unified parallel sync tracker
+    $stmtInsert = $pdo->prepare("
+        INSERT IGNORE INTO facebook_leads 
+        (lead_id, name, email, phone, ad_name, form_id, created_time, source, fetched_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'webhook', NOW())
+    ");
+    $stmtInsert->execute([$leadgenId, $parsed['name'], $parsed['email'], $parsed['phone'], $campaign, $formId, $createdAt]);
+
+    // E + F + G. Inject into CRM leads table using Model
     require_once '../../models/Lead.php';
     $leadModel = new Lead($pdo);
-    
-    $createdAt = isset($leadData['created_time']) ? date('Y-m-d H:i:s', strtotime($leadData['created_time'])) : date('Y-m-d H:i:s');
     
     $leadModel->addLead([
         'organization_id'    => $orgId,
