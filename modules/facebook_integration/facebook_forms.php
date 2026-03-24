@@ -86,6 +86,11 @@ try {
             $stmtGetKnown = $pdo->prepare("SELECT form_id, form_name FROM facebook_forms WHERE page_id = ?");
             $stmtGetKnown->execute([$pageId]);
             $activeFormsList = $stmtGetKnown->fetchAll(PDO::FETCH_ASSOC);
+
+            // FORCE UI VISIBILITY: Map these found forms perfectly to your logged-in organization
+            if (!empty($activeFormsList)) {
+                $pdo->prepare("UPDATE facebook_forms SET organization_id = ? WHERE page_id = ?")->execute([$orgId, $pageId]);
+            }
         }
 
         // STEP 4: Fetch Leads strictly for the activeFormsList
