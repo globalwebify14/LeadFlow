@@ -404,8 +404,7 @@ include '../../includes/header.php';
                 <button type="submit" class="btn btn-light btn-sm fw-bold px-3" onclick="return confirm('Execute bulk action on selected leads?')">Apply Action</button>
             </div>
 
-            <!-- Removed class table-responsive as overflow-x:auto clips absolute dropdowns -->
-            <div style="overflow-x: visible;">
+            <div class="table-responsive border-0" style="min-height: 400px; padding-bottom: 2rem;">
                 <table class="table table-modern table-hover align-middle mb-0 w-100">
                     <thead>
                         <tr>
