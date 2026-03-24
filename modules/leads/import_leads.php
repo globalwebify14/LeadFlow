@@ -21,10 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
     } elseif ($file['error'] !== UPLOAD_ERR_OK) {
         $errorMsg = "Upload failed. Code: " . $file['error'];
     } else {
-        $tempFilePath = '../../logs/temp_import_' . $orgId . '_' . time() . '.' . $ext;
-        move_uploaded_file($file['tmp_name'], $tempFilePath);
-
-        try {
+        // Safely move the uploaded file to the native OS Temporary Directory
+        $tempFilePath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'temp_import_' . $orgId . '_' . time() . '.' . $ext;
+        if (!move_uploaded_file($file['tmp_name'], $tempFilePath)) {
+            $errorMsg = "Server Permission Error: Could not save the uploaded file to the temporary server drive. Please check disk space or permissions!";
+        } else {
+            try {
             if ($ext === 'csv') {
                 if (($handle = fopen($tempFilePath, "r")) !== false) {
                     $headers = fgetcsv($handle, 10000, ",");
@@ -39,11 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                 $headers = $worksheet->toArray()[0] ?? [];
             }
 
-            if (empty($headers)) throw new Exception("Could not read any column headers from the file.");
+            if (empty($headers)) throw new Exception("Could not read any column headers from the file. The file may be empty or corrupted.");
         } catch (Exception $e) {
             $errorMsg = "Processing Error: " . $e->getMessage();
             @unlink($tempFilePath);
         }
+    }
     }
 } else {
     redirect(BASE_URL . 'modules/leads/');
