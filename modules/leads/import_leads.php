@@ -28,9 +28,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
         } else {
             try {
             if ($ext === 'csv') {
+                // Fix Mac OS Line Ending Issues (CR)
+                ini_set('auto_detect_line_endings', TRUE);
+                
                 if (($handle = fopen($tempFilePath, "r")) !== false) {
-                    // Auto-detect Regional Excel Delimiters (; vs , vs TAB)
                     $firstLine = fgets($handle);
+                    
+                    // IF THE RAW BYTES START WITH 'PK', THIS IS A ZIP/XLSX FILE, NOT A TEXT CSV
+                    if (strpos($firstLine, 'PK') === 0 || preg_match('/[^\x20-\x7E\t\r\n]/', substr($firstLine, 0, 100))) {
+                        throw new Exception("This is NOT a real CSV file! You simply renamed an Excel .xlsx file to .csv. Please open your file in Excel and literally click 'File -> Save As' and pick 'CSV (Comma delimited)' format!");
+                    }
+                    
                     rewind($handle);
                     $delimiter = ',';
                     $maxCount = 0;
@@ -44,9 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                     
                     $headers = fgetcsv($handle, 10000, $delimiter);
                     
-                    // Strip hidden BOM characters from the very first header
-                    if (!empty($headers[0])) {
-                        $headers[0] = preg_replace('/^[\xef\xbb\xbf]+/', '', trim((string)$headers[0]));
+                    if (is_array($headers)) {
+                        foreach ($headers as &$h) {
+                            // Strip hidden BOM characters 
+                            $h = preg_replace('/^[\xef\xbb\xbf]+/', '', trim((string)$h));
+                            // Force UTF-8 Encoding so htmlspecialchars doesn't fail and show "Column 1"
+                            $h = mb_convert_encoding($h, 'UTF-8', 'auto');
+                        }
                     }
                     
                     fclose($handle);
