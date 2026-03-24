@@ -24,8 +24,8 @@ $composerHome = __DIR__ . '/.composer';
 if (!is_dir($composerHome)) mkdir($composerHome, 0777, true);
 putenv('COMPOSER_HOME=' . $composerHome);
 
-// 4. Execute the composer installation command securely
-$output = shell_exec('php composer.phar require phpoffice/phpspreadsheet 2>&1');
+// 4. Force installation of version 2.x which perfectly supports your PHP 8.2 server
+$output = shell_exec('php composer.phar require phpoffice/phpspreadsheet:^2.3 2>&1');
 
 echo "<div style='background: #1e1e1e; color: #0f0; padding: 15px; border-radius: 5px; font-family: monospace; overflow-x: auto;'>";
 echo nl2br(htmlspecialchars($output));
