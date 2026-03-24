@@ -284,6 +284,12 @@ class Lead {
             }
             return $leadId;
         } catch (Exception $e) {
+            error_log("CRITICAL CRM LEAD INSERT ERROR: " . $e->getMessage());
+            // Attempt to aggressively write to the facebook_sync log file in case of webhook failure
+            $logPath = __DIR__ . '/../modules/facebook_integration/logs/facebook_sync.log';
+            if (is_writable(dirname($logPath))) {
+                file_put_contents($logPath, date('Y-m-d H:i:s') . ' - [FATAL PIPELINE REJECTION] ' . $e->getMessage() . "\n", FILE_APPEND);
+            }
             if ($startedTransaction) {
                 $this->pdo->rollBack();
             }
