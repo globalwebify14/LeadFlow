@@ -19,7 +19,12 @@ set_time_limit(300);
 
 echo "<p>Installing PhpSpreadsheet (this usually takes 10 to 30 seconds)...</p>";
 
-// 3. Execute the composer installation command securely
+// 3. Setup temporary home environment for Composer to bypass Hostinger restrictions
+$composerHome = __DIR__ . '/.composer';
+if (!is_dir($composerHome)) mkdir($composerHome, 0777, true);
+putenv('COMPOSER_HOME=' . $composerHome);
+
+// 4. Execute the composer installation command securely
 $output = shell_exec('php composer.phar require phpoffice/phpspreadsheet 2>&1');
 
 echo "<div style='background: #1e1e1e; color: #0f0; padding: 15px; border-radius: 5px; font-family: monospace; overflow-x: auto;'>";
