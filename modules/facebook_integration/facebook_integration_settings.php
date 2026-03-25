@@ -5,6 +5,11 @@ requireLogin();
 requireRole('org_owner');
 require_once '../../config/db.php';
 
+// MODULE ACCESS CHECK
+if (!hasModuleAccess('facebook_integration')) {
+    die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to the Facebook Integration module.');
+}
+
 $orgId = getOrgId();
 
 // Fetch System Configs required for OAuth

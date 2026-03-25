@@ -5,6 +5,11 @@ requireLogin();
 requireRole(['super_admin', 'org_owner', 'org_admin']);
 require_once '../../config/db.php';
 
+// MODULE ACCESS CHECK
+if (!hasModuleAccess('users')) {
+    die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to the Team module.');
+}
+
 $isSuperAdmin = ($_SESSION['user_role'] ?? '') === 'super_admin';
 $orgId = getOrgId(); // null for super_admin
 

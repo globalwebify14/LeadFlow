@@ -10,44 +10,18 @@ if (!in_array($userRole, ['super_admin', 'org_owner', 'org_admin'])) {
 
 require_once '../../config/db.php';
 
+// MODULE ACCESS CHECK
+if (!hasModuleAccess('profile_settings')) {
+    die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to Profile & API Settings.');
+}
+
 $orgId = getOrgId();
 $userId = $_SESSION['user_id'];
 $success = $error = '';
 
-// Handle Profile Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
-    $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $phone = trim($_POST['phone'] ?? '');
-    $password = $_POST['password'] ?? '';
-
-    if (!$name || !$email) {
-        $error = 'Name and Email are required.';
-    } else {
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email AND id != :id");
-        $stmt->execute(['email' => $email, 'id' => $userId]);
-        if ($stmt->fetch()) {
-            $error = 'Email is already in use by another account.';
-        } else {
-            if ($password) {
-                if (strlen($password) < 6) {
-                    $error = 'Password must be at least 6 characters.';
-                } else {
-                    $hash = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("UPDATE users SET name = :n, email = :e, phone = :p, password = :pwd WHERE id = :id");
-                    $stmt->execute(['n' => $name, 'e' => $email, 'p' => $phone, 'pwd' => $hash, 'id' => $userId]);
-                    $success = 'Profile & Password updated successfully!';
-                    $_SESSION['user_name'] = $name;
-                }
-            } else {
-                $stmt = $pdo->prepare("UPDATE users SET name = :n, email = :e, phone = :p WHERE id = :id");
-                $stmt->execute(['n' => $name, 'e' => $email, 'p' => $phone, 'id' => $userId]);
-                $success = 'Profile updated successfully!';
-                $_SESSION['user_name'] = $name;
-            }
-        }
-    }
-}
+$orgId = getOrgId();
+$userId = $_SESSION['user_id'];
+$success = $error = '';
 
 // Get User Info
 $stmtUser = $pdo->prepare("SELECT * FROM users WHERE id = :id");
@@ -83,8 +57,8 @@ include '../../includes/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="bi bi-person-gear me-2 text-primary"></i>Profile & API Settings</h4>
-        <p class="text-muted small mb-0">Manage your personal account, subscription, and developer integrations.</p>
+        <h4 class="fw-bold mb-1"><i class="bi bi-code-square me-2 text-primary"></i>API</h4>
+        <p class="text-muted small mb-0">Manage your subscription limits and developer integrations.</p>
     </div>
 </div>
 
@@ -100,46 +74,8 @@ include '../../includes/header.php';
 <?php endif; ?>
 
 <div class="row g-4">
-    <!-- Left Column: Profile & API -->
+    <!-- Left Column: API -->
     <div class="col-lg-7">
-        
-        <!-- Personal Profile -->
-        <div class="card shadow-sm border-0 mb-4 bg-white rounded-4 overflow-hidden">
-            <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
-                <h6 class="fw-bold mb-0 d-flex align-items-center"><i class="bi bi-person-circle fs-5 me-2 text-primary"></i> My Profile</h6>
-            </div>
-            <div class="card-body px-4 pb-4">
-                <form method="POST">
-                    <input type="hidden" name="action" value="update_profile">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted mb-1">Full Name</label>
-                            <input type="text" class="form-control" name="name" value="<?= e($user['name']) ?>" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted mb-1">Email Address</label>
-                            <input type="email" class="form-control" name="email" value="<?= e($user['email']) ?>" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted mb-1">Phone Number</label>
-                            <input type="text" class="form-control" name="phone" value="<?= e($user['phone']) ?>">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-muted mb-1">Role</label>
-                            <input type="text" class="form-control bg-light text-muted" value="<?= ucfirst(str_replace('_', ' ', $user['role'])) ?>" readonly disabled>
-                        </div>
-                        <div class="col-12 mt-4">
-                            <label class="form-label fw-semibold small text-muted mb-1">Change Password <span class="fw-normal">(Optional)</span></label>
-                            <input type="password" class="form-control" name="password" minlength="6" placeholder="Leave blank to keep current password">
-                            <div class="form-text small">Must be at least 6 characters long.</div>
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-2 border-top">
-                        <button type="submit" class="btn btn-primary fw-semibold px-4 rounded-3"><i class="bi bi-check-circle me-1"></i> Update Profile</button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
         <!-- API Keys -->
         <div class="card shadow-sm border-0 bg-white rounded-4 overflow-hidden">

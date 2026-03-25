@@ -6,9 +6,22 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Sidebar Toggle
-        document.getElementById('menu-toggle')?.addEventListener('click', function () {
-            document.getElementById('wrapper').classList.toggle('toggled');
-        });
+        const menuToggle = document.getElementById('menu-toggle');
+        const wrapper = document.getElementById('wrapper');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', function () {
+                wrapper.classList.toggle('toggled');
+            });
+        }
+
+        // Close sidebar when clicking the overlay on mobile
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function () {
+                wrapper.classList.remove('toggled');
+            });
+        }
 
         <?php if (in_array(getUserRole(), ['agent', 'team_lead', 'org_owner'])): ?>
         // Instant Lead Popup Poller

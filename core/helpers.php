@@ -230,4 +230,53 @@ function getInitials($name) {
     }
     return $initials ?: '?';
 }
+/**
+ * Check if the current organization has access to a specific module.
+ * Logic:
+ * 1. Super Admins always have access to everything.
+ * 2. If NO records exist in organization_modules for an org, treat as legacy (ALL ALLOWED).
+ * 3. Otherwise, explicitly require an exact match in organization_modules.
+ */
+function hasModuleAccess($module_name) {
+    global $pdo;
+    
+    // Super Admins bypass module restrictions
+    if (getUserRole() === 'super_admin') {
+        return true;
+    }
+    
+    $org_id = getOrgId();
+    if (!$org_id) return true;
+    
+    try {
+        // FAST CACHING: Store checked modules in RAM for the request
+        static $orgModulesCount = null;
+        static $allowedModules = [];
+        
+        // 1. Check if org has ANY module restrictions defined
+        if ($orgModulesCount === null) {
+            $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM organization_modules WHERE organization_id = ?");
+            $stmtCount->execute([$org_id]);
+            $orgModulesCount = (int)$stmtCount->fetchColumn();
+        }
+        
+        // Legacy fallback: If 0 rules exist, they get FULL access
+        if ($orgModulesCount === 0) {
+            return true;
+        }
+        
+        // 2. Fetch specific module access
+        if (!isset($allowedModules[$module_name])) {
+            $stmt = $pdo->prepare("SELECT 1 FROM organization_modules WHERE organization_id = ? AND module_name = ?");
+            $stmt->execute([$org_id, $module_name]);
+            $allowedModules[$module_name] = (bool)$stmt->fetchColumn();
+        }
+        
+        return $allowedModules[$module_name];
+        
+    } catch (Exception $e) {
+        // Fail open or fail closed? Fail closed for security.
+        return false;
+    }
+}
 ?>

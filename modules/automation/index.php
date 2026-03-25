@@ -3,6 +3,11 @@ $pageTitle = 'Automation Sequences';
 require_once '../../config/auth.php';
 requireLogin();
 require_once '../../config/db.php';
+
+// MODULE ACCESS CHECK
+if (!hasModuleAccess('automation')) {
+    die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to the Automation module.');
+}
 if (!in_array(getUserRole(), ['org_owner', 'org_admin'])) {
     redirect(BASE_URL . 'modules/dashboard/', 'No permission.', 'danger');
 }

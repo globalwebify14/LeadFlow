@@ -4,6 +4,11 @@ require_once '../../config/auth.php';
 requireLogin();
 requireRole(['org_owner', 'org_admin']);
 require_once '../../config/db.php';
+
+// MODULE ACCESS CHECK
+if (!hasModuleAccess('org_settings')) {
+    die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to Organization Settings.');
+}
 require_once '../../models/ActivityLog.php';
 
 $orgId = getOrgId();

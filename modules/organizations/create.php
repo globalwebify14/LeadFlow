@@ -11,6 +11,11 @@ require_once '../../models/ActivityLog.php';
 $orgModel = new Organization($pdo);
 $planModel = new Plan($pdo);
 $plans = $planModel->getActive();
+
+// Fetch available modules for the checklist
+$stmt = $pdo->query("SELECT * FROM modules WHERE status = 'active' ORDER BY label ASC");
+$availableModules = $stmt->fetchAll();
+
 $errors = [];
 $success = false;
 
@@ -24,6 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $address  = trim($_POST['address'] ?? '');
     $planId   = (int)($_POST['plan_id'] ?? 0);
     $status   = $_POST['status'] ?? 'active';
+    
+    // Module Selection Parsing
+    $selectedModules = $_POST['modules'] ?? [];
 
     if (!$name) $errors[] = 'Organization name is required.';
     if (!$oName) $errors[] = 'Owner name is required.';
@@ -49,6 +57,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ownerId = $pdo->lastInsertId();
         $orgModel->setOwner($orgId, $ownerId);
         $orgModel->seedDefaultStages($orgId);
+
+        // Bind chosen core modules explicitly to the organization
+        if (!empty($selectedModules) && is_array($selectedModules)) {
+            $stmtModule = $pdo->prepare("INSERT INTO organization_modules (organization_id, module_name) VALUES (?, ?)");
+            foreach ($selectedModules as $modName) {
+                $stmtModule->execute([$orgId, $modName]);
+            }
+        }
 
         // Log activity
         ActivityLog::write($pdo, 'org_created', "Organization '{$name}' created with owner '{$oName}'");
@@ -142,6 +158,25 @@ include '../../includes/header.php';
                         <div class="form-text">Share this with the owner as their login.</div>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Module Access Configuration -->
+        <div class="col-12 border-top pt-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-ui-checks-grid me-2 text-primary"></i>Select Allowed Modules</h5>
+            <p class="text-muted small mb-3">Check the boxes below to grant this organization exclusive access to specific features. If none are selected, they will have no active modules!</p>
+            
+            <div class="row g-3">
+                <?php foreach ($availableModules as $mod): ?>
+                <div class="col-md-4 col-lg-3">
+                    <div class="form-check p-3 border rounded-3 bg-light bg-opacity-50 h-100 d-flex align-items-center">
+                        <input class="form-check-input fs-5 mt-0 me-3" type="checkbox" name="modules[]" value="<?= e($mod['name']) ?>" id="mod_<?= e($mod['name']) ?>" checked>
+                        <label class="form-check-label fw-semibold text-dark w-100 cursor-pointer" for="mod_<?= e($mod['name']) ?>" style="cursor: pointer;">
+                            <?= e($mod['label']) ?>
+                        </label>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>

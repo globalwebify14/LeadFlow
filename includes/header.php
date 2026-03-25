@@ -31,6 +31,7 @@ if (!empty($_SESSION['organization_id'])) {
 </head>
 <body class="bg-light">
     <div class="d-flex" id="wrapper">
+        <div id="sidebar-overlay"></div>
         <?php include __DIR__ . '/sidebar.php'; ?>
 
         <div id="page-content-wrapper" class="w-100">

@@ -4,6 +4,11 @@ require_once '../../config/auth.php';
 requireLogin();
 require_once '../../config/db.php';
 
+// MODULE ACCESS CHECK
+if (!hasModuleAccess('import_leads')) {
+    die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to the Import Leads module.');
+}
+
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 $orgId = getOrgId();

@@ -90,9 +90,11 @@ $base = BASE_URL;
             <?php elseif ($userRole === 'org_owner' || $userRole === 'org_admin'): ?>
                 <div class="sidebar-category mt-3">Sales</div>
                 <div class="list-group list-group-flush">
+                    <?php if(hasModuleAccess('leads')): ?>
                     <a href="<?= $base ?>modules/leads/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/leads/') !== false && strpos($requestUri, 'add.php') === false ? 'active-link' : '' ?>">
                         <i class="bi bi-people me-2"></i> Leads
                     </a>
+                    <?php endif; ?>
                     <a href="<?= $base ?>modules/pipeline/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/pipeline/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-kanban me-2"></i> Pipeline
                     </a>
@@ -109,40 +111,54 @@ $base = BASE_URL;
 
                 <div class="sidebar-category mt-3">Management</div>
                 <div class="list-group list-group-flush">
+                    <?php if (hasModuleAccess('users')): ?>
                     <a href="<?= $base ?>modules/users/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/users/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-people-fill me-2"></i> Team
                     </a>
+                    <?php endif; ?>
+                    <?php if (hasModuleAccess('reports')): ?>
                     <a href="<?= $base ?>modules/reports/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/reports/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-bar-chart-fill me-2"></i> Reports
                     </a>
+                    <?php endif; ?>
                 </div>
 
                 <div class="sidebar-category mt-3">Integrations</div>
                 <div class="list-group list-group-flush">
+                    <?php if (hasModuleAccess('facebook_integration')): ?>
                     <a href="<?= $base ?>modules/facebook_integration/facebook_integration_settings.php" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/facebook_integration/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-facebook me-2"></i> Facebook Leads
                     </a>
+                    <?php endif; ?>
+                    <?php if (hasModuleAccess('automation')): ?>
                     <a href="<?= $base ?>modules/automation/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/automation/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-robot me-2"></i> Automation
                     </a>
+                    <?php endif; ?>
                 </div>
 
                 <div class="sidebar-category mt-3">Settings</div>
                 <div class="list-group list-group-flush">
+                    <?php if (hasModuleAccess('org_settings')): ?>
                     <a href="<?= $base ?>modules/settings/organization.php" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/settings/organization') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-building-gear me-2"></i> Org Settings
                     </a>
+                    <?php endif; ?>
+                    <?php if (hasModuleAccess('profile_settings')): ?>
                     <a href="<?= $base ?>modules/settings/" class="list-group-item list-group-item-action bg-transparent <?= (strpos($requestUri, '/modules/settings/') !== false && strpos($requestUri, 'organization.php') === false) ? 'active-link' : '' ?>">
-                        <i class="bi bi-person-gear me-2"></i> Profile & API
+                        <i class="bi bi-code-square me-2"></i> API
                     </a>
+                    <?php endif; ?>
                 </div>
 
             <?php else: // agent ?>
                 <div class="sidebar-category mt-3">My Sales</div>
                 <div class="list-group list-group-flush">
+                    <?php if(hasModuleAccess('leads')): ?>
                     <a href="<?= $base ?>modules/leads/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/leads/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-person-lines-fill me-2"></i> My Leads
                     </a>
+                    <?php endif; ?>
                     <a href="<?= $base ?>modules/pipeline/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/pipeline/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-kanban me-2"></i> Pipeline
                     </a>

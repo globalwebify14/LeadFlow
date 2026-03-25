@@ -3,6 +3,11 @@ $pageTitle = 'Manage Leads';
 require_once '../../config/auth.php';
 requireLogin();
 require_once '../../config/db.php';
+
+// MODULE ACCESS CHECK
+if (!hasModuleAccess('leads')) {
+    die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to the Leads module.');
+}
 require_once '../../models/Lead.php';
 require_once '../../models/User.php';
 
@@ -288,15 +293,21 @@ include '../../includes/header.php';
         <p class="mb-0 text-white-50" style="font-size: 14px;">View, organize, and assign your leads to drive conversions.</p>
     </div>
     <div class="d-flex gap-2" style="z-index: 1;">
+        <?php if (hasModuleAccess('import_leads')): ?>
         <button type="button" class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm" style="font-weight: 500;" data-bs-toggle="modal" data-bs-target="#importModal">
             <i class="bi bi-file-earmark-excel me-1"></i> Import Leads
         </button>
+        <?php endif; ?>
+        
         <a href="<?= BASE_URL ?>modules/leads/export.php?<?= http_build_query($filters) ?>" class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm" style="font-weight: 500;">
             <i class="bi bi-download me-1"></i> Export
         </a>
+        
+        <?php if (hasModuleAccess('manual_leads')): ?>
         <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-light text-primary shadow-sm" style="font-weight: 600;">
             <i class="bi bi-plus-lg me-1"></i> Add Lead
         </a>
+        <?php endif; ?>
     </div>
 </div>
 
