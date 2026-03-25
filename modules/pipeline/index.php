@@ -159,6 +159,59 @@ include '../../includes/header.php';
     background-color: #cbd5e1;
     border-radius: 10px;
 }
+
+/* ============================================================
+   PIPELINE — Mobile Responsive Overhaul
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Filter bar: stack full width */
+    .d-flex.flex-column.flex-md-row.justify-content-between {
+        gap: 10px !important;
+    }
+    .d-flex.flex-column.flex-md-row.justify-content-between form {
+        width: 100%;
+    }
+    .d-flex.flex-column.flex-md-row.justify-content-between form select,
+    .d-flex.flex-column.flex-md-row.justify-content-between form input[type="date"] {
+        width: 100% !important;
+        flex: 1;
+    }
+
+    /* Pipeline board: stack vertically */
+    .pipeline-board {
+        flex-direction: column !important;
+        overflow-x: hidden !important;
+        height: auto !important;
+        gap: 16px !important;
+        padding-bottom: 0 !important;
+    }
+
+    /* Each column: full width, auto height */
+    .pipeline-column {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Cards container: limited height with scroll */
+    .pipeline-cards {
+        max-height: 300px;
+        overflow-y: auto !important;
+    }
+
+    /* Pipeline cards: smaller padding */
+    .pipeline-card .card-body {
+        padding: 10px !important;
+    }
+    .pipeline-card .fw-semibold {
+        font-size: 13px !important;
+    }
+
+    /* Unassigned leads: wrap nicely */
+    .d-flex.flex-wrap.gap-2 .pipeline-card {
+        width: 100% !important;
+    }
+}
 </style>
 
 <script>

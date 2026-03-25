@@ -16,9 +16,15 @@
             });
         }
 
-        // Close sidebar when clicking the overlay on mobile
+        // Close sidebar when clicking the overlay or close button on mobile
+        const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
         if (sidebarOverlay) {
             sidebarOverlay.addEventListener('click', function () {
+                wrapper.classList.remove('toggled');
+            });
+        }
+        if (sidebarCloseBtn) {
+            sidebarCloseBtn.addEventListener('click', function () {
                 wrapper.classList.remove('toggled');
             });
         }

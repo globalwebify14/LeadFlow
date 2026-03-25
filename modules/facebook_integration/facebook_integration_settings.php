@@ -48,7 +48,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 include '../../includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+@media (max-width: 768px) {
+    .fb-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    .fb-header h4 { font-size: 1.05rem; }
+    .fb-header p { font-size: 11px !important; }
+    .fb-header form .btn { width: 100%; }
+
+    /* Cards: tighter padding */
+    .card .card-body { padding: 14px !important; }
+    .card .card-header { padding: 14px 14px 0 !important; }
+
+    /* Webhook inputs: allow horizontal scroll for long URLs */
+    .input-group input.form-control { font-size: 11px !important; }
+
+    /* Connected status: reduce icon size */
+    .card-body .bi-check-circle-fill,
+    .card-body .bi-facebook { font-size: 2rem !important; }
+
+    /* Pages list: stack badge below */
+    .list-group-item .d-flex.justify-content-between {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px;
+    }
+
+    /* Forms table */
+    .table-responsive { overflow-x: hidden !important; }
+    .table th, .table td { font-size: 12px !important; padding: 8px !important; }
+    .font-monospace { font-size: 10px !important; word-break: break-all; }
+}
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 fb-header">
     <div>
         <h4 class="fw-bold mb-1"><i class="bi bi-facebook text-primary me-2"></i>Facebook Lead Ads</h4>
         <p class="text-muted small mb-0">Connect your Facebook account to automatically sync leads from your ad campaigns.</p>

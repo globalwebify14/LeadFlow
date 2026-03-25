@@ -53,7 +53,77 @@ if ($isSuperAdmin) {
 include '../../includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+@media (max-width: 768px) {
+    .team-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    .team-header h4 { font-size: 1.1rem; }
+    .team-header a.btn { width: 100%; text-align: center; }
+
+    /* Table to card */
+    .team-card-table { display: block; width: 100%; }
+    .team-card-table thead { display: none; }
+    .team-card-table tbody, .team-card-table tr, .team-card-table td { display: block; }
+    .team-card-table tr {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .team-card-table td {
+        padding: 5px 0 !important;
+        border: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .team-card-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #94a3b8;
+        white-space: nowrap;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    /* User cell: full width, no label */
+    .team-card-table td.cell-user::before { display: none; }
+    .team-card-table td.cell-user {
+        display: flex !important;
+        padding-bottom: 8px !important;
+        border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    }
+
+    /* Email */
+    .team-card-table td.cell-email { font-size: 12px; }
+
+    /* Hide verbose columns */
+    .team-card-table td.cell-login,
+    .team-card-table td.cell-account { display: none !important; }
+
+    /* Availability dropdown: take remaining space */
+    .team-card-table td.cell-avail select { width: auto !important; flex: 1; max-width: 200px; }
+
+    /* Actions: align right, no label */
+    .team-card-table td.cell-actions::before { display: none; }
+    .team-card-table td.cell-actions {
+        justify-content: flex-end !important;
+        padding-top: 8px !important;
+        border-top: 1px solid rgba(0,0,0,0.05) !important;
+    }
+
+    .table-responsive { overflow-x: hidden !important; }
+}
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 team-header">
     <div>
         <h4 class="fw-bold mb-1"><i class="bi bi-people me-2 text-primary"></i>Team Management</h4>
         <p class="text-muted small mb-0"><?= count($users) ?> member<?= count($users) !== 1 ? 's' : '' ?> found</p>
@@ -105,7 +175,7 @@ include '../../includes/header.php';
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0 team-card-table">
                 <thead class="table-light">
                     <tr>
                         <th>User</th>
@@ -122,15 +192,15 @@ include '../../includes/header.php';
                     <?php if (!empty($users)): ?>
                         <?php foreach ($users as $u): ?>
                         <tr>
-                            <td>
+                            <td class="cell-user">
                                 <div class="d-flex align-items-center">
                                     <div class="rounded-circle d-flex align-items-center justify-content-center me-2 text-white flex-shrink-0" style="width:36px;height:36px;font-size:13px;background:linear-gradient(135deg,#6366f1,#4f46e5);"><?= getInitials($u['name']) ?></div>
                                     <div><div class="fw-semibold small"><?= e($u['name']) ?></div></div>
                                 </div>
                             </td>
-                            <td class="text-muted small"><?= e($u['email']) ?></td>
+                            <td class="text-muted small cell-email" data-label="Email"><?= e($u['email']) ?></td>
                             <?php if ($isSuperAdmin): ?>
-                            <td>
+                            <td data-label="Organization">
                                 <?php if ($u['org_name']): ?>
                                     <a href="<?= BASE_URL ?>modules/organizations/view.php?id=<?= $u['organization_id'] ?>" class="badge bg-primary bg-opacity-10 text-primary text-decoration-none">
                                         <?= e($u['org_name']) ?>
@@ -140,7 +210,7 @@ include '../../includes/header.php';
                                 <?php endif; ?>
                             </td>
                             <?php endif; ?>
-                            <td>
+                            <td data-label="Role">
                                 <?php
                                 $roleBadge = ['org_owner'=>'primary','org_admin'=>'info','team_lead'=>'warning','agent'=>'secondary','super_admin'=>'danger'];
                                 $roleLabel = ['org_owner'=>'Org Owner','org_admin'=>'Org Admin','team_lead'=>'Team Lead','agent'=>'Agent','super_admin'=>'Super Admin'];
@@ -148,16 +218,16 @@ include '../../includes/header.php';
                                 ?>
                                 <span class="badge bg-<?= $roleBadge[$r] ?? 'secondary' ?> bg-opacity-10 text-<?= $roleBadge[$r] ?? 'secondary' ?>"><?= $roleLabel[$r] ?? $r ?></span>
                             </td>
-                            <td><span class="badge bg-<?= $u['is_active'] ? 'success' : 'danger' ?> bg-opacity-10 text-<?= $u['is_active'] ? 'success' : 'danger' ?>"><?= $u['is_active'] ? 'Active' : 'Inactive' ?></span></td>
-                            <td>
+                            <td class="cell-account" data-label="Account"><span class="badge bg-<?= $u['is_active'] ? 'success' : 'danger' ?> bg-opacity-10 text-<?= $u['is_active'] ? 'success' : 'danger' ?>"><?= $u['is_active'] ? 'Active' : 'Inactive' ?></span></td>
+                            <td class="cell-avail" data-label="Availability">
                                 <select class="form-select form-select-sm border border-secondary border-opacity-25 fw-semibold" style="width: 165px; font-size: 12px; cursor: pointer; background-color: var(--bs-light);" onchange="updateAvailability(<?= $u['id'] ?>, this.value, this)">
                                     <option value="active" <?= ($u['availability_status'] ?? 'active') === 'active' ? 'selected' : '' ?>>🟢 Receiving Leads</option>
                                     <option value="absent" <?= ($u['availability_status'] ?? 'active') === 'absent' ? 'selected' : '' ?>>🟡 Absent Today</option>
                                     <option value="inactive" <?= ($u['availability_status'] ?? 'active') === 'inactive' ? 'selected' : '' ?>>⚪ Inactive</option>
                                 </select>
                             </td>
-                            <td class="small text-muted"><?= $u['last_login'] ? timeAgo($u['last_login']) : 'Never' ?></td>
-                            <td>
+                            <td class="small text-muted cell-login" data-label="Last Login"><?= $u['last_login'] ? timeAgo($u['last_login']) : 'Never' ?></td>
+                            <td class="cell-actions">
                                 <div class="btn-group btn-group-sm">
                                     <a href="<?= BASE_URL ?>modules/users/edit.php?id=<?= $u['id'] ?>" class="btn btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
                                     <?php if ($u['id'] != getUserId()): ?>

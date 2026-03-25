@@ -284,6 +284,188 @@ include '../../includes/header.php';
 .btn-add-note-modern:hover {
     color: #1d4ed8;
 }
+
+/* ============================================================
+   LEADS TABLE — Desktop Overflow Fix
+   ============================================================ */
+#page-content-wrapper {
+    overflow-x: hidden;
+}
+.leads-table-card {
+    overflow: hidden;
+}
+.table-modern {
+    table-layout: fixed;
+    width: 100%;
+}
+.table-modern th,
+.table-modern td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.table-modern td[data-label="Context / Notes"] {
+    white-space: normal;
+}
+.table-modern td[data-label="Lead Name"] .d-flex {
+    overflow: hidden;
+}
+
+/* ============================================================
+   LEADS MODULE — Compact Mobile Cards
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Hero header: stack vertically */
+    .page-header-bg {
+        padding: 16px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    .page-header-bg h4 { font-size: 1rem; }
+    .page-header-bg p { font-size: 11px !important; display: none; }
+    .page-header-bg .d-flex.gap-2 {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+    .page-header-bg .d-flex.gap-2 .btn,
+    .page-header-bg .d-flex.gap-2 a.btn {
+        flex: 1;
+        font-size: 11px !important;
+        padding: 7px 8px !important;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* Filter card */
+    .filter-card .card-body { padding: 10px !important; }
+    .filter-card .col-6 { flex: 0 0 50% !important; max-width: 50% !important; }
+    .filter-input { font-size: 12px !important; padding: 7px 10px !important; }
+
+    /* Leads card header */
+    .leads-table-card .card-header {
+        padding: 12px 14px 6px !important;
+    }
+
+    /* Bulk bar */
+    .bulk-bar {
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 10px !important;
+    }
+    .bulk-bar .d-flex.align-items-center.gap-3 { flex-wrap: wrap; width: 100%; }
+    .bulk-bar select { width: 100% !important; }
+    .bulk-bar button { width: 100%; }
+
+    /* ---- COMPACT CARD REDESIGN ---- */
+    .mobile-card-table tr {
+        padding: 12px !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* Hide the verbose labels above each cell */
+    .mobile-card-table td::before {
+        display: none !important;
+    }
+
+    /* All cells: clean vertical stacking, no borders */
+    .mobile-card-table td {
+        flex-direction: row !important;
+        align-items: center !important;
+        text-align: left !important;
+        padding: 4px 0 !important;
+        min-height: unset !important;
+        border-bottom: none !important;
+    }
+
+    /* Hide checkbox on mobile */
+    .mobile-card-table td.checkbox-cell {
+        display: none !important;
+    }
+
+    /* LEAD NAME cell: compact row with avatar, name, badges */
+    .mobile-card-table td[data-label="Lead Name"] {
+        padding: 0 0 6px 0 !important;
+        border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    }
+    .mobile-card-table td[data-label="Lead Name"] .lead-avatar-small {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    .mobile-card-table td[data-label="Lead Name"] .lead-name-modern {
+        max-width: 100% !important;
+        font-size: 13px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .mobile-card-table td[data-label="Lead Name"] .d-flex.align-items-center.gap-3 {
+        gap: 8px !important;
+    }
+    /* Hide date line under name */
+    .mobile-card-table td[data-label="Lead Name"] .text-muted.d-flex {
+        display: none !important;
+    }
+
+    /* CONTACT INFO cell: inline phone + action pills */
+    .mobile-card-table td[data-label="Contact Info"] {
+        padding: 6px 0 !important;
+    }
+    .mobile-card-table td[data-label="Contact Info"] .phone-number {
+        font-size: 13px;
+        max-width: 100% !important;
+    }
+    .mobile-card-table td[data-label="Contact Info"] .text-muted.text-truncate {
+        display: none !important;
+    }
+    .mobile-card-table td[data-label="Contact Info"] .d-flex.gap-2.mt-2 {
+        margin-top: 6px !important;
+    }
+
+    /* CONTEXT / NOTES: hide entirely on mobile */
+    .mobile-card-table td[data-label="Context / Notes"] {
+        display: none !important;
+    }
+
+    /* PIPELINE, ASSIGNMENT: inline badges row */
+    .mobile-card-table td[data-label="Pipeline"],
+    .mobile-card-table td[data-label="Assignment"] {
+        display: inline-flex !important;
+        padding: 3px 0 !important;
+        margin-right: 8px;
+    }
+
+    /* STATUS: hide on mobile (Pipeline badge already shows it) */
+    .mobile-card-table td[data-label="Status"] {
+        display: none !important;
+    }
+
+    /* ACTIONS cell: inline with badges, push right */
+    .mobile-card-table td[data-label="Actions"] {
+        display: inline-flex !important;
+        margin-left: auto;
+        padding: 3px 0 !important;
+        border-top: none !important;
+    }
+    .mobile-card-table td[data-label="Actions"] .btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    /* Pagination */
+    .d-flex.justify-content-between.align-items-center.py-4.px-4 {
+        flex-direction: column !important;
+        gap: 10px;
+        padding: 14px !important;
+    }
+    .pagination-modern .page-link { font-size: 11px; padding: 4px 8px; }
+
+    /* Overflow prevention */
+    .table-responsive { overflow-x: hidden !important; min-height: auto !important; }
+    .leads-table-card { overflow: hidden; }
+}
 </style>
 
 <!-- Hero Header -->
@@ -416,7 +598,7 @@ include '../../includes/header.php';
             </div>
 
             <div class="table-responsive border-0" style="min-height: 400px; padding-bottom: 2rem;">
-                <table class="table table-modern table-hover align-middle mb-0 w-100">
+                <table class="table table-modern table-hover align-middle mb-0 w-100 mobile-card-table">
                     <thead>
                         <tr>
                             <th width="40" class="ps-4"><input type="checkbox" id="selectAll" class="form-check-input custom-checkbox"></th>
@@ -436,10 +618,10 @@ include '../../includes/header.php';
                     <tbody>
                         <?php foreach ($leads as $lead): ?>
                         <tr>
-                            <td class="ps-4">
+                            <td class="ps-4 checkbox-cell">
                                 <input type="checkbox" name="lead_ids[]" value="<?= $lead['id'] ?>" class="form-check-input custom-checkbox lead-check">
                             </td>
-                            <td>
+                            <td data-label="Lead Name">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="lead-avatar-small">
                                         <?= strtoupper(substr($lead['name'], 0, 1)) ?>
@@ -467,7 +649,7 @@ include '../../includes/header.php';
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Contact Info">
                                 <div class="d-flex flex-column gap-1">
                                     <div class="phone-number text-truncate" style="max-width: 140px;">
                                         <?= trim(e($lead['phone'] ?: '—')) ?>
@@ -490,8 +672,8 @@ include '../../includes/header.php';
                                     <?php endif; ?>
                                 </div>
                             </td>
-                            <td>
-                                <?php 
+                            <td data-label="Context / Notes">
+                                <?php  
                                 $previewNote = $lead['note'] ?? '';
                                 $previewNote = trim(str_replace("--- Facebook Lead Form Data ---", "", $previewNote));
                                 $previewNote = preg_replace('/(Full Name|Phone|Email):\s*.*?\n/i', '', $previewNote); // Strip redundant FB fields
@@ -515,7 +697,7 @@ include '../../includes/header.php';
                                 </div>
                             </td>
                             <?php if ($userRole !== 'agent'): ?>
-                            <td>
+                            <td data-label="Pipeline">
                                 <?php if ($lead['stage_name']): ?>
                                     <span class="badge rounded-pill text-white" style="background: <?= e($lead['stage_color'] ?: '#64748b') ?>; font-size: 9px; padding: 2px 8px; font-weight: 600;">
                                         <?= e($lead['stage_name']) ?>
@@ -526,7 +708,7 @@ include '../../includes/header.php';
                             </td>
                             <?php endif; ?>
                             <?php if ($userRole !== 'agent'): ?>
-                            <td>
+                            <td data-label="Assignment">
                                 <?php 
                                 $assignedAgentName = 'Unassigned';
                                 foreach($agents as $ag) { if($ag['id'] == $lead['assigned_to']) { $assignedAgentName = $ag['name']; break; } }
@@ -555,7 +737,7 @@ include '../../includes/header.php';
                                 <?php endforeach; ?>
                             </td>
                             <?php endif; ?>
-                            <td>
+                            <td data-label="Status">
                                 <?php if ($userRole === 'agent'): ?>
                                     <select class="agent-status-modern agent-quick-status" data-lead-id="<?= $lead['id'] ?>">
                                         <?php foreach ($pipelineStages as $ps): ?>
@@ -566,7 +748,7 @@ include '../../includes/header.php';
                                     <span class="badge <?= getStatusBadgeClass($lead['status']) ?> rounded-pill" style="font-size: 10px; padding: 4px 10px;"><?= e($lead['status']) ?></span>
                                 <?php endif; ?>
                             </td>
-                            <td class="text-end pe-4">
+                            <td class="text-end pe-4" data-label="Actions">
                                 <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="btn btn-light btn-sm rounded-circle d-inline-flex align-items-center justify-content-center border" style="width: 28px; height: 28px;" title="View Detail">
                                     <i class="bi bi-arrow-right text-primary" style="font-size: 12px;"></i>
                                 </a>

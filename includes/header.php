@@ -38,19 +38,17 @@ if (!empty($_SESSION['organization_id'])) {
             <nav class="navbar navbar-expand-lg px-4 py-3" style="position:relative;z-index:1050;">
                 <div class="d-flex align-items-center">
                     <button class="btn btn-outline-primary shadow-sm rounded-pill px-3 me-3 border-1 bg-white text-primary" id="menu-toggle" style="border-color: #e2e8f0 !important;"><i class="bi bi-list"></i></button>
-                    <h5 class="m-0 text-dark fw-bold"><?= $pageTitle ?? 'Dashboard' ?></h5>
+                    <h5 class="m-0 text-dark fw-bold hidden-mobile"><?= e($pageTitle ?? 'Dashboard') ?></h5>
                 </div>
                 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"><span class="navbar-toggler-icon"></span></button>
-
-                <div class="collapse navbar-collapse" id="navbarContent">
-                    <form class="ms-auto d-flex my-2 my-lg-0" action="leads.php" method="GET">
-                        <div class="input-group" style="width: 300px;">
+                <div class="d-flex align-items-center ms-auto">
+                    <form class="d-flex me-2 me-md-4 hidden-mobile" action="leads.php" method="GET">
+                        <div class="input-group" style="width: 260px;">
                             <input type="text" class="form-control" placeholder="Search leads..." name="search">
                             <button class="btn btn-search" type="submit"><i class="bi bi-search"></i></button>
                         </div>
                     </form>
-                    <ul class="navbar-nav ms-3 align-items-center">
+                    <ul class="navbar-nav flex-row align-items-center mb-0 gap-2 gap-md-3">
                         <!-- Notifications -->
                         <li class="nav-item dropdown me-2">
                             <a class="nav-link position-relative p-2" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">

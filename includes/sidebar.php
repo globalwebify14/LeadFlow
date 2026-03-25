@@ -38,13 +38,18 @@ $base = BASE_URL;
 
     <!-- Sidebar -->
     <div id="sidebar-wrapper" class="text-white border-end shadow-sm d-flex flex-column" style="background-color: var(--sidebar-bg); border-color: rgba(255,255,255,0.05) !important; height: 100vh; position: fixed; width: var(--sidebar-width); z-index: 1060; transition: all 0.3s;">
-        <div class="sidebar-heading px-4 py-4 fs-5 fw-bold d-flex align-items-center flex-shrink-0">
-            <?php if (!empty($orgLogoHeader) && in_array(getUserRole(), ['org_owner', 'org_admin', 'team_lead', 'agent'])): ?>
-                <img src="<?= e($orgLogoHeader) ?>" class="me-2 rounded border border-secondary" style="height:32px;width:auto;max-width:140px;object-fit:contain;background:white;" alt="Org Logo">
-            <?php else: ?>
-                <i class="bi bi-rocket-takeoff text-primary me-2 fs-4"></i>
-                <span style="letter-spacing:0.5px;">LEAD CRM [S]</span>
-            <?php endif; ?>
+        <div class="sidebar-heading px-4 py-4 fs-5 fw-bold d-flex align-items-center justify-content-between flex-shrink-0">
+            <div class="d-flex align-items-center">
+                <?php if (!empty($orgLogoHeader) && in_array(getUserRole(), ['org_owner', 'org_admin', 'team_lead', 'agent'])): ?>
+                    <img src="<?= e($orgLogoHeader) ?>" class="me-2 rounded border border-secondary" style="height:32px;width:auto;max-width:140px;object-fit:contain;background:white;" alt="Org Logo">
+                <?php else: ?>
+                    <i class="bi bi-rocket-takeoff text-primary me-2 fs-4"></i>
+                    <span style="letter-spacing:0.5px;">LEAD CRM [S]</span>
+                <?php endif; ?>
+            </div>
+            <button class="btn btn-sm text-white border-0 d-md-none p-0 ms-2" id="sidebar-close-btn" type="button">
+                <i class="bi bi-x-lg fs-5 opacity-75"></i>
+            </button>
         </div>
         
         <div class="sidebar-scrollable" style="flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 20px;">

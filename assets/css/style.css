@@ -686,8 +686,17 @@ h6,
         margin-left: 0;
     }
 
-    .toggled #page-content-wrapper {
-        margin-left: var(--sidebar-width);
+    /* Global Mobile Padding Compression */
+    #page-content-wrapper > .px-4,
+    .container-fluid.px-4,
+    .container-fluid {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+    
+    .navbar.px-4 {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
     }
 
     .stat-card-number {
@@ -1259,5 +1268,195 @@ h6,
 
     .section-header h2 {
         font-size: 2.5rem;
+    }
+}
+
+/* ================================
+   GLOBAL RESPONSIVENESS (14-FEATURE OVERHAUL)
+   ================================ */
+
+/* --- 1. Utilities --- */
+@media (max-width: 768px) {
+    .hidden-mobile { display: none !important; }
+    .flex-mobile-column { flex-direction: column !important; }
+    .w-mobile-100 { width: 100% !important; }
+}
+
+@media (min-width: 769px) {
+    .hidden-desktop { display: none !important; }
+}
+
+/* --- 2. Sidebar Overlay Drawer --- */
+#sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 1055;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.toggled #sidebar-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- 3. Forms & Buttons (Mobile Touch Optimization) --- */
+@media (max-width: 768px) {
+    .form-control, .form-select {
+        height: 48px;
+        font-size: 16px;
+    }
+    
+    .btn:not(.btn-sm) {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+    
+    form .btn[type="submit"], 
+    .modal-footer .btn {
+        width: 100%;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 8px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* --- 4. Modals --- */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 0.5rem;
+        width: calc(100% - 1rem);
+        max-width: none;
+    }
+    .modal-content {
+        border-radius: 20px;
+    }
+}
+
+/* --- 5. Header Compression --- */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 10px 15px !important;
+    }
+    .navbar .input-group {
+        width: 100% !important;
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+    #navbarContent {
+        padding-top: 10px;
+    }
+    .navbar-nav {
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 15px;
+    }
+}
+
+/* --- 6. Table to Card Layout (Option A) --- */
+@media (max-width: 768px) {
+    .mobile-card-table {
+        display: block;
+        width: 100%;
+        background: transparent !important;
+    }
+    .mobile-card-table thead,
+    .mobile-card-table tbody,
+    .mobile-card-table th,
+    .mobile-card-table td,
+    .mobile-card-table tr {
+        display: block;
+    }
+
+    .mobile-card-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .mobile-card-table tr {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    
+    .mobile-card-table tbody tr:hover {
+        background-color: #fff;
+    }
+
+    .mobile-card-table td {
+        border: none;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        position: relative;
+        padding: 10px 0;
+        text-align: right;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 40px;
+    }
+
+    .mobile-card-table td:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .mobile-card-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        text-align: left;
+        margin-right: 15px;
+        white-space: nowrap;
+    }
+    
+    .mobile-card-table td.checkbox-cell {
+        justify-content: flex-start;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .mobile-card-table td.checkbox-cell::before {
+        display: none;
+    }
+}
+
+/* --- 7. Mobile Navigation Dropdown Overlay --- */
+@media (max-width: 768px) {
+    .navbar-nav .dropdown {
+        position: static !important;
+    }
+    .navbar-nav .dropdown-menu {
+        position: absolute;
+        width: calc(100vw - 32px) !important;
+        left: 16px !important;
+        right: 16px !important;
+        top: 70px !important;
+        transform: none !important;
+        border-radius: 16px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
+        margin-top: 0;
     }
 }

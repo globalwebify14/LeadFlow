@@ -36,7 +36,65 @@ $sequences = $automation->getSequences($orgId);
 include '../../includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+@media (max-width: 768px) {
+    .auto-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    .auto-header h4 { font-size: 1.1rem; }
+    .auto-header .btn { width: 100%; }
+
+    /* Table to card */
+    .auto-card-table { display: block; width: 100%; }
+    .auto-card-table thead { display: none; }
+    .auto-card-table tbody, .auto-card-table tr, .auto-card-table td { display: block; }
+    .auto-card-table tr {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .auto-card-table td {
+        padding: 4px 0 !important;
+        border: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .auto-card-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    /* Name cell: no label, full width */
+    .auto-card-table td.cell-name::before { display: none; }
+    .auto-card-table td.cell-name {
+        padding-bottom: 6px !important;
+        border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    }
+    .auto-card-table td.cell-name a { font-size: 14px; }
+
+    /* Actions: right-aligned, no label */
+    .auto-card-table td.cell-actions::before { display: none; }
+    .auto-card-table td.cell-actions {
+        justify-content: flex-end !important;
+        padding-top: 6px !important;
+        border-top: 1px solid rgba(0,0,0,0.05) !important;
+    }
+
+    .table-responsive { overflow-x: hidden !important; }
+}
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 auto-header">
     <h4 class="fw-bold mb-0">Automation Sequences</h4>
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
         <i class="bi bi-plus-lg me-2"></i>New Sequence
@@ -46,7 +104,7 @@ include '../../includes/header.php';
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0 auto-card-table">
                 <thead class="bg-light">
                     <tr>
                         <th class="ps-4">Sequence Name</th>
@@ -58,16 +116,16 @@ include '../../includes/header.php';
                 <tbody>
                     <?php foreach ($sequences as $s): ?>
                     <tr>
-                        <td class="ps-4">
+                        <td class="ps-4 cell-name" data-label="">
                             <a href="edit.php?id=<?= $s['id'] ?>" class="fw-bold text-decoration-none text-dark"><?= e($s['name']) ?></a>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             <span class="badge rounded-pill <?= $s['is_active'] ? 'bg-success' : 'bg-secondary' ?> bg-opacity-10 text-<?= $s['is_active'] ? 'success' : 'secondary' ?> px-3">
                                 <?= $s['is_active'] ? 'Active' : 'Inactive' ?>
                             </span>
                         </td>
-                        <td><?= formatDate($s['created_at']) ?></td>
-                        <td class="text-end pe-4">
+                        <td data-label="Created"><?= formatDate($s['created_at']) ?></td>
+                        <td class="text-end pe-4 cell-actions">
                             <a href="edit.php?id=<?= $s['id'] ?>" class="btn btn-sm btn-light border me-1"><i class="bi bi-pencil"></i></a>
                             <form action="" method="POST" class="d-inline" onsubmit="return confirm('Delete this sequence?')">
                                 <input type="hidden" name="id" value="<?= $s['id'] ?>">

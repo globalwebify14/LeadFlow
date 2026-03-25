@@ -305,6 +305,99 @@ include '../../includes/header.php';
     display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all .2s;
 }
 .btn-add-floating:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(99,102,241,0.3); }
+
+/* ============================================================
+   LEAD DETAIL — Mobile Responsive
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Hero card: compress */
+    .ld-hero {
+        padding: 16px !important;
+        border-radius: 14px;
+        margin-bottom: 16px;
+    }
+
+    /* Avatar: smaller */
+    .lead-avatar-lg {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        font-size: 16px;
+    }
+
+    /* Name: scale down */
+    .ld-name {
+        font-size: 1.15rem !important;
+        letter-spacing: -0.3px;
+    }
+    .ld-sub { font-size: 11px; }
+
+    /* Badges: tighter */
+    .ld-badge {
+        font-size: 10px;
+        padding: 3px 9px;
+    }
+
+    /* Avatar + name gap */
+    .ld-hero .d-flex.align-items-center.gap-4 {
+        gap: 12px !important;
+    }
+
+    /* Top row: stack vertically */
+    .ld-hero .d-flex.align-items-start.justify-content-between {
+        flex-direction: column !important;
+        gap: 12px;
+    }
+
+    /* Action buttons: full width row */
+    .ld-hero .d-flex.flex-wrap.gap-2.align-items-center {
+        width: 100%;
+    }
+    .btn-wa, .btn-call, .btn-email {
+        flex: 1;
+        justify-content: center;
+        padding: 9px 10px !important;
+        font-size: 12px !important;
+        border-radius: 10px;
+    }
+    .btn-icon-ghost {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    /* Quick Status pills: scrollable row */
+    .ld-hero .mt-4.pt-3 {
+        margin-top: 12px !important;
+        padding-top: 10px !important;
+    }
+    .status-pill-btn {
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+
+    /* Info cards: tighter padding */
+    .ld-card { border-radius: 14px; margin-bottom: 14px; }
+    .ld-card-header { padding: 14px 16px 0; }
+    .ld-card-body { padding: 12px 16px 14px; }
+
+    /* Info rows */
+    .info-row { gap: 10px; padding: 10px 0; }
+    .info-icon { width: 30px; height: 30px; border-radius: 8px; font-size: 13px; }
+    .info-value { font-size: 13px; word-break: break-word; }
+
+    /* Note textarea */
+    .note-input { font-size: 12px; padding: 10px 12px; }
+    .note-submit { font-size: 12px; padding: 8px 14px; }
+
+    /* Timeline */
+    .tl-dot { width: 28px; height: 28px; font-size: 12px; }
+    .tl-desc { font-size: 12px; }
+
+    /* Back link */
+    .back-link { font-size: 12px; margin-bottom: 10px; }
+
+    /* Scrollable sections: shorter on mobile */
+    .scroll-y { max-height: 300px; }
+}
 </style>
 
 <!-- ═══════════════ BACK NAVIGATION ═══════════════ -->

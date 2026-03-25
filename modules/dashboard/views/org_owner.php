@@ -116,9 +116,26 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, null);
     gap: 14px;
     margin-bottom: 28px;
 }
-@media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 768px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px)  { .kpi-grid { grid-template-columns: 1fr; } }
+@media (max-width: 480px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+/* Mobile Dashboard Compression */
+@media (max-width: 768px) {
+    .dash-hero { padding: 20px 18px; }
+    .hero-stats-row { gap: 10px; margin-top: 18px; }
+    .hero-stat-pill { min-width: 45%; flex: 1; padding: 12px 14px; }
+    .hero-stat-pill .hval { font-size: 0.85rem; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; line-height: 1.1; }
+    .hero-actions { width: 100%; justify-content: stretch; }
+    .hero-actions .btn-hero-primary, .hero-actions .btn-hero-secondary { flex: 1; justify-content: center; }
+    .dash-card-header { padding: 14px 16px 0; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .dash-card-header .ms-auto, .dash-card-header a { align-self: flex-start; }
+    .dash-card-body { padding: 12px 16px 16px; }
+    .kpi-card { padding: 16px 14px 14px; }
+    .kpi-card .kpi-value { font-size: 0.85rem; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; line-height: 1.1; }
+    .kpi-card .kpi-icon { width: 34px; height: 34px; font-size: 15px; margin-bottom: 10px; }
+    .kpi-card .kpi-label { font-size: 10px; }
+    .kpi-card .kpi-sub { font-size: 10px; }
+}
 
 .kpi-card {
     background: #fff;

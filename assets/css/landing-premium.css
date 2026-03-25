@@ -25,11 +25,15 @@
 .text-secondary { color: var(--lp-secondary) !important; }
 .bg-secondary { background-color: var(--lp-secondary) !important; }
 
+html,
 body.lp-body {
     font-family: 'Inter', sans-serif;
     color: var(--lp-text);
     background-color: var(--lp-bg);
     overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 h1, h2, h3, h4, .lp-font-poppins {
@@ -317,6 +321,7 @@ h2 { letter-spacing: -0.02em; font-weight: 700; }
     .lp-problem-box { padding: 40px 24px; border-radius: 24px; }
     .display-4 { font-size: 2rem !important; }
     .display-5 { font-size: 1.75rem !important; }
+    .lp-floating-card { display: none !important; }
 }
 
 @media (max-width: 480px) {
