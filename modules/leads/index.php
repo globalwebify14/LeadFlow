@@ -385,69 +385,39 @@ include '../../includes/header.php';
     }
 
     /* LEAD NAME cell: compact row with avatar, name, badges */
-    .mobile-card-table td[data-label="Lead Name"] {
+    .mobile-card-table td[data-label="Name"] {
         padding: 0 0 6px 0 !important;
         border-bottom: 1px solid rgba(0,0,0,0.05) !important;
     }
-    .mobile-card-table td[data-label="Lead Name"] .lead-avatar-small {
-        width: 32px;
-        height: 32px;
-        font-size: 12px;
-    }
-    .mobile-card-table td[data-label="Lead Name"] .lead-name-modern {
+    .mobile-card-table td[data-label="Name"] .lead-name-modern {
         max-width: 100% !important;
         font-size: 13px !important;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .mobile-card-table td[data-label="Lead Name"] .d-flex.align-items-center.gap-3 {
-        gap: 8px !important;
-    }
-    /* Hide date line under name */
-    .mobile-card-table td[data-label="Lead Name"] .text-muted.d-flex {
-        display: none !important;
-    }
 
-    /* CONTACT INFO cell: inline phone + action pills */
-    .mobile-card-table td[data-label="Contact Info"] {
+    /* PHONE cell: inline phone + action pills */
+    .mobile-card-table td[data-label="Phone"] {
         padding: 6px 0 !important;
     }
-    .mobile-card-table td[data-label="Contact Info"] .phone-number {
-        font-size: 13px;
-        max-width: 100% !important;
-    }
-    .mobile-card-table td[data-label="Contact Info"] .text-muted.text-truncate {
-        display: none !important;
-    }
-    .mobile-card-table td[data-label="Contact Info"] .d-flex.gap-2.mt-2 {
+    .mobile-card-table td[data-label="Phone"] .d-flex.gap-2.mt-1 {
         margin-top: 6px !important;
     }
 
-    /* CONTEXT / NOTES: hide entirely on mobile */
-    .mobile-card-table td[data-label="Context / Notes"] {
+    /* Keep Source and Priority hidden on mobile to save space */
+    .mobile-card-table td[data-label="Source"],
+    .mobile-card-table td[data-label="Priority"] {
         display: none !important;
     }
 
-    /* PIPELINE, ASSIGNMENT: inline badges row */
+    /* PIPELINE, STATUS, ASSIGNED: inline badges row */
     .mobile-card-table td[data-label="Pipeline"],
-    .mobile-card-table td[data-label="Assignment"] {
+    .mobile-card-table td[data-label="Status"],
+    .mobile-card-table td[data-label="Assigned"] {
         display: inline-flex !important;
-        padding: 3px 0 !important;
+        padding: 6px 0 !important;
         margin-right: 8px;
-    }
-
-    /* STATUS: hide on mobile (Pipeline badge already shows it) */
-    .mobile-card-table td[data-label="Status"] {
-        display: none !important;
-    }
-
-    /* ACTIONS cell: inline with badges, push right */
-    .mobile-card-table td[data-label="Actions"] {
-        display: inline-flex !important;
-        margin-left: auto;
-        padding: 3px 0 !important;
-        border-top: none !important;
     }
     .mobile-card-table td[data-label="Actions"] .btn {
         width: 34px;
@@ -601,133 +571,137 @@ include '../../includes/header.php';
                 <table class="table table-modern table-hover align-middle mb-0 w-100 mobile-card-table">
                     <thead>
                         <tr>
-                            <th width="40" class="ps-4"><input type="checkbox" id="selectAll" class="form-check-input custom-checkbox"></th>
-                            <th>Lead Name</th>
-                            <th>Contact Info</th>
-                            <th>Context / Notes</th>
+                            <th width="40" class="ps-4 border-0 text-muted" style="font-size:10px;font-weight:600;letter-spacing:0.5px;"><input type="checkbox" id="selectAll" class="form-check-input custom-checkbox"></th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 20%;">Name</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Phone</th>
                             <?php if ($userRole !== 'agent'): ?>
-                                <th width="90">Pipeline</th>
+                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Status</th>
+                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Pipeline</th>
                             <?php endif; ?>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Priority</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Source</th>
                             <?php if ($userRole !== 'agent'): ?>
-                                <th width="130">Assignment</th>
+                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px;">Assigned</th>
                             <?php endif; ?>
-                            <th width="100">Status</th>
-                            <th width="80" class="text-end pe-4">Actions</th>
+                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody style="border-top: none;">
                         <?php foreach ($leads as $lead): ?>
                         <tr>
-                            <td class="ps-4 checkbox-cell">
+                            <td class="ps-4 checkbox-cell border-bottom border-light py-3">
                                 <input type="checkbox" name="lead_ids[]" value="<?= $lead['id'] ?>" class="form-check-input custom-checkbox lead-check">
                             </td>
-                            <td data-label="Lead Name">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="lead-avatar-small">
-                                        <?= strtoupper(substr($lead['name'], 0, 1)) ?>
-                                    </div>
-                                    <div>
-                                        <div class="d-flex align-items-center gap-2 mb-1">
-                                            <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="lead-name-modern text-truncate" style="max-width: 140px;">
-                                                <?= e($lead['name']) ?>
-                                            </a>
-                                            <?php if($lead['priority']): ?>
-                                                <span class="<?= strtolower($lead['priority']) === 'hot' ? 'priority-badge-hot' : 'badge bg-light text-muted border' ?>" style="font-size: 9px;"><?= strtoupper($lead['priority']) ?></span>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($lead['source'] === 'facebook'): ?>
-                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1" style="font-size: 9px;"><i class="bi bi-facebook me-1"></i>Facebook</span>
-                                            <?php elseif ($lead['source'] === 'import'): ?>
-                                                <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle ms-1" style="font-size: 9px;"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Import</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle ms-1" style="font-size: 9px;"><i class="bi bi-person-lines-fill me-1"></i>Manual</span>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="text-muted d-flex align-items-center" style="font-size: 11px;">
-                                            <i class="bi bi-calendar3 me-1"></i><?= date('M d, Y', strtotime($lead['created_at'])) ?>
-                                        </div>
-                                    </div>
+                            
+                            <!-- NAME -->
+                            <td data-label="Name" class="border-bottom border-light py-3">
+                                <div class="fw-bold" style="font-size: 13.5px; color: #1e293b;">
+                                    <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="text-decoration-none" style="color: inherit;">
+                                        <?= e($lead['name']) ?>
+                                    </a>
                                 </div>
+                                <?php if($lead['email']): ?>
+                                    <div class="text-muted text-truncate mt-1" style="font-size: 11.5px; max-width: 200px;" title="<?= e($lead['email']) ?>">
+                                        <?= e($lead['email']) ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
-                            <td data-label="Contact Info">
+                            
+                            <!-- PHONE -->
+                            <td data-label="Phone" class="border-bottom border-light py-3">
                                 <div class="d-flex flex-column gap-1">
-                                    <div class="phone-number text-truncate" style="max-width: 140px;">
-                                        <?= trim(e($lead['phone'] ?: '—')) ?>
-                                    </div>
-                                    <?php if($lead['email']): ?>
-                                        <div class="text-muted text-truncate" style="font-size: 11px; max-width: 140px;" title="<?= e($lead['email']) ?>">
-                                            <?= e($lead['email']) ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    
+                                    <span class="text-dark fw-medium" style="font-size: 12.5px; font-family: monospace; letter-spacing: 0.5px;"><?= trim(e($lead['phone'] ?: '—')) ?></span>
                                     <?php if ($lead['phone']): ?>
-                                        <div class="d-flex gap-2 mt-2">
+                                        <div class="d-flex gap-2 mt-1">
                                             <?php $waPhone = preg_replace('/[^0-9]/', '', $lead['phone']); ?>
-                                            <a href="tel:<?= e($lead['phone']) ?>" class="agent-action-pill call" title="Call"><i class="bi bi-telephone"></i></a>
-                                            <a href="https://wa.me/<?= e($waPhone) ?>" target="_blank" class="agent-action-pill wa" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
-                                            <?php if($lead['email']): ?>
-                                                <a href="mailto:<?= e($lead['email']) ?>" class="agent-action-pill email" title="Email"><i class="bi bi-envelope"></i></a>
-                                            <?php endif; ?>
+                                            <a href="tel:<?= e($lead['phone']) ?>" class="btn btn-sm btn-light border d-inline-flex align-items-center justify-content-center text-primary" style="width:28px;height:28px;font-size:12px;border-radius:8px;" title="Call"><i class="bi bi-telephone-fill"></i></a>
+                                            <a href="https://wa.me/<?= e($waPhone) ?>" target="_blank" class="btn btn-sm text-white d-inline-flex align-items-center justify-content-center" style="background-color:#25d366;width:28px;height:28px;font-size:13px;border-radius:8px;" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                             </td>
-                            <td data-label="Context / Notes">
-                                <?php  
-                                $previewNote = $lead['note'] ?? '';
-                                $previewNote = trim(str_replace("--- Facebook Lead Form Data ---", "", $previewNote));
-                                $previewNote = preg_replace('/(Full Name|Phone|Email):\s*.*?\n/i', '', $previewNote); // Strip redundant FB fields
-                                $previewNote = str_replace("\n", " • ", trim($previewNote));
-                                ?>
-                                <div class="text-muted mb-1 text-truncate" style="font-size: 12px; max-width: 180px;" id="note_text_<?= $lead['id'] ?>" title="<?= e($previewNote) ?>">
-                                    <?= e($previewNote ?: '—') ?>
-                                </div>
-                                <div class="d-flex flex-column gap-2 mt-2">
-                                    <?php if ($lead['company']): ?>
-                                        <div class="text-dark fw-semibold text-truncate" style="font-size: 11.5px; max-width: 140px;" title="<?= e($lead['company']) ?>">
-                                            <i class="bi bi-building me-1 text-primary-emphasis"></i><?= e($lead['company']) ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <div>
-                                        <a href="javascript:void(0)" class="btn-add-note-modern" onclick="openQuickNote(<?= $lead['id'] ?>)">
-                                            <i class="bi bi-plus-circle"></i> Add Note
-                                        </a>
-                                    </div>
-                                </div>
-                            </td>
+
+                            <!-- STATUS & PIPELINE -->
                             <?php if ($userRole !== 'agent'): ?>
-                            <td data-label="Pipeline">
+                            <td data-label="Status" class="border-bottom border-light py-3" style="overflow: visible !important;">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm border-0 bg-primary bg-opacity-10 text-primary rounded-pill d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="font-size: 11.5px; padding: 5px 12px; font-weight: 600;">
+                                        <span style="width:6px;height:6px;border-radius:50%;background-color:currentColor;"></span>
+                                        <?= e($lead['status'] ?: 'New Lead') ?>
+                                        <i class="bi bi-chevron-down ms-1" style="font-size: 9px;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu shadow-sm border-0" style="font-size: 12px; border-radius: 12px; min-width: 140px; z-index: 1050;">
+                                        <?php foreach ($pipelineStages as $ps): ?>
+                                            <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('status_<?= $lead['id'] ?>_<?= md5($ps) ?>').submit();"><?= e($ps) ?></a></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                                <?php foreach ($pipelineStages as $ps): ?>
+                                <form id="status_<?= $lead['id'] ?>_<?= md5($ps) ?>" method="POST" style="display:none;">
+                                    <input type="hidden" name="bulk_action" value="<?= e($ps) ?>">
+                                    <input type="hidden" name="lead_ids[]" value="<?= $lead['id'] ?>">
+                                </form>
+                                <?php endforeach; ?>
+                            </td>
+                            
+                            <td data-label="Pipeline" class="border-bottom border-light py-3">
                                 <?php if ($lead['stage_name']): ?>
-                                    <span class="badge rounded-pill text-white" style="background: <?= e($lead['stage_color'] ?: '#64748b') ?>; font-size: 9px; padding: 2px 8px; font-weight: 600;">
+                                    <span class="badge rounded-pill text-white shadow-sm" style="background: <?= e($lead['stage_color'] ?: '#3b82f6') ?>; font-size: 11.5px; padding: 5px 14px; font-weight: 600;">
                                         <?= e($lead['stage_name']) ?>
                                     </span>
                                 <?php else: ?>
-                                    <span class="text-muted small">—</span>
+                                    <span class="badge rounded-pill text-white shadow-sm bg-primary" style="font-size: 11.5px; padding: 5px 14px; font-weight: 600;">New Lead</span>
                                 <?php endif; ?>
                             </td>
                             <?php endif; ?>
+
+                            <!-- PRIORITY -->
+                            <td data-label="Priority" class="border-bottom border-light py-3">
+                                <?php 
+                                    $pri = $lead['priority'] ?: 'Warm';
+                                    $priColor = strtolower($pri) === 'hot' ? '#ef4444' : (strtolower($pri) === 'warm' ? '#f59e0b' : '#64748b');
+                                ?>
+                                <span class="d-inline-flex align-items-center gap-2" style="font-size: 12px; color: <?= $priColor ?>; font-weight: 500;">
+                                    <span style="width:6px;height:6px;border-radius:50%;background-color:currentColor;"></span>
+                                    <?= ucfirst(strtolower($pri)) ?>
+                                </span>
+                            </td>
+
+                            <!-- SOURCE -->
+                            <td data-label="Source" class="border-bottom border-light py-3">
+                                <span class="text-secondary" style="font-size: 12px;">
+                                    <?php 
+                                        $displaySource = $lead['source'] ?: 'manual'; 
+                                        echo $displaySource === 'facebook' ? 'facebook_ads' : e($displaySource);
+                                    ?>
+                                </span>
+                            </td>
+
+                            <!-- ASSIGNED -->
                             <?php if ($userRole !== 'agent'): ?>
-                            <td data-label="Assignment">
+                            <td data-label="Assigned" class="border-bottom border-light py-3" style="overflow: visible !important;">
                                 <?php 
                                 $assignedAgentName = 'Unassigned';
                                 foreach($agents as $ag) { if($ag['id'] == $lead['assigned_to']) { $assignedAgentName = $ag['name']; break; } }
+                                $initial = strtoupper(substr($assignedAgentName, 0, 1));
+                                $colors = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#8b5cf6'];
+                                $color = $colors[ord($initial) % count($colors)];
+                                if ($assignedAgentName === 'Unassigned') $color = '#94a3b8';
                                 ?>
                                 <div class="dropdown">
-                                    <button class="btn btn-sm btn-light bg-white border w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" style="font-size: 11.5px; border-radius: 6px;">
-                                        <span class="text-truncate">
-                                            <?php if($lead['assigned_to']): ?>
-                                                <span class="badge bg-light text-dark border-0 p-0 me-1" style="width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 9px;"><?= strtoupper(substr($assignedAgentName,0,1)) ?></span><?= e($assignedAgentName) ?>
-                                            <?php else: ?>
-                                                <span class="text-muted">Unassigned</span>
-                                            <?php endif; ?>
+                                    <button class="btn btn-sm btn-light bg-transparent border-0 text-start d-flex align-items-center gap-2 p-0" type="button" data-bs-toggle="dropdown" style="font-size: 12px; font-weight: 500;">
+                                        <span class="text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 20px; height: 20px; border-radius: 6px; font-size: 10px; background-color: <?= $color ?>;">
+                                            <?= $initial ?>
                                         </span>
-                                        <i class="bi bi-chevron-down text-muted" style="font-size: 8px;"></i>
+                                        <span style="color: #334155;">
+                                            <?= e(strtolower($assignedAgentName) === 'unassigned' ? 'Unassigned' : explode(' ', $assignedAgentName)[0]) ?>
+                                        </span>
+                                        <i class="bi bi-chevron-down text-muted" style="font-size: 9px;"></i>
                                     </button>
-                                    <ul class="dropdown-menu shadow border-0" style="font-size: 12px;">
-                                        <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_null').submit();">Unassigned</a></li>
+                                    <ul class="dropdown-menu shadow-sm border-0" style="font-size: 12px; border-radius: 12px;">
+                                        <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_null').submit();">Unassigned</a></li>
                                         <?php foreach ($agents as $agent): ?>
-                                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>').submit();"><?= e($agent['name']) ?></a></li>
+                                            <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>').submit();"><?= e($agent['name']) ?></a></li>
                                         <?php endforeach; ?>
                                     </ul>
                                 </div>
@@ -737,20 +711,11 @@ include '../../includes/header.php';
                                 <?php endforeach; ?>
                             </td>
                             <?php endif; ?>
-                            <td data-label="Status">
-                                <?php if ($userRole === 'agent'): ?>
-                                    <select class="agent-status-modern agent-quick-status" data-lead-id="<?= $lead['id'] ?>">
-                                        <?php foreach ($pipelineStages as $ps): ?>
-                                            <option value="<?= $ps ?>" <?= ($lead['status'] ?? '') === $ps ? 'selected' : '' ?>><?= e($ps) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                <?php else: ?>
-                                    <span class="badge <?= getStatusBadgeClass($lead['status']) ?> rounded-pill" style="font-size: 10px; padding: 4px 10px;"><?= e($lead['status']) ?></span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="text-end pe-4" data-label="Actions">
-                                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="btn btn-light btn-sm rounded-circle d-inline-flex align-items-center justify-content-center border" style="width: 28px; height: 28px;" title="View Detail">
-                                    <i class="bi bi-arrow-right text-primary" style="font-size: 12px;"></i>
+
+                            <!-- ACTIONS -->
+                            <td class="text-end pe-4 border-bottom border-light py-3" data-label="Actions">
+                                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="btn btn-light btn-sm rounded-circle d-inline-flex align-items-center justify-content-center border" style="width: 32px; height: 32px;" title="View Detail">
+                                    <i class="bi bi-arrow-right text-primary" style="font-size: 14px;"></i>
                                 </a>
                             </td>
                         </tr>
@@ -758,7 +723,7 @@ include '../../includes/header.php';
                         
                         <?php if (empty($leads)): ?>
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <div class="py-4">
                                     <div class="bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 60px; height: 60px;">
                                         <i class="bi bi-inbox text-primary" style="font-size: 24px;"></i>

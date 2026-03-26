@@ -18,6 +18,12 @@ if (!empty($_SESSION['organization_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($pageTitle) ? $pageTitle . ' - Lead CRM' : 'Lead CRM' ?></title>
+    <!-- Favicon -->
+    <?php if (!empty($orgLogoHeader) && file_exists(__DIR__ . '/../' . $orgLogoHeader)): ?>
+        <link rel="icon" type="image/x-icon" href="<?= BASE_URL . $orgLogoHeader ?>">
+    <?php else: ?>
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+    <?php endif; ?>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
