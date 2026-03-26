@@ -153,7 +153,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, null);
     font-size: 18px; color: #fff; margin-bottom: 14px;
 }
 .kpi-card .kpi-label { font-size: 11px; font-weight: 600; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
-.kpi-card .kpi-value { font-size: 1.7rem; font-weight: 800; color: #0f172a; line-height: 1; margin-bottom: 8px; }
+.kpi-card .kpi-value { font-size: 1.2rem; font-weight: 800; color: #0f172a; line-height: 1; margin-bottom: 8px; }
 .kpi-card .kpi-sub { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
 .kpi-card .kpi-glow {
     position: absolute; top: -20px; right: -20px;
