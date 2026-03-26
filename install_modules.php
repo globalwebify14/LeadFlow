@@ -1,8 +1,6 @@
 <?php
-// HARDCODED LOCALHOST CONNECTION FOR CLI EXECUTION
+require_once 'config/db.php';
 try {
-    $pdo = new PDO("mysql:host=127.0.0.1;dbname=lead;charset=utf8mb4", "root", "");
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // 1. Create `modules` table
     $pdo->exec("
