@@ -19,6 +19,24 @@ function requireLogin() {
         header('Location: ' . BASE_URL . 'login.php');
         exit;
     }
+
+    // Check if organization is still active (skip for super_admin)
+    $role = $_SESSION['user_role'] ?? '';
+    $orgId = $_SESSION['organization_id'] ?? null;
+    if ($role !== 'super_admin' && $orgId) {
+        require_once __DIR__ . '/db.php';
+        $orgCheck = $pdo->prepare("SELECT status FROM organizations WHERE id = :id LIMIT 1");
+        $orgCheck->execute(['id' => $orgId]);
+        $orgData = $orgCheck->fetch();
+        if ($orgData && $orgData['status'] !== 'active') {
+            // Destroy session and redirect to login
+            session_destroy();
+            session_start();
+            $_SESSION['login_error'] = 'Your organization account has been suspended. Please contact support.';
+            header('Location: ' . BASE_URL . 'login.php?suspended=1');
+            exit;
+        }
+    }
 }
 
 function getUserName() {

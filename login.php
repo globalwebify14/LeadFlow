@@ -9,6 +9,12 @@ if (isset($_SESSION['user_id'])) {
 $error = '';
 $email = ''; // Initialize to avoid warning
 
+// Show suspension error from session (set by auth middleware)
+if (isset($_SESSION['login_error'])) {
+    $error = $_SESSION['login_error'];
+    unset($_SESSION['login_error']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once 'config/db.php';
     require_once 'models/User.php';
@@ -19,23 +25,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || empty($password)) {
         $error = 'Please fill in all fields.';
     } else {
-        $stmt = $pdo->prepare("SELECT u.*, o.name as org_name FROM users u LEFT JOIN organizations o ON u.organization_id = o.id WHERE u.email = :email AND u.is_active = 1 LIMIT 1");
+        $stmt = $pdo->prepare("SELECT u.*, o.name as org_name, o.status as org_status FROM users u LEFT JOIN organizations o ON u.organization_id = o.id WHERE u.email = :email AND u.is_active = 1 LIMIT 1");
         $stmt->execute(['email' => $email]);
         $user = $stmt->fetch();
         
         if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_email'] = $user['email'];
-            $_SESSION['user_role'] = $user['role'];
-            $_SESSION['organization_id'] = $user['organization_id'];
-            $_SESSION['org_name'] = $user['org_name'] ?? 'My Company';
+            // Check if the organization is suspended or inactive (skip for super_admin)
+            if ($user['role'] !== 'super_admin' && $user['organization_id']) {
+                $orgStatus = $user['org_status'] ?? 'active';
+                if ($orgStatus === 'suspended') {
+                    $error = 'Your organization account has been suspended. Please contact your administrator or support to resolve this issue.';
+                } elseif ($orgStatus === 'inactive') {
+                    $error = 'Your organization account is currently inactive. Please contact your administrator to reactivate it.';
+                }
+            }
 
-            // Update last login
-            $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
-            
-            header('Location: modules/dashboard/');
-            exit;
+            if (!$error) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_name'] = $user['name'];
+                $_SESSION['user_email'] = $user['email'];
+                $_SESSION['user_role'] = $user['role'];
+                $_SESSION['organization_id'] = $user['organization_id'];
+                $_SESSION['org_name'] = $user['org_name'] ?? 'My Company';
+
+                // Update last login
+                $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
+                
+                header('Location: modules/dashboard/');
+                exit;
+            }
         } else {
             $error = 'Invalid email or password.';
         }
