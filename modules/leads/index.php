@@ -538,7 +538,7 @@ include '../../includes/header.php';
     </div>
     
     <div class="card-body p-0">
-        <form method="POST" id="bulkForm">
+        <div id="bulkForm">
             <!-- Sleek Bulk Actions Bar -->
             <div class="bulk-bar d-flex align-items-center justify-content-between mx-3 mb-3" id="bulkBar" style="display:none !important;">
                 <div class="d-flex align-items-center gap-3">
@@ -564,7 +564,7 @@ include '../../includes/header.php';
                     </select>
                     <?php endif; ?>
                 </div>
-                <button type="submit" class="btn btn-light btn-sm fw-bold px-3" onclick="return confirm('Execute bulk action on selected leads?')">Apply Action</button>
+                <button type="button" class="btn btn-light btn-sm fw-bold px-3" onclick="applyBulkAction(event)">Apply Action</button>
             </div>
 
             <div class="table-responsive border-0" style="min-height: 400px; padding-bottom: 2rem;">
@@ -572,18 +572,18 @@ include '../../includes/header.php';
                     <thead>
                         <tr>
                             <th width="40" class="ps-4 border-0 text-muted" style="font-size:10px;font-weight:600;letter-spacing:0.5px;"><input type="checkbox" id="selectAll" class="form-check-input custom-checkbox"></th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 20%;">Name</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 22%;">Name</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Phone</th>
                             <?php if ($userRole !== 'agent'): ?>
-                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Status</th>
-                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Pipeline</th>
+                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Status</th>
+                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Pipeline</th>
                             <?php endif; ?>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Priority</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Source</th>
                             <?php if ($userRole !== 'agent'): ?>
-                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px;">Assigned</th>
+                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Assigned</th>
                             <?php endif; ?>
-                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px;">Actions</th>
+                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Actions</th>
                         </tr>
                     </thead>
                     <tbody style="border-top: none;">
@@ -737,7 +737,7 @@ include '../../includes/header.php';
                     </tbody>
                 </table>
             </div>
-        </form>
+        </div>
 
         <?php if ($totalPages > 1): ?>
         <div class="d-flex justify-content-between align-items-center py-4 px-4 border-top">
@@ -812,6 +812,54 @@ function updateBulkBar() {
         setTimeout(() => { bar.style.display = 'none'; }, 300);
     }
     document.getElementById('selectedCount').textContent = checked + ' selected';
+}
+
+function applyBulkAction(event) {
+    event.preventDefault();
+    const actionSelect = document.querySelector('select[name="bulk_action"]');
+    const agentSelect = document.querySelector('select[name="bulk_agent"]');
+    let action = actionSelect ? actionSelect.value : '';
+    let agent = agentSelect ? agentSelect.value : '';
+
+    if (!action && agent) action = 'assign';
+    if (!action && !agent) {
+        alert('Please select an action or an agent.');
+        return;
+    }
+
+    const checked = Array.from(document.querySelectorAll('.lead-check:checked'));
+    if (checked.length === 0) {
+        alert("No leads selected.");
+        return;
+    }
+
+    if (!confirm('Execute bulk action on ' + checked.length + ' selected leads?')) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
+
+    const inputAction = document.createElement('input');
+    inputAction.name = 'bulk_action';
+    inputAction.value = action;
+    form.appendChild(inputAction);
+
+    if (agent && action === 'assign') {
+        const inputAgent = document.createElement('input');
+        inputAgent.name = 'bulk_agent';
+        inputAgent.value = agent;
+        form.appendChild(inputAgent);
+    }
+
+    checked.forEach(cb => {
+        const inputId = document.createElement('input');
+        inputId.name = 'lead_ids[]';
+        inputId.value = cb.value;
+        form.appendChild(inputId);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
 }
 
 function refreshLeadData() {
