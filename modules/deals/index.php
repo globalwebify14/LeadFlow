@@ -199,9 +199,9 @@ include '../../includes/header.php';
                         <td data-label="Agent" class="small"><?= e($deal['agent_name'] ?: 'Unassigned') ?></td>
                         <td data-label="Close Date" class="small text-muted"><?= $deal['expected_close_date'] ? formatDate($deal['expected_close_date']) : '—' ?></td>
                         <td data-label="Actions">
-                            <div class="btn-group btn-group-sm w-100">
-                                <a href="<?= BASE_URL ?>modules/deals/view.php?id=<?= $deal['id'] ?>" class="btn btn-outline-primary"><i class="bi bi-eye"></i> View</a>
-                                <a href="<?= BASE_URL ?>modules/deals/edit.php?id=<?= $deal['id'] ?>" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                            <div class="btn-group btn-group-sm">
+                                <a href="<?= BASE_URL ?>modules/deals/view.php?id=<?= $deal['id'] ?>" class="btn btn-outline-primary px-3"><i class="bi bi-eye"></i> View</a>
+                                <a href="<?= BASE_URL ?>modules/deals/edit.php?id=<?= $deal['id'] ?>" class="btn btn-outline-secondary px-3"><i class="bi bi-pencil"></i> Edit</a>
                             </div>
                         </td>
                     </tr>
