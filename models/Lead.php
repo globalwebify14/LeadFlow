@@ -178,7 +178,7 @@ class Lead {
                         FROM users u 
                         WHERE u.organization_id = :org_id 
                           AND u.role = 'agent' 
-                          AND u.status = 'active'
+                          AND u.is_active = 1
                           AND u.availability_status = 'active'
                         ORDER BY (
                             SELECT COALESCE(MAX(created_at), '2000-01-01') 
@@ -196,7 +196,7 @@ class Lead {
                         FROM users u 
                         WHERE u.organization_id = :org_id 
                           AND u.role = 'agent' 
-                          AND u.status = 'active'
+                          AND u.is_active = 1
                         ORDER BY (
                             SELECT COALESCE(MAX(created_at), '2000-01-01') 
                             FROM leads 
