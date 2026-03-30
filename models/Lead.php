@@ -172,23 +172,42 @@ class Lead {
 
         if ($mode === 'auto') {
             // Fetch all active agents for this org, ordered by last assigned time (Round Robin logic)
-            // We use a subquery to find the newest lead assigned to each agent to determine who waited the longest
-            $sql = "SELECT u.id 
-                    FROM users u 
-                    WHERE u.organization_id = :org_id 
-                      AND u.role = 'agent' 
-                      AND u.status = 'active'
-                      AND u.availability_status = 'active'
-                    ORDER BY (
-                        SELECT COALESCE(MAX(created_at), '2000-01-01') 
-                        FROM leads 
-                        WHERE assigned_to = u.id
-                    ) ASC 
-                    LIMIT 1";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute(['org_id' => $orgId]);
-            $agentId = $stmt->fetchColumn();
-            return $agentId ?: null;
+            // Try with availability_status first
+            try {
+                $sql = "SELECT u.id 
+                        FROM users u 
+                        WHERE u.organization_id = :org_id 
+                          AND u.role = 'agent' 
+                          AND u.status = 'active'
+                          AND u.availability_status = 'active'
+                        ORDER BY (
+                            SELECT COALESCE(MAX(created_at), '2000-01-01') 
+                            FROM leads 
+                            WHERE assigned_to = u.id
+                        ) ASC 
+                        LIMIT 1";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute(['org_id' => $orgId]);
+                $agentId = $stmt->fetchColumn();
+                return $agentId ?: null;
+            } catch (PDOException $e) {
+                // Fallback if availability_status column doesn't exist on live DB yet
+                $sql = "SELECT u.id 
+                        FROM users u 
+                        WHERE u.organization_id = :org_id 
+                          AND u.role = 'agent' 
+                          AND u.status = 'active'
+                        ORDER BY (
+                            SELECT COALESCE(MAX(created_at), '2000-01-01') 
+                            FROM leads 
+                            WHERE assigned_to = u.id
+                        ) ASC 
+                        LIMIT 1";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute(['org_id' => $orgId]);
+                $agentId = $stmt->fetchColumn();
+                return $agentId ?: null;
+            }
         }
 
         return null;
