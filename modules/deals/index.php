@@ -40,6 +40,89 @@ $stages = $stagesStmt->fetchAll();
 include '../../includes/header.php';
 ?>
 
+<style>
+/* ============================================================
+   DEALS MODULE — Compact Mobile Cards
+   ============================================================ */
+@media (max-width: 768px) {
+    /* ---- COMPACT CARD REDESIGN ---- */
+    .mobile-card-table tr {
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+
+    /* Hide the table header completely */
+    .mobile-card-table thead { display: none !important; }
+
+    /* All cells: clean vertical stacking, no borders */
+    .mobile-card-table td {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        text-align: left !important;
+        padding: 3px 0 !important;
+        min-height: unset !important;
+        border-bottom: none !important;
+        width: 100% !important;
+    }
+
+    /* DEAL NAME cell: compact row */
+    .mobile-card-table td[data-label="Deal"] {
+        padding: 0 0 8px 0 !important;
+        border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+        margin-bottom: 6px;
+    }
+    .mobile-card-table td[data-label="Deal"] a {
+        font-size: 15px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+    }
+
+    /* VALUE cell: make it prominent */
+    .mobile-card-table td[data-label="Value"] { margin-bottom: 4px; }
+    .mobile-card-table td[data-label="Value"] .text-success { font-size: 16px !important; font-weight: 800 !important; }
+
+    /* Hide Close Date and Lead text to save space on mobile */
+    .mobile-card-table td[data-label="Close Date"],
+    .mobile-card-table td[data-label="Lead"] {
+        display: none !important;
+    }
+
+    /* STAGE, STATUS, AGENT: inline badges row */
+    .mobile-card-table td[data-label="Stage"],
+    .mobile-card-table td[data-label="Status"],
+    .mobile-card-table td[data-label="Agent"] {
+        display: inline-flex !important;
+        padding: 6px 0 !important;
+        margin-right: 8px;
+        width: auto !important;
+    }
+    
+    /* Actions pushed to bottom */
+    .mobile-card-table td[data-label="Actions"] { 
+        justify-content: flex-end; 
+        width: 100% !important; 
+        margin-top: 8px; 
+        border-top: 1px dashed rgba(0,0,0,0.08) !important; 
+        padding-top: 14px !important; 
+    }
+    
+    /* Overflow prevention */
+    .table-responsive { overflow-x: hidden !important; min-height: auto !important; border: none !important; margin-bottom: 2rem; }
+    .table-responsive table { border-collapse: separate; border-spacing: 0; }
+}
+</style>
+
 <!-- Revenue Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
@@ -103,21 +186,21 @@ include '../../includes/header.php';
         </form>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 text-nowrap">
+            <table class="table table-hover align-middle mb-0 text-nowrap mobile-card-table">
                 <thead><tr><th>Deal</th><th>Lead</th><th>Value</th><th>Stage</th><th>Status</th><th>Agent</th><th>Close Date</th><th>Actions</th></tr></thead>
                 <tbody>
                     <?php foreach ($deals as $deal): ?>
                     <tr>
-                        <td><a href="<?= BASE_URL ?>modules/deals/view.php?id=<?= $deal['id'] ?>" class="fw-semibold text-dark text-decoration-none"><?= e($deal['name']) ?></a></td>
-                        <td class="small"><?= e($deal['lead_name'] ?: '—') ?></td>
-                        <td class="fw-bold text-success"><?= formatCurrency($deal['value']) ?></td>
-                        <td><?php if ($deal['stage_name']): ?><span class="badge rounded-pill px-2 py-1" style="background:<?= e($deal['stage_color'] ?? '#6366f1') ?>20;color:<?= e($deal['stage_color'] ?? '#6366f1') ?>;border:1px solid <?= e($deal['stage_color'] ?? '#6366f1') ?>30;"><?= e($deal['stage_name']) ?></span><?php else: ?>—<?php endif; ?></td>
-                        <td><span class="badge bg-<?= $deal['status']==='won'?'success':($deal['status']==='lost'?'danger':'primary') ?> bg-opacity-10 text-<?= $deal['status']==='won'?'success':($deal['status']==='lost'?'danger':'primary') ?>"><?= ucfirst($deal['status']) ?></span></td>
-                        <td class="small"><?= e($deal['agent_name'] ?: 'Unassigned') ?></td>
-                        <td class="small text-muted"><?= $deal['expected_close_date'] ? formatDate($deal['expected_close_date']) : '—' ?></td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="<?= BASE_URL ?>modules/deals/view.php?id=<?= $deal['id'] ?>" class="btn btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        <td data-label="Deal"><a href="<?= BASE_URL ?>modules/deals/view.php?id=<?= $deal['id'] ?>" class="fw-semibold text-dark text-decoration-none"><i class="bi bi-briefcase text-primary me-2 d-inline-block d-md-none"></i><?= e($deal['name']) ?></a></td>
+                        <td data-label="Lead" class="small"><?= e($deal['lead_name'] ?: '—') ?></td>
+                        <td data-label="Value" class="fw-bold text-success"><?= formatCurrency($deal['value']) ?></td>
+                        <td data-label="Stage"><?php if ($deal['stage_name']): ?><span class="badge rounded-pill px-2 py-1" style="background:<?= e($deal['stage_color'] ?? '#6366f1') ?>20;color:<?= e($deal['stage_color'] ?? '#6366f1') ?>;border:1px solid <?= e($deal['stage_color'] ?? '#6366f1') ?>30;"><?= e($deal['stage_name']) ?></span><?php else: ?>—<?php endif; ?></td>
+                        <td data-label="Status"><span class="badge bg-<?= $deal['status']==='won'?'success':($deal['status']==='lost'?'danger':'primary') ?> bg-opacity-10 text-<?= $deal['status']==='won'?'success':($deal['status']==='lost'?'danger':'primary') ?>"><?= ucfirst($deal['status']) ?></span></td>
+                        <td data-label="Agent" class="small"><?= e($deal['agent_name'] ?: 'Unassigned') ?></td>
+                        <td data-label="Close Date" class="small text-muted"><?= $deal['expected_close_date'] ? formatDate($deal['expected_close_date']) : '—' ?></td>
+                        <td data-label="Actions">
+                            <div class="btn-group btn-group-sm w-100">
+                                <a href="<?= BASE_URL ?>modules/deals/view.php?id=<?= $deal['id'] ?>" class="btn btn-outline-primary"><i class="bi bi-eye"></i> View</a>
                                 <a href="<?= BASE_URL ?>modules/deals/edit.php?id=<?= $deal['id'] ?>" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
                             </div>
                         </td>
