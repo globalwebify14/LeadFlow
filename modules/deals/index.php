@@ -103,7 +103,7 @@ include '../../includes/header.php';
         </form>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
                 <thead><tr><th>Deal</th><th>Lead</th><th>Value</th><th>Stage</th><th>Status</th><th>Agent</th><th>Close Date</th><th>Actions</th></tr></thead>
                 <tbody>
                     <?php foreach ($deals as $deal): ?>
