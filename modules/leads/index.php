@@ -578,7 +578,10 @@ include '../../includes/header.php';
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Pipeline</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Priority</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Source</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Assigned</th>
+                            <?php if ($userRole !== 'agent'): ?>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Assigned</th>
+                            <?php endif; ?>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Notes</th>
                             <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Actions</th>
                         </tr>
                     </thead>
@@ -672,6 +675,7 @@ include '../../includes/header.php';
                             </td>
 
                             <!-- ASSIGNED -->
+                            <?php if ($userRole !== 'agent'): ?>
                             <td data-label="Assigned" class="border-bottom border-light py-3" style="overflow: visible !important;">
                                 <?php 
                                 $assignedAgentName = 'Unassigned';
@@ -704,6 +708,15 @@ include '../../includes/header.php';
                                 <form id="assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value="<?= $agent['id'] ?>"></form>
                                 <?php endforeach; ?>
                             </td>
+                            <?php endif; ?>
+
+                            <!-- NOTES -->
+                            <td data-label="Notes" class="border-bottom border-light py-3">
+                                <button type="button" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1" style="font-size:11.5px; font-weight:500; border-radius:6px; color:#475569; max-width: 120px;" onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                    <i class="bi bi-pencil-square text-primary"></i> 
+                                    <span id="note_text_<?= $lead['id'] ?>" class="text-truncate" style="max-width: 80px;">Add Note</span>
+                                </button>
+                            </td>
 
                             <!-- ACTIONS -->
                             <td class="text-end pe-4 border-bottom border-light py-3" data-label="Actions">
@@ -716,7 +729,7 @@ include '../../includes/header.php';
                         
                         <?php if (empty($leads)): ?>
                         <tr>
-                            <td colspan="9" class="text-center py-5">
+                            <td colspan="10" class="text-center py-5">
                                 <div class="py-4">
                                     <div class="bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 60px; height: 60px;">
                                         <i class="bi bi-inbox text-primary" style="font-size: 24px;"></i>
