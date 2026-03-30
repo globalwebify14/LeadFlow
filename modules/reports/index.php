@@ -72,14 +72,14 @@ $leadDist = [];
 $agentResp = [];
 $campaigns = [];
 if (!$isAgent) {
-    $agentPerf = $reportModel->getAgentAdvancedPerformance($orgId, $dateFrom, $dateTo);
-    $leadDist = $reportModel->getLeadDistribution($orgId, $dateFrom, $dateTo);
-    $agentResp = $reportModel->getAgentResponseTime($orgId, $dateFrom, $dateTo);
-    $campaigns = $reportModel->getFacebookCampaignReport($orgId, $dateFrom, $dateTo);
+    $agentPerf = $reportModel->getAgentAdvancedPerformance($orgId, $agentIdFilter, $dateFrom, $dateTo);
+    $leadDist = $reportModel->getLeadDistribution($orgId, $agentIdFilter, $dateFrom, $dateTo);
+    $agentResp = $reportModel->getAgentResponseTime($orgId, $agentIdFilter, $dateFrom, $dateTo);
+    $campaigns = $reportModel->getFacebookCampaignReport($orgId, $agentIdFilter, $dateFrom, $dateTo);
 }
 
-$monthlyGrowth = $reportModel->getMonthlyGrowth($orgId, $agentIdFilter);
-$pipelinePerf = $reportModel->getPipelinePerformance($orgId, $agentIdFilter);
+$monthlyGrowth = $reportModel->getMonthlyGrowth($orgId, $agentIdFilter, $dateFrom, $dateTo);
+$pipelinePerf = $reportModel->getPipelinePerformance($orgId, $agentIdFilter, $dateFrom, $dateTo);
 
 include '../../includes/header.php';
 ?>

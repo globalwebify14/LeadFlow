@@ -83,14 +83,15 @@ class Report {
         ];
     }
 
-    public function getMonthlyGrowth($orgId, $userId = null) {
+    public function getMonthlyGrowth($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
         $sql = "SELECT DATE_FORMAT(created_at, '%b %d') as label, DATE_FORMAT(created_at, '%Y-%m-%d') as day, COUNT(*) as count 
-             FROM leads WHERE organization_id = :org AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+             FROM leads WHERE organization_id = :org";
         $params = ['org' => $orgId];
         if ($userId) {
             $sql .= " AND assigned_to = :userId";
             $params['userId'] = $userId;
         }
+        $this->applyDateFilter($sql, $params, 'leads', $dateFrom, $dateTo);
         $sql .= " GROUP BY label, day ORDER BY day";
         
         $stmt = $this->pdo->prepare($sql);
@@ -98,7 +99,7 @@ class Report {
         return $stmt->fetchAll();
     }
 
-    public function getAgentAdvancedPerformance($orgId, $dateFrom = null, $dateTo = null) {
+    public function getAgentAdvancedPerformance($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
         // We will sum up leads assigned in the period and deals closed in the period
         $sql = "SELECT u.id, u.name, 
                     (SELECT COUNT(*) FROM leads l WHERE l.assigned_to = u.id";
@@ -119,8 +120,14 @@ class Report {
         $sql .= $dateFilterDeals . ") as converted_deals";
         
         $sql .= " FROM users u
-                  WHERE u.organization_id = :org AND u.role IN ('agent','team_lead','org_admin') AND u.is_active = 1
-                  ORDER BY converted_deals DESC, total_leads DESC";
+                  WHERE u.organization_id = :org AND u.role IN ('agent','team_lead','org_admin') AND u.is_active = 1";
+                  
+        if ($userId) {
+            $sql .= " AND u.id = :userId";
+            $params['userId'] = $userId;
+        }
+        
+        $sql .= " ORDER BY converted_deals DESC, total_leads DESC";
                   
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -132,7 +139,7 @@ class Report {
         return $results;
     }
 
-    public function getLeadDistribution($orgId, $dateFrom = null, $dateTo = null) {
+    public function getLeadDistribution($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
         $sql = "SELECT u.name as agent_name, COUNT(l.id) as assigned_count
                 FROM users u
                 LEFT JOIN leads l ON l.assigned_to = u.id";
@@ -142,8 +149,12 @@ class Report {
         if ($dateTo) { $dateFilter .= " AND DATE(l.created_at) <= :dTo"; $params['dTo'] = $dateTo; }
         
         $sql .= $dateFilter;
-        $sql .= " WHERE u.organization_id = :org AND u.role IN ('agent','team_lead','org_admin') AND u.is_active = 1
-                  GROUP BY u.id, u.name
+        $sql .= " WHERE u.organization_id = :org AND u.role IN ('agent','team_lead','org_admin') AND u.is_active = 1";
+        if ($userId) {
+            $sql .= " AND u.id = :userId";
+            $params['userId'] = $userId;
+        }
+        $sql .= " GROUP BY u.id, u.name
                   ORDER BY assigned_count DESC";
                   
         $stmt = $this->pdo->prepare($sql);
@@ -151,7 +162,7 @@ class Report {
         return $stmt->fetchAll();
     }
 
-    public function getAgentResponseTime($orgId, $dateFrom = null, $dateTo = null) {
+    public function getAgentResponseTime($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
         $sql = "SELECT u.name as agent_name, 
                        AVG(TIMESTAMPDIFF(MINUTE, l.created_at, (
                            SELECT MIN(a.created_at) FROM lead_activities a WHERE a.lead_id = l.id AND a.user_id = u.id
@@ -161,6 +172,10 @@ class Report {
                 WHERE l.organization_id = :org AND l.assigned_to IS NOT NULL AND l.status != 'New Lead'";
         
         $params = ['org' => $orgId];
+        if ($userId) {
+            $sql .= " AND u.id = :userId";
+            $params['userId'] = $userId;
+        }
         $this->applyDateFilter($sql, $params, 'l', $dateFrom, $dateTo);
         
         $sql .= " GROUP BY u.id, u.name ORDER BY avg_response_minutes ASC";
@@ -199,7 +214,7 @@ class Report {
         return $stmt->fetch();
     }
 
-    public function getFacebookCampaignReport($orgId, $dateFrom = null, $dateTo = null) {
+    public function getFacebookCampaignReport($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
         $sql = "SELECT 
                     l.facebook_page_id,
                     p.page_name,
@@ -210,6 +225,10 @@ class Report {
                 WHERE l.organization_id = :org AND l.source = 'facebook_ads'";
         
         $params = ['org' => $orgId];
+        if ($userId) {
+            $sql .= " AND l.assigned_to = :userId";
+            $params['userId'] = $userId;
+        }
         $this->applyDateFilter($sql, $params, 'l', $dateFrom, $dateTo);
         
         $sql .= " GROUP BY l.facebook_page_id, p.page_name, l.meta_campaign
@@ -219,7 +238,7 @@ class Report {
         return $stmt->fetchAll();
     }
 
-    public function getPipelinePerformance($orgId, $userId = null) {
+    public function getPipelinePerformance($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
         $sql = "SELECT ps.name, ps.color, COUNT(d.id) as deals_count, COALESCE(SUM(d.value), 0) as total_value
              FROM pipeline_stages ps
              LEFT JOIN deals d ON d.stage_id = ps.id AND d.organization_id = :org";
@@ -229,6 +248,7 @@ class Report {
             $sql .= " AND d.assigned_to = :userId";
             $params['userId'] = $userId;
         }
+        $this->applyDateFilter($sql, $params, 'd', $dateFrom, $dateTo, 'updated_at');
         
         $sql .= " WHERE ps.organization_id = :org2
              GROUP BY ps.id, ps.name, ps.color
