@@ -437,21 +437,39 @@ if (document.getElementById('sourceChart') && sourceData.length > 0) {
     });
 }
 
-// Pipeline Chart (Deals/Values)
+// Pipeline Chart (Deals & Leads)
 const pipeData = <?= json_encode($pipelinePerf) ?>;
 if (document.getElementById('pipelineChart') && pipeData.length > 0) {
     new Chart(document.getElementById('pipelineChart'), {
         type: 'bar',
         data: { 
             labels: pipeData.map(p => p.name), 
-            datasets: [{ 
-                label: 'Deals Count', 
-                data: pipeData.map(p => p.deals_count), 
-                backgroundColor: pipeData.map(p => p.color ? p.color : '#ccc'), 
-                borderRadius: 4 
-            }] 
+            datasets: [
+                { 
+                    label: 'Leads in Stage', 
+                    data: pipeData.map(p => p.leads_count), 
+                    backgroundColor: pipeData.map(p => p.color ? p.color : '#ccc'), 
+                    borderRadius: 4 
+                },
+                { 
+                    label: 'Deals in Stage', 
+                    data: pipeData.map(p => p.deals_count), 
+                    backgroundColor: 'rgba(100, 116, 139, 0.2)', 
+                    borderRadius: 4 
+                }
+            ] 
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, 
+                x: { grid: { display: false } } 
+            } 
+        }
     });
 }
 </script>

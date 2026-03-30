@@ -239,21 +239,28 @@ class Report {
     }
 
     public function getPipelinePerformance($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
-        $sql = "SELECT ps.name, ps.color, COUNT(d.id) as deals_count, COALESCE(SUM(d.value), 0) as total_value
+        $sql = "SELECT ps.name, ps.color,
+                (SELECT COUNT(l.id) FROM leads l WHERE l.pipeline_stage_id = ps.id AND l.organization_id = :org1";
+        $params = ['org1' => $orgId];
+        $lf = "";
+        if ($userId) { $lf .= " AND l.assigned_to = :u1"; $params['u1'] = $userId; }
+        if ($dateFrom) { $lf .= " AND DATE(l.created_at) >= :dF1"; $params['dF1'] = $dateFrom; }
+        if ($dateTo) { $lf .= " AND DATE(l.created_at) <= :dT1"; $params['dT1'] = $dateTo; }
+        $sql .= $lf . ") as leads_count,
+        
+                (SELECT COUNT(d.id) FROM deals d WHERE d.stage_id = ps.id AND d.organization_id = :org2";
+        $params['org2'] = $orgId;
+        $df = "";
+        if ($userId) { $df .= " AND d.assigned_to = :u2"; $params['u2'] = $userId; }
+        if ($dateFrom) { $df .= " AND DATE(d.updated_at) >= :dF2"; $params['dF2'] = $dateFrom; }
+        if ($dateTo) { $df .= " AND DATE(d.updated_at) <= :dT2"; $params['dT2'] = $dateTo; }
+        $sql .= $df . ") as deals_count
+        
              FROM pipeline_stages ps
-             LEFT JOIN deals d ON d.stage_id = ps.id AND d.organization_id = :org";
-        $params = ['org' => $orgId, 'org2' => $orgId];
-        
-        if ($userId) {
-            $sql .= " AND d.assigned_to = :userId";
-            $params['userId'] = $userId;
-        }
-        $this->applyDateFilter($sql, $params, 'd', $dateFrom, $dateTo, 'updated_at');
-        
-        $sql .= " WHERE ps.organization_id = :org2
-             GROUP BY ps.id, ps.name, ps.color
+             WHERE ps.organization_id = :org3
              ORDER BY ps.position";
-             
+        $params['org3'] = $orgId;
+        
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
