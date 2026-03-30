@@ -3,7 +3,14 @@ require_once __DIR__ . '/config/db.php';
 
 echo "<h1>Applying Live Database Updates</h1>";
 
-// 1. Fix Deals Status
+// 1. Fix Pipeline Stages Master Configuration
+try {
+    $pdo->exec("UPDATE pipeline_stages SET is_won = 1 WHERE name = 'Closed Won' OR name LIKE '%Won%'");
+    $pdo->exec("UPDATE pipeline_stages SET is_lost = 1 WHERE name = 'Closed Lost' OR name LIKE '%Lost%'");
+    echo "<p>Master Pipeline Configurations re-calibrated.</p>";
+} catch (Exception $e) { /* ignore safety */ }
+
+// 2. Fix Deals Status
 try {
     $sql1 = "UPDATE deals d JOIN pipeline_stages ps ON d.stage_id = ps.id SET d.status = 'won' WHERE ps.is_won = 1 AND d.status != 'won'";
     $stmt1 = $pdo->prepare($sql1);
