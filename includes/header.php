@@ -41,7 +41,7 @@ if (!empty($_SESSION['organization_id'])) {
         <?php include __DIR__ . '/sidebar.php'; ?>
 
         <div id="page-content-wrapper" class="w-100">
-            <nav class="navbar navbar-expand-lg px-4 py-3" style="position:relative;z-index:1050;">
+            <nav class="navbar navbar-expand-lg px-4 py-3 flex-nowrap" style="position:relative;z-index:1050;">
                 <div class="d-flex align-items-center">
                     <button class="btn btn-outline-primary shadow-sm rounded-pill px-3 me-3 border-1 bg-white text-primary" id="menu-toggle" style="border-color: #e2e8f0 !important;"><i class="bi bi-list"></i></button>
                     <h5 class="m-0 text-dark fw-bold hidden-mobile"><?= e($pageTitle ?? 'Dashboard') ?></h5>
@@ -98,7 +98,7 @@ if (!empty($_SESSION['organization_id'])) {
                                         <?= strtoupper(substr(getUserName(), 0, 1)) ?>
                                     </div>
                                 <?php endif; ?>
-                                <?= e(getUserName()) ?>
+                                <span class="d-none d-md-inline-block text-truncate" style="max-width: 150px;"><?= e(getUserName()) ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                                 <li><span class="dropdown-item-text small text-muted"><?= e(getUserRoleName()) ?></span></li>

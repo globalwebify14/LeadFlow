@@ -52,7 +52,7 @@ try {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch);
 
         $stmtFormInsert = $pdo->prepare("INSERT IGNORE INTO facebook_forms (organization_id, page_id, form_id, form_name, created_at) VALUES (?, ?, ?, ?, NOW())");
 
@@ -97,7 +97,7 @@ try {
                 curl_setopt($ch2, CURLOPT_RETURNTRANSFER, 1);
                 $leadsResponse = curl_exec($ch2);
                 $leadsHttpCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
-                curl_close($ch2);
+                unset($ch2);
 
                 if ($leadsHttpCode === 200) {
                     $leadsData = json_decode($leadsResponse, true);

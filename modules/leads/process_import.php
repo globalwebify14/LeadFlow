@@ -5,8 +5,6 @@ requireLogin();
 require_once '../../config/db.php';
 require_once '../../models/Lead.php';
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-
 $orgId = getOrgId();
 $userId = getUserId();
 $leadModel = new Lead($pdo);
@@ -57,7 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['temp_file'])) {
                 }
             } else {
                 if (file_exists('../../vendor/autoload.php')) require_once '../../vendor/autoload.php';
-                $spreadsheet = IOFactory::load($tempFile);
+                if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+                    throw new Exception("PhpSpreadsheet library not found. Excel parsing is disabled.");
+                }
+                $className = '\PhpOffice\PhpSpreadsheet\IOFactory';
+                $spreadsheet = $className::load($tempFile);
                 $rows = $spreadsheet->getActiveSheet()->toArray();
             }
 

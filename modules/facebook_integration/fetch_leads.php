@@ -38,7 +38,7 @@ try {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch);
 
         if ($httpCode !== 200) {
             logSync("API Warning [Form: {$formId}] - HTTP {$httpCode}: {$response}");
