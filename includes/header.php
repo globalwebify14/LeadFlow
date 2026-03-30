@@ -67,7 +67,7 @@ if (!empty($_SESSION['organization_id'])) {
                                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
                                     <h6 class="mb-0 fw-bold">Notifications</h6>
                                     <?php if ($unreadCount > 0): ?>
-                                        <a href="notifications_api.php?action=mark_all_read" class="text-primary small text-decoration-none">Mark all read</a>
+                                        <a href="<?= BASE_URL ?>ajax/notifications_api.php?action=mark_all_read" class="text-primary small text-decoration-none">Mark all read</a>
                                     <?php endif; ?>
                                 </div>
                                 <div style="max-height:300px;overflow-y:auto;">
