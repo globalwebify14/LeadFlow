@@ -50,35 +50,41 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
     font-size: 11px; font-weight: 600; padding: 4px 12px;
     border-radius: 100px; margin-bottom: 10px; letter-spacing: 0.5px;
 }
-.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; width: 100%; }
 .btn-hero-primary {
+    flex: 1; justify-content: center;
     display: inline-flex; align-items: center; gap: 7px;
     background: linear-gradient(135deg,#6366f1,#4f46e5);
     color: #fff; border: none; border-radius: 10px;
-    padding: 10px 20px; font-size: 13px; font-weight: 600;
+    padding: 12px 20px; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all .25s; text-decoration: none;
     box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+    white-space: nowrap;
 }
 .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(99,102,241,0.45); color: #fff; }
 .btn-hero-secondary {
+    flex: 1; justify-content: center;
     display: inline-flex; align-items: center; gap: 7px;
     background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.8);
     border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
-    padding: 10px 20px; font-size: 13px; font-weight: 600;
+    padding: 12px 20px; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all .25s; text-decoration: none; backdrop-filter: blur(6px);
+    white-space: nowrap;
 }
 .btn-hero-secondary:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); }
 
 /* Hero mini-stats row */
 .hero-stats-row {
-    display: flex; gap: 28px; margin-top: 24px; flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
 }
 .hero-stat-pill {
     display: flex; flex-direction: column;
-    padding: 12px 20px; border-radius: 12px;
+    padding: 16px; border-radius: 12px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.08);
-    min-width: 110px;
 }
 .hero-stat-pill .hval { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1; }
 .hero-stat-pill .hlbl { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500; letter-spacing: 0.4px; }
@@ -245,7 +251,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                 <?php endif; ?>
             </div>
         </div>
-        <div class="hero-actions align-self-start">
+        <div class="hero-actions align-self-start mt-4 mt-md-0 mx-auto mx-md-0" style="max-width:300px;">
             <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn-hero-primary">
                 <i class="bi bi-plus-circle-fill"></i> Add Lead
             </a>
