@@ -574,15 +574,11 @@ include '../../includes/header.php';
                             <th width="40" class="ps-4 border-0 text-muted" style="font-size:10px;font-weight:600;letter-spacing:0.5px;"><input type="checkbox" id="selectAll" class="form-check-input custom-checkbox"></th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 22%;">Name</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Phone</th>
-                            <?php if ($userRole !== 'agent'): ?>
-                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Status</th>
-                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Pipeline</th>
-                            <?php endif; ?>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Status</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Pipeline</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Priority</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Source</th>
-                            <?php if ($userRole !== 'agent'): ?>
-                                <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Assigned</th>
-                            <?php endif; ?>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Assigned</th>
                             <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Actions</th>
                         </tr>
                     </thead>
@@ -622,7 +618,6 @@ include '../../includes/header.php';
                             </td>
 
                             <!-- STATUS & PIPELINE -->
-                            <?php if ($userRole !== 'agent'): ?>
                             <td data-label="Status" class="border-bottom border-light py-3" style="overflow: visible !important;">
                                 <div class="dropdown">
                                     <button class="btn btn-sm border-0 bg-primary bg-opacity-10 text-primary rounded-pill d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="font-size: 11.5px; padding: 5px 12px; font-weight: 600;">
@@ -653,7 +648,6 @@ include '../../includes/header.php';
                                     <span class="badge rounded-pill text-white shadow-sm bg-primary" style="font-size: 11.5px; padding: 5px 14px; font-weight: 600;">New Lead</span>
                                 <?php endif; ?>
                             </td>
-                            <?php endif; ?>
 
                             <!-- PRIORITY -->
                             <td data-label="Priority" class="border-bottom border-light py-3">
@@ -678,7 +672,6 @@ include '../../includes/header.php';
                             </td>
 
                             <!-- ASSIGNED -->
-                            <?php if ($userRole !== 'agent'): ?>
                             <td data-label="Assigned" class="border-bottom border-light py-3" style="overflow: visible !important;">
                                 <?php 
                                 $assignedAgentName = 'Unassigned';
@@ -711,7 +704,6 @@ include '../../includes/header.php';
                                 <form id="assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value="<?= $agent['id'] ?>"></form>
                                 <?php endforeach; ?>
                             </td>
-                            <?php endif; ?>
 
                             <!-- ACTIONS -->
                             <td class="text-end pe-4 border-bottom border-light py-3" data-label="Actions">
