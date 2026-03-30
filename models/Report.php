@@ -96,7 +96,42 @@ class Report {
         
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $rawData = $stmt->fetchAll();
+
+        if (!$dateFrom || !$dateTo) {
+            return $rawData;
+        }
+
+        try {
+            $startDate = new DateTime($dateFrom);
+            $endDate = new DateTime($dateTo);
+        } catch (Exception $e) {
+            return $rawData;
+        }
+
+        if ($startDate->diff($endDate)->days > 366) {
+            return $rawData;
+        }
+
+        $mapped = [];
+        foreach ($rawData as $r) {
+            $mapped[$r['day']] = $r['count'];
+        }
+
+        $results = [];
+        $current = clone $startDate;
+        while ($current <= $endDate) {
+            $dayStr = $current->format('Y-m-d');
+            $labelStr = $current->format('M d'); 
+            $results[] = [
+                'label' => $labelStr,
+                'day' => $dayStr,
+                'count' => $mapped[$dayStr] ?? 0
+            ];
+            $current->modify('+1 day');
+        }
+
+        return $results;
     }
 
     public function getAgentAdvancedPerformance($orgId, $userId = null, $dateFrom = null, $dateTo = null) {

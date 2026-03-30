@@ -202,7 +202,7 @@ include '../../includes/header.php';
     <!-- Monthly Lead Trend -->
     <div class="col-lg-8">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-graph-up me-2 text-primary"></i>Daily Lead Trend (Last 30 Days)</h6></div>
+            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-graph-up me-2 text-primary"></i>Daily Lead Trend</h6></div>
             <div class="card-body"><canvas id="monthlyChart" height="280"></canvas></div>
         </div>
     </div>
