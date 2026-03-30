@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'password' => $_POST['password'],
         'phone' => trim($_POST['phone'] ?? ''),
         'role' => $_POST['role'] ?? 'agent',
+        'availability_status' => $_POST['availability_status'] ?? 'active',
     ];
     
     if (!array_key_exists($data['role'], $allowedRoles)) {
