@@ -91,8 +91,25 @@ class Deal {
         return $stmt->fetch();
     }
 
+    private function resolveStatusFromStage($stageId) {
+        if (!$stageId) return 'open';
+        $stmt = $this->pdo->prepare("SELECT is_won, is_lost FROM pipeline_stages WHERE id = :id");
+        $stmt->execute(['id' => $stageId]);
+        $stage = $stmt->fetch();
+        if ($stage) {
+            if ($stage['is_won']) return 'won';
+            if ($stage['is_lost']) return 'lost';
+        }
+        return 'open';
+    }
+
     public function createDeal($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO deals (organization_id, lead_id, name, value, stage_id, assigned_to, expected_close_date, description) VALUES (:org_id, :lead_id, :name, :value, :stage_id, :assigned_to, :close_date, :description)");
+        $status = $this->resolveStatusFromStage($data['stage_id'] ?? null);
+        if (isset($data['status']) && in_array($data['status'], ['open', 'won', 'lost'])) {
+            $status = $data['status'];
+        }
+
+        $stmt = $this->pdo->prepare("INSERT INTO deals (organization_id, lead_id, name, value, stage_id, assigned_to, expected_close_date, description, status) VALUES (:org_id, :lead_id, :name, :value, :stage_id, :assigned_to, :close_date, :description, :status)");
         $stmt->execute([
             'org_id' => $data['organization_id'],
             'lead_id' => $data['lead_id'] ?: null,
@@ -102,6 +119,7 @@ class Deal {
             'assigned_to' => $data['assigned_to'] ?: null,
             'close_date' => $data['expected_close_date'] ?: null,
             'description' => $data['description'] ?? null,
+            'status' => $status,
         ]);
         $dealId = $this->pdo->lastInsertId();
 
@@ -113,6 +131,13 @@ class Deal {
 
     public function updateDeal($id, $data) {
         $current = $this->getDealById($id);
+        
+        $status = $data['status'] ?? 'open';
+        // Auto sync if stage changed, unless they're explicitly forcing a valid status override
+        if ($current && $current['stage_id'] != $data['stage_id']) {
+            $status = $this->resolveStatusFromStage($data['stage_id']);
+        }
+
         $stmt = $this->pdo->prepare("UPDATE deals SET name=:name, lead_id=:lead_id, value=:value, stage_id=:stage_id, assigned_to=:assigned_to, expected_close_date=:close_date, status=:status, description=:description WHERE id=:id");
         $stmt->execute([
             'id' => $id,
@@ -122,7 +147,7 @@ class Deal {
             'stage_id' => $data['stage_id'] ?: null,
             'assigned_to' => $data['assigned_to'] ?: null,
             'close_date' => $data['expected_close_date'] ?: null,
-            'status' => $data['status'] ?? 'open',
+            'status' => $status,
             'description' => $data['description'] ?? null,
         ]);
 
@@ -141,8 +166,9 @@ class Deal {
     }
 
     public function updateStage($dealId, $stageId, $userId = null) {
-        $stmt = $this->pdo->prepare("UPDATE deals SET stage_id = :stage_id WHERE id = :id");
-        $result = $stmt->execute(['stage_id' => $stageId, 'id' => $dealId]);
+        $status = $this->resolveStatusFromStage($stageId);
+        $stmt = $this->pdo->prepare("UPDATE deals SET stage_id = :stage_id, status = :status WHERE id = :id");
+        $result = $stmt->execute(['stage_id' => $stageId, 'status' => $status, 'id' => $dealId]);
         $this->logActivity($dealId, 'stage_change', 'Deal stage updated', $userId);
         return $result;
     }
