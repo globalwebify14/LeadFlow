@@ -181,7 +181,7 @@ class Lead {
                           AND u.is_active = 1
                           AND u.availability_status = 'active'
                         ORDER BY (
-                            SELECT COALESCE(MAX(created_at), '2000-01-01') 
+                            SELECT COALESCE(MAX(id), 0) 
                             FROM leads 
                             WHERE assigned_to = u.id
                         ) ASC 
@@ -198,7 +198,7 @@ class Lead {
                           AND u.role = 'agent' 
                           AND u.is_active = 1
                         ORDER BY (
-                            SELECT COALESCE(MAX(created_at), '2000-01-01') 
+                            SELECT COALESCE(MAX(id), 0) 
                             FROM leads 
                             WHERE assigned_to = u.id
                         ) ASC 

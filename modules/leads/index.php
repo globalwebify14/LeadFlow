@@ -684,8 +684,9 @@ include '../../includes/header.php';
                                 $assignedAgentName = 'Unassigned';
                                 foreach($agents as $ag) { if($ag['id'] == $lead['assigned_to']) { $assignedAgentName = $ag['name']; break; } }
                                 $initial = strtoupper(substr($assignedAgentName, 0, 1));
-                                $colors = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308'];
-                                $color = $colors[abs(crc32($assignedAgentName)) % count($colors)];
+                                $colors = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308', '#ef4444', '#14b8a6', '#f97316', '#3b82f6', '#84cc16'];
+                                $agentId = (int)($lead['assigned_to'] ?? 0);
+                                $color = $colors[($agentId * 7) % count($colors)];
                                 if ($assignedAgentName === 'Unassigned') $color = '#94a3b8';
                                 ?>
                                 <div class="dropdown">
