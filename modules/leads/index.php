@@ -907,29 +907,60 @@ document.addEventListener('hide.bs.dropdown', function (event) {
     if (tr) { tr.style.zIndex = ''; setTimeout(() => { tr.style.position = ''; }, 300); }
 });
 
+let currentNoteLeadId = null;
+
 function openQuickNote(leadId) {
-    const noteText = prompt("Add a quick note for this lead:");
-    if (noteText && noteText.trim().length > 0) {
-        fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ 'action': 'add_note', 'lead_id': leadId, 'note': noteText.trim() })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const noteDiv = document.getElementById('note_text_' + leadId);
-                if (noteDiv) { noteDiv.textContent = noteText.trim(); noteDiv.title = noteText.trim(); }
-            } else { alert(data.message || 'Error adding note'); }
-        })
-        .catch(err => alert('A network error occurred. Note not saved.'));
+    currentNoteLeadId = leadId;
+    document.getElementById('quickNoteText').value = '';
+    var modal = new bootstrap.Modal(document.getElementById('quickNoteModal'));
+    modal.show();
+}
+
+function saveQuickNote() {
+    const noteText = document.getElementById('quickNoteText').value;
+    if (!noteText || noteText.trim().length === 0) {
+        alert("Please enter a note.");
+        return;
     }
+    
+    const saveBtn = document.getElementById('saveQuickNoteBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+    fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ 'action': 'add_note', 'lead_id': currentNoteLeadId, 'note': noteText.trim() })
+    })
+    .then(res => res.json())
+    .then(data => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = 'Save Note';
+        if (data.success) {
+            const noteDiv = document.getElementById('note_text_' + currentNoteLeadId);
+            if (noteDiv) { 
+                noteDiv.textContent = noteText.trim(); 
+                noteDiv.title = noteText.trim(); 
+            }
+            var modal = bootstrap.Modal.getInstance(document.getElementById('quickNoteModal'));
+            modal.hide();
+        } else { 
+            alert(data.message || 'Error adding note'); 
+        }
+    })
+    .catch(err => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = 'Save Note';
+        alert('A network error occurred. Note not saved.');
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Relocate modal to body to prevent Bootstrap z-index trapping in fixed/relative layout wrappers
-    var mod = document.getElementById('importModal');
-    if (mod) document.body.appendChild(mod);
+    // Relocate modals to body to prevent Bootstrap z-index trapping in fixed/relative layout wrappers
+    var modImport = document.getElementById('importModal');
+    if (modImport) document.body.appendChild(modImport);
+    var modNote = document.getElementById('quickNoteModal');
+    if (modNote) document.body.appendChild(modNote);
 });
 </script>
 
@@ -957,6 +988,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-upload me-2"></i>Upload File</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Note Modal -->
+<div class="modal fade" id="quickNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Add Lead Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Note Details</label>
+                    <textarea class="form-control" id="quickNoteText" rows="5" placeholder="Enter multi-line notes here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 shadow-sm" id="saveQuickNoteBtn" onclick="saveQuickNote()">Save Note</button>
+            </div>
         </div>
     </div>
 </div>
