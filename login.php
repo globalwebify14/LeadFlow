@@ -194,10 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn-login shadow-lg">Sign In <i class="bi bi-arrow-right ms-2"></i></button>
         </form>
 
-        <div class="demo-box">
-            <p class="mb-1">Want to try the demo?</p>
-            <strong>admin@crm.com</strong> / <strong>admin123</strong>
-        </div>
+
 
         <a href="index.php" class="back-home"><i class="bi bi-arrow-left me-2"></i>Back to home</a>
     </div>
