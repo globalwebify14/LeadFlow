@@ -50,41 +50,35 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
     font-size: 11px; font-weight: 600; padding: 4px 12px;
     border-radius: 100px; margin-bottom: 10px; letter-spacing: 0.5px;
 }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; width: 100%; }
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn-hero-primary {
-    flex: 1; justify-content: center;
     display: inline-flex; align-items: center; gap: 7px;
     background: linear-gradient(135deg,#6366f1,#4f46e5);
     color: #fff; border: none; border-radius: 10px;
-    padding: 12px 20px; font-size: 13px; font-weight: 600;
+    padding: 10px 20px; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all .25s; text-decoration: none;
     box-shadow: 0 4px 20px rgba(99,102,241,0.35);
-    white-space: nowrap;
 }
 .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(99,102,241,0.45); color: #fff; }
 .btn-hero-secondary {
-    flex: 1; justify-content: center;
     display: inline-flex; align-items: center; gap: 7px;
     background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.8);
     border: 1px solid rgba(255,255,255,0.14); border-radius: 10px;
-    padding: 12px 20px; font-size: 13px; font-weight: 600;
+    padding: 10px 20px; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all .25s; text-decoration: none; backdrop-filter: blur(6px);
-    white-space: nowrap;
 }
 .btn-hero-secondary:hover { background: rgba(255,255,255,0.12); color: #fff; transform: translateY(-2px); }
 
 /* Hero mini-stats row */
 .hero-stats-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 16px;
-    margin-top: 24px;
+    display: flex; gap: 28px; margin-top: 24px; flex-wrap: wrap;
 }
 .hero-stat-pill {
     display: flex; flex-direction: column;
-    padding: 16px; border-radius: 12px;
+    padding: 12px 20px; border-radius: 12px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.08);
+    min-width: 110px;
 }
 .hero-stat-pill .hval { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1; }
 .hero-stat-pill .hlbl { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500; letter-spacing: 0.4px; }
@@ -121,6 +115,24 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
 @media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+/* Mobile Dashboard Compression */
+@media (max-width: 768px) {
+    .dash-hero { padding: 20px 18px; }
+    .hero-stats-row { gap: 10px; margin-top: 18px; }
+    .hero-stat-pill { min-width: 45%; flex: 1; padding: 12px 14px; }
+    .hero-stat-pill .hval { font-size: 0.85rem; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; line-height: 1.1; }
+    .hero-actions { width: 100%; justify-content: stretch; }
+    .hero-actions .btn-hero-primary, .hero-actions .btn-hero-secondary { flex: 1; justify-content: center; }
+    .dash-card-header { padding: 14px 16px 0; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .dash-card-header .ms-auto, .dash-card-header a { align-self: flex-start; }
+    .dash-card-body { padding: 12px 16px 16px; }
+    .kpi-card { padding: 16px 14px 14px; }
+    .kpi-card .kpi-value { font-size: 0.85rem; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; line-height: 1.1; }
+    .kpi-card .kpi-icon { width: 34px; height: 34px; font-size: 15px; margin-bottom: 10px; }
+    .kpi-card .kpi-label { font-size: 10px; }
+    .kpi-card .kpi-sub { font-size: 10px; }
+}
 
 .kpi-card {
     background: #fff;
@@ -251,7 +263,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                 <?php endif; ?>
             </div>
         </div>
-        <div class="hero-actions align-self-start mt-4 mt-md-0 mx-auto mx-md-0" style="max-width:300px;">
+        <div class="hero-actions align-self-start">
             <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn-hero-primary">
                 <i class="bi bi-plus-circle-fill"></i> Add Lead
             </a>
