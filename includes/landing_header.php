@@ -34,6 +34,7 @@
                     <a href="<?= BASE_URL ?>index.php#features">Features</a>
                     <a href="<?= BASE_URL ?>index.php#pricing">Pricing</a>
                     <a href="<?= BASE_URL ?>index.php#testimonials">Testimonials</a>
+                    <a href="<?= BASE_URL ?>docs.php">User Guide</a>
                     <a href="<?= BASE_URL ?>login.php" class="lp-btn lp-btn-outline" style="padding: 10px 24px; font-size: 14px;">Sign In</a>
                     <a href="<?= BASE_URL ?>login.php" class="lp-btn lp-btn-primary" style="padding: 10px 24px; font-size: 14px;">Get Started</a>
                 </div>
@@ -49,6 +50,7 @@
             <div class="d-flex flex-column gap-3">
                 <a href="<?= BASE_URL ?>index.php#features" class="text-decoration-none text-dark fw-medium">Features</a>
                 <a href="<?= BASE_URL ?>index.php#pricing" class="text-decoration-none text-dark fw-medium">Pricing</a>
+                <a href="<?= BASE_URL ?>docs.php" class="text-decoration-none text-dark fw-medium">User Guide</a>
                 <a href="<?= BASE_URL ?>login.php" class="lp-btn lp-btn-primary w-100 justify-content-center">Get Started</a>
             </div>
         </div>

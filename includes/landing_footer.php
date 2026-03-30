@@ -19,6 +19,7 @@
                         <li><a href="#features" class="text-decoration-none text-muted">Features</a></li>
                         <li><a href="#pricing" class="text-decoration-none text-muted">Pricing</a></li>
                         <li><a href="#testimonials" class="text-decoration-none text-muted">Success Stories</a></li>
+                        <li><a href="<?= BASE_URL ?>docs.php" class="text-decoration-none text-muted">User Guide</a></li>
                         <li><a href="<?= BASE_URL ?>login.php" class="text-decoration-none text-muted">Login</a></li>
                     </ul>
                 </div>
