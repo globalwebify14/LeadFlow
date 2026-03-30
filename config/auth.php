@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/db.php';
+
 // Calculate the exact BASE_URL automatically to prevent broken CSS/links on live servers
 $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
 $dirRoot = str_replace('\\', '/', dirname(__DIR__));
@@ -24,7 +26,7 @@ function requireLogin() {
     $role = $_SESSION['user_role'] ?? '';
     $orgId = $_SESSION['organization_id'] ?? null;
     if ($role !== 'super_admin' && $orgId) {
-        require_once __DIR__ . '/db.php';
+        global $pdo;
         $orgCheck = $pdo->prepare("SELECT status FROM organizations WHERE id = :id LIMIT 1");
         $orgCheck->execute(['id' => $orgId]);
         $orgData = $orgCheck->fetch();
