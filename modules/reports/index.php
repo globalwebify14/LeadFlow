@@ -82,7 +82,7 @@ $monthlyGrowth = $reportModel->getMonthlyGrowth($orgId, $agentIdFilter, $dateFro
 $pipelinePerf = $reportModel->getPipelinePerformance($orgId, $agentIdFilter, $dateFrom, $dateTo);
 
 // New Detailed Leads Feed
-$detailedLeads = $reportModel->getDetailedLeadsReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 50);
+$detailedLeads = $reportModel->getDetailedLeadsReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 10);
 $followupsList = $reportModel->getFollowUpsListReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 100);
 
 include '../../includes/header.php';
@@ -208,7 +208,7 @@ include '../../includes/header.php';
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0"><i class="bi bi-list-ul me-2 text-primary"></i>Daily Leads Feed & Recent Notes</h6>
-                <span class="badge bg-primary bg-opacity-10 text-primary">Showing latest 50</span>
+                <span class="badge bg-primary bg-opacity-10 text-primary">Showing latest 10</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
