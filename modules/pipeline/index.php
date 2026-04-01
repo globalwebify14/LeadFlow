@@ -20,8 +20,28 @@ if (getUserRole() === 'agent') {
     $filterAgentId = getUserId();
 }
 
+$datePreset = $_GET['date_preset'] ?? '';
 $dateFrom = $_GET['date_from'] ?? null;
 $dateTo = $_GET['date_to'] ?? null;
+
+if ($datePreset) {
+    if ($datePreset === 'today') {
+        $dateFrom = date('Y-m-d');
+        $dateTo   = date('Y-m-d');
+    } elseif ($datePreset === 'yesterday') {
+        $dateFrom = date('Y-m-d', strtotime('-1 day'));
+        $dateTo   = date('Y-m-d', strtotime('-1 day'));
+    } elseif ($datePreset === '7days') {
+        $dateFrom = date('Y-m-d', strtotime('-7 days'));
+        $dateTo   = date('Y-m-d');
+    } elseif ($datePreset === 'month') {
+        $dateFrom = date('Y-m-01');
+        $dateTo   = date('Y-m-t');
+    } elseif ($datePreset === '90days') {
+        $dateFrom = date('Y-m-d', strtotime('-90 days'));
+        $dateTo   = date('Y-m-d');
+    }
+}
 
 $pipelineData = [];
 foreach ($stages as $stage) {
@@ -59,10 +79,23 @@ include '../../includes/header.php';
             <?php endforeach; ?>
         </select>
         <?php endif; ?>
-        <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($dateFrom) ?>" style="width:140px;">
-        <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>" style="width:140px;">
-        <button type="submit" class="btn btn-sm btn-light border"><i class="bi bi-filter"></i></button>
-        <?php if ($filterAgentId || $dateFrom || $dateTo): ?>
+        <select name="date_preset" class="form-select form-select-sm" style="width:140px;" onchange="toggleCustomDates(this.value)">
+            <option value="">All Time</option>
+            <option value="today" <?= $datePreset === 'today' ? 'selected' : '' ?>>Today</option>
+            <option value="yesterday" <?= $datePreset === 'yesterday' ? 'selected' : '' ?>>Yesterday</option>
+            <option value="7days" <?= $datePreset === '7days' ? 'selected' : '' ?>>Last 7 Days</option>
+            <option value="month" <?= $datePreset === 'month' ? 'selected' : '' ?>>This Month</option>
+            <option value="90days" <?= $datePreset === '90days' ? 'selected' : '' ?>>Last 90 Days</option>
+            <option value="custom" <?= $datePreset === 'custom' ? 'selected' : '' ?>>Custom Range</option>
+        </select>
+        
+        <div id="custom-dates" class="<?= $datePreset === 'custom' ? 'd-flex' : 'd-none' ?> gap-2">
+            <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($_GET['date_from'] ?? '') ?>" style="width:130px;">
+            <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($_GET['date_to'] ?? '') ?>" style="width:130px;">
+        </div>
+
+        <button type="submit" class="btn btn-sm btn-light border fw-bold text-secondary"><i class="bi bi-filter me-1"></i>Filter</button>
+        <?php if ($filterAgentId || $datePreset || $dateFrom || $dateTo): ?>
         <a href="index.php" class="btn btn-sm btn-link text-decoration-none text-danger">Clear</a>
         <?php endif; ?>
     </form>
@@ -215,6 +248,17 @@ include '../../includes/header.php';
 </style>
 
 <script>
+function toggleCustomDates(val) {
+    const cd = document.getElementById('custom-dates');
+    if (val === 'custom') {
+        cd.classList.remove('d-none');
+        cd.classList.add('d-flex');
+    } else {
+        cd.classList.add('d-none');
+        cd.classList.remove('d-flex');
+    }
+}
+
 function dragLead(e) {
     e.dataTransfer.setData('text/plain', e.target.closest('[data-lead-id]').dataset.leadId);
     e.target.closest('[data-lead-id]').style.opacity = '0.5';
