@@ -203,29 +203,6 @@ include '../../includes/header.php';
 </div>
 
 <div class="row g-4 mb-4">
-    <!-- Monthly Lead Trend -->
-    <div class="col-lg-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-graph-up me-2 text-primary"></i>Daily Lead Trend</h6></div>
-            <div class="card-body"><canvas id="monthlyChart" height="280"></canvas></div>
-        </div>
-    </div>
-    <!-- Leads by Status (Pie) -->
-    <div class="col-lg-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-pie-chart me-2 text-info"></i>Leads by Pipeline Stage</h6></div>
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <?php if (empty($leadsByStatus)): ?>
-                    <p class="text-muted small">No data for selected period</p>
-                <?php else: ?>
-                    <canvas id="statusChart" height="240"></canvas>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
     <!-- Daily Detailed Leads Feed -->
     <div class="col-12">
         <div class="card shadow-sm border-0 h-100">
@@ -374,10 +351,35 @@ include '../../includes/header.php';
     </div>
 </div>
 
+<div class="row g-4 mb-4">
+    <!-- Monthly Lead Trend -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-graph-up me-2 text-primary"></i>Daily Lead Trend</h6></div>
+            <div class="card-body"><canvas id="monthlyChart" height="280"></canvas></div>
+        </div>
+    </div>
+    <!-- Leads by Status (Pie) -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-pie-chart me-2 text-info"></i>Leads by Pipeline Stage</h6></div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <?php if (empty($leadsByStatus)): ?>
+                    <p class="text-muted small">No data for selected period</p>
+                <?php else: ?>
+                    <canvas id="statusChart" height="240"></canvas>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 <?php if (!$isAgent): ?>
 <div class="row g-4 mb-4">
     <!-- Agent Performance Table -->
-    <div class="col-lg-7">
+    <div class="col-12">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-4 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0"><i class="bi bi-people me-2 text-primary"></i>Agent Performance Leaderboard</h6>
@@ -421,75 +423,6 @@ include '../../includes/header.php';
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Lead Distribution (Auto-Assign audit) -->
-    <div class="col-lg-5">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-4">
-                <h6 class="fw-bold mb-0"><i class="bi bi-diagram-3 me-2 text-info"></i>Lead Distribution Verification</h6>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead><tr class="small text-uppercase text-muted fw-semibold"><th>Agent</th><th>Leads Assigned</th><th>Fairness Gap</th></tr></thead>
-                        <tbody>
-                            <?php 
-                            $maxLeads = 0;
-                            if (count($leadDist) > 0) {
-                                $maxLeads = max(array_column($leadDist, 'assigned_count'));
-                            }
-                            ?>
-                            <?php foreach ($leadDist as $ld): ?>
-                            <tr>
-                                <td class="fw-semibold"><?= e($ld['agent_name']) ?></td>
-                                <td class="fw-bold"><?= number_format($ld['assigned_count']) ?></td>
-                                <td>
-                                    <?php $pct = $maxLeads > 0 ? ($ld['assigned_count'] / $maxLeads) * 100 : 0; ?>
-                                    <div class="progress" style="height:6px;">
-                                        <div class="progress-bar bg-primary" style="width:<?= $pct ?>%"></div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Facebook Campaign ROI -->
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white border-0 pt-4">
-        <h6 class="fw-bold mb-0"><i class="bi bi-facebook me-2 text-primary" style="color:#1877f2 !important;"></i>Facebook Ads Campaign ROI</h6>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead><tr class="small text-uppercase text-muted fw-semibold"><th>Facebook Page</th><th>Campaign Name</th><th>Leads Generated</th><th>Performance</th></tr></thead>
-                <tbody>
-                    <?php 
-                    $maxCampLeads = count($campaigns) > 0 ? max(array_column($campaigns, 'lead_count')) : 0;
-                    foreach ($campaigns as $camp): 
-                    ?>
-                    <tr>
-                        <td class="fw-semibold text-dark"><?= e($camp['page_name'] ?? 'Disconnected Page') ?></td>
-                        <td><?= e($camp['campaign_name']) ?></td>
-                        <td class="fw-bold text-primary"><?= number_format($camp['lead_count']) ?></td>
-                        <td style="width: 200px;">
-                            <?php $cpct = $maxCampLeads > 0 ? ($camp['lead_count'] / $maxCampLeads) * 100 : 0; ?>
-                            <div class="progress" style="height:8px;">
-                                <div class="progress-bar" style="background-color: #1877f2; width:<?= $cpct ?>%"></div>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($campaigns)): ?><tr><td colspan="4" class="text-center text-muted py-4">No Facebook Ad leads generated in this period</td></tr><?php endif; ?>
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
