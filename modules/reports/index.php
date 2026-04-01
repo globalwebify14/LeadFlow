@@ -387,7 +387,7 @@ include '../../includes/header.php';
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead><tr class="small text-uppercase text-muted fw-semibold"><th>Agent</th><th>Assigned</th><th>Contacted</th><th>Deals</th><th>Conv Ratio</th><th>Avg Resp Time</th></tr></thead>
+                        <thead><tr class="small text-uppercase text-muted fw-semibold"><th>Agent</th><th>Assigned</th><th>Deals</th><th>Conv Ratio</th><th>Avg Resp Time</th></tr></thead>
                         <tbody>
                             <?php foreach ($agentPerf as $ap): ?>
                             <?php 
@@ -405,7 +405,6 @@ include '../../includes/header.php';
                             <tr>
                                 <td class="fw-semibold text-dark"><?= e($ap['name']) ?></td>
                                 <td><?= number_format($ap['total_leads']) ?></td>
-                                <td><?= number_format($ap['contacted_leads']) ?></td>
                                 <td class="fw-bold text-success"><?= number_format($ap['converted_deals']) ?></td>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -418,7 +417,7 @@ include '../../includes/header.php';
                                 <td><span class="badge bg-light text-dark border"><?= $respStr ?></span></td>
                             </tr>
                             <?php endforeach; ?>
-                            <?php if (empty($agentPerf)): ?><tr><td colspan="6" class="text-center text-muted py-4">No agents active in this timeframe</td></tr><?php endif; ?>
+                            <?php if (empty($agentPerf)): ?><tr><td colspan="5" class="text-center text-muted py-4">No agents active in this timeframe</td></tr><?php endif; ?>
                         </tbody>
                     </table>
                 </div>
