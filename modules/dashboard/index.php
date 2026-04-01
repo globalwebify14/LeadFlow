@@ -17,7 +17,7 @@ $followupModel = new Followup($pdo);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_task'])) {
     require_once '../../models/Task.php';
     $taskModel = new Task($pdo);
-    $assignedTo = (isAdmin() && !empty($_POST['assigned_to'])) ? (int)$_POST['assigned_to'] : $userId;
+    $assignedTo = !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : $userId;
     
     $taskModel->createTask([
         'organization_id' => $orgId,
@@ -33,13 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_task'])) {
     exit;
 }
 
-// Fetch agents for task assignment (admin/team_lead only)
+// Fetch agents for task assignment
 $orgAgents = [];
-if (isAdmin()) {
-    $agentsStmt = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = :org AND is_active = 1 ORDER BY name");
-    $agentsStmt->execute(['org' => $orgId]);
-    $orgAgents = $agentsStmt->fetchAll();
-}
+$agentsStmt = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = :org AND is_active = 1 ORDER BY name");
+$agentsStmt->execute(['org' => $orgId]);
+$orgAgents = $agentsStmt->fetchAll();
 
 include '../../includes/header.php';
 

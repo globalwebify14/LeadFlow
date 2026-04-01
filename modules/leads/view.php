@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_task'])) {
     $taskModel->createTask([
         'organization_id' => $orgId,
         'lead_id'         => $lead['id'],
-        'assigned_to'     => (isAdmin() && !empty($_POST['assigned_to'])) ? (int)$_POST['assigned_to'] : getUserId(),
+        'assigned_to'     => !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : getUserId(),
         'task_title'      => trim($_POST['task_title']),
         'description'     => trim($_POST['description']),
         'due_date'        => $_POST['due_date'],
@@ -112,17 +112,16 @@ usort($followups, function($a, $b) { return strtotime($a['followup_date']) - str
 usort($leadTasks, function($a, $b) { return strtotime($a['due_date']) - strtotime($b['due_date']); });
 
 // Get pipeline stages for quick status
+// Get pipeline stages for quick status
 $stagesStmt = $pdo->prepare("SELECT name FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
 $stagesStmt->execute(['org' => $orgId]);
 $pipelineStages = $stagesStmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Fetch agents for task assignment (admin/team_lead only)
+// Fetch agents for task assignment
 $orgAgents = [];
-if (isAdmin()) {
-    $agentsStmt = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = :org AND is_active = 1 ORDER BY name");
-    $agentsStmt->execute(['org' => $orgId]);
-    $orgAgents = $agentsStmt->fetchAll();
-}
+$agentsStmt = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = :org AND is_active = 1 ORDER BY name");
+$agentsStmt->execute(['org' => $orgId]);
+$orgAgents = $agentsStmt->fetchAll();
 
 include '../../includes/header.php';
 ?>
@@ -852,7 +851,7 @@ include '../../includes/header.php';
                     <label class="form-label fw-semibold small">Due Date</label>
                     <input type="date" class="form-control" name="due_date" value="<?= date('Y-m-d') ?>" required style="border-radius:12px;">
                 </div>
-                <?php if (isAdmin() && !empty($orgAgents)): ?>
+                <?php if (!empty($orgAgents)): ?>
                 <div class="mb-3">
                     <label class="form-label fw-semibold small">Assign To</label>
                     <select class="form-select" name="assigned_to" style="border-radius:12px;">

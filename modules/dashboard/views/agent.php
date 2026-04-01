@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label class="form-label fw-semibold small">Due Date</label>
                     <input type="date" class="form-control" name="due_date" value="<?= date('Y-m-d') ?>" required style="border-radius:12px;">
                 </div>
-                <?php if (isAdmin() && !empty($orgAgents)): ?>
+                <?php if (!empty($orgAgents)): ?>
                 <div class="mb-3">
                     <label class="form-label fw-semibold small">Assign To</label>
                     <select class="form-select" name="assigned_to" style="border-radius:12px;">
