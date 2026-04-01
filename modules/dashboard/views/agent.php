@@ -1,5 +1,7 @@
 <?php
 // agent.php view
+/** @var Dashboard $dashboard */
+/** @var Followup $followupModel */
 $stats         = $dashboard->getStatistics($orgId, $userId, 'agent');
 $recentLeads   = $dashboard->getRecentLeads($orgId, 6, $userId, 'agent');
 $todayFollowups= $dashboard->getTodayFollowups($orgId, $userId);

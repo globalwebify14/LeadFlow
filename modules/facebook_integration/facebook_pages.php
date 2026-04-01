@@ -75,7 +75,9 @@ function subscribePageToApp($pageId, $pageToken) {
 
     $res = json_decode($response, true);
     if ($info['http_code'] !== 200 || !($res['success'] ?? false)) {
-        error_log("Failed to subscribe page {$pageId} to webhooks: " . $response);
+        error_log("FB Sync Error: Failed to subscribe page {$pageId} to webhooks: " . $response);
+    } else {
+        error_log("FB Sync Success: Successfully subscribed page {$pageId} to 'leadgen' webhook.");
     }
 }
 

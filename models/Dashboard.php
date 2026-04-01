@@ -38,6 +38,7 @@ class Dashboard {
 
     /**
      * Get Organization statistics (Owner, Admin, Team Lead, Agent)
+     * @return array
      */
     public function getStatistics($orgId, $userId = null, $role = 'org_owner') {
         $stats = [

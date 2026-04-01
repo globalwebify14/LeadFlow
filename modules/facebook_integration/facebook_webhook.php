@@ -140,6 +140,7 @@ function processLead($pdo, $leadgenId, $formId, $pageId) {
     }
 
     $leadData = json_decode($response, true);
+    writeLog("API SUCCESS: Lead data fetched successfully for Leadgen ID: {$leadgenId}");
     
     // E. Parse ALL form fields BEFORE inserting into facebook_leads
     $parsed = parseAllLeadFields($leadData);
