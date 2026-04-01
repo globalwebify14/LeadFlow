@@ -75,11 +75,14 @@ class Report {
     public function getConversionRate($orgId, $userId = null, $dateFrom = null, $dateTo = null) {
         $summary = $this->getLeadSummary($orgId, $userId, $dateFrom, $dateTo);
         $total = $summary['total_leads'] ?? 0;
-        $converted = $summary['converted_leads'] ?? 0;
+        
+        $deals = $this->getDealsRevenueReport($orgId, $userId, $dateFrom, $dateTo);
+        $converted = $deals['total_closed_deals'] ?? 0;
+        
         return [
             'total' => $total,
             'converted' => $converted,
-            'rate' => $total > 0 ? round(($converted / $total) * 100, 1) : 0,
+            'rate' => $total > 0 ? min(100, round(($converted / $total) * 100, 1)) : 0,
         ];
     }
 

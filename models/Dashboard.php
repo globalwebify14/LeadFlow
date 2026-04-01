@@ -90,10 +90,7 @@ class Dashboard {
             if ($row['status'] === 'New Lead') $stats['new_leads'] += $row['count'];
             if ($row['status'] === 'Follow Up') $stats['follow_up'] += $row['count'];
             if ($row['status'] !== 'New Lead') $stats['contacted_leads'] += $row['count'];
-            if (in_array($row['status'], ['Done', 'Closed Won'])) $stats['converted'] += $row['count'];
         }
-
-        $stats['conversion_rate'] = $stats['total_leads'] > 0 ? round(($stats['converted'] / $stats['total_leads']) * 100) : 0;
 
         // Assigned today
         $assignSql = "SELECT COUNT(*) FROM leads WHERE organization_id = :org_id AND DATE(created_at) = CURDATE()";
@@ -121,6 +118,10 @@ class Dashboard {
             if ($d['status'] === 'lost') $stats['lost_deals'] += $d['cnt'];
             if ($d['status'] === 'open') $stats['deals_in_progress'] += $d['cnt'];
         }
+
+        // Ensure "Converted Leads" explicitly equals "Deals Won"
+        $stats['converted'] = $stats['won_deals'];
+        $stats['conversion_rate'] = $stats['total_leads'] > 0 ? min(100, round(($stats['converted'] / $stats['total_leads']) * 100)) : 0;
 
         // Pending follow-ups (Today + Overdue)
         $fSql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org_id AND status = 'pending' AND followup_date <= CURDATE()";
