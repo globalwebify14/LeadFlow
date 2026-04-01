@@ -303,5 +303,56 @@ class Report {
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
+
+    public function getDetailedLeadsReport($orgId, $agentId = null, $dateFrom = null, $dateTo = null, $limit = 50) {
+        $sql = "SELECT l.id, l.name, l.phone, l.status, l.created_at, l.source,
+                       u.name as agent_name, 
+                       ps.name as stage_name, ps.color as stage_color,
+                       (SELECT note FROM lead_notes ln WHERE ln.lead_id = l.id ORDER BY ln.created_at DESC LIMIT 1) as latest_note,
+                       (SELECT CONCAT(followup_date, ' ', followup_time) FROM followups f WHERE f.lead_id = l.id ORDER BY f.created_at DESC LIMIT 1) as latest_followup_date,
+                       (SELECT status FROM followups f WHERE f.lead_id = l.id ORDER BY f.created_at DESC LIMIT 1) as latest_followup_status
+                FROM leads l
+                LEFT JOIN users u ON l.assigned_to = u.id
+                LEFT JOIN pipeline_stages ps ON l.pipeline_stage_id = ps.id
+                WHERE l.organization_id = :org";
+        $params = ['org' => $orgId];
+        
+        if ($agentId) {
+            $sql .= " AND l.assigned_to = :userId";
+            $params['userId'] = $agentId;
+        }
+        $this->applyDateFilter($sql, $params, 'l', $dateFrom, $dateTo);
+        
+        $sql .= " ORDER BY l.created_at DESC LIMIT " . (int)$limit;
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function getFollowUpsListReport($orgId, $agentId = null, $dateFrom = null, $dateTo = null, $limit = 50) {
+        $sql = "SELECT f.*, 
+                       l.name as lead_name, l.phone as lead_phone,
+                       u.name as agent_name
+                FROM followups f
+                JOIN leads l ON f.lead_id = l.id
+                LEFT JOIN users u ON f.user_id = u.id
+                WHERE f.organization_id = :org";
+        $params = ['org' => $orgId];
+        
+        if ($agentId) {
+            $sql .= " AND f.user_id = :userId";
+            $params['userId'] = $agentId;
+        }
+        
+        // Filter by Scheduled Date so Admin can ask "What followups are scheduled for today?"
+        $this->applyDateFilter($sql, $params, 'f', $dateFrom, $dateTo, 'followup_date');
+        
+        $sql .= " ORDER BY f.followup_date ASC, f.followup_time ASC LIMIT " . (int)$limit;
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
 }
 ?>

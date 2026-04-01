@@ -14,7 +14,7 @@ $isAgent = ($userRole === 'agent');
 $agentIdFilter = $isAgent ? getUserId() : ($_GET['agent_id'] ?? null);
 
 // Date filters
-$dateFilter = $_GET['date_filter'] ?? 'this_month';
+$dateFilter = $_GET['date_filter'] ?? 'today';
 $dateFrom = $_GET['date_from'] ?? null;
 $dateTo = $_GET['date_to'] ?? null;
 
@@ -80,6 +80,10 @@ if (!$isAgent) {
 
 $monthlyGrowth = $reportModel->getMonthlyGrowth($orgId, $agentIdFilter, $dateFrom, $dateTo);
 $pipelinePerf = $reportModel->getPipelinePerformance($orgId, $agentIdFilter, $dateFrom, $dateTo);
+
+// New Detailed Leads Feed
+$detailedLeads = $reportModel->getDetailedLeadsReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 50);
+$followupsList = $reportModel->getFollowUpsListReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 100);
 
 include '../../includes/header.php';
 ?>
@@ -222,29 +226,149 @@ include '../../includes/header.php';
 </div>
 
 <div class="row g-4 mb-4">
-    <!-- Leads by Source -->
-    <div class="col-lg-6">
+    <!-- Daily Detailed Leads Feed -->
+    <div class="col-12">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-bar-chart me-2 text-success"></i>Leads by Source</h6></div>
-            <div class="card-body">
-                <?php if (empty($leadsBySource)): ?>
-                    <p class="text-muted small text-center mt-3">No data for selected period</p>
-                <?php else: ?>
-                    <canvas id="sourceChart" height="250"></canvas>
-                <?php endif; ?>
+            <div class="card-header bg-white border-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-list-ul me-2 text-primary"></i>Daily Leads Feed & Recent Notes</h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary">Showing latest 50</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-muted fw-semibold">
+                                <th class="ps-4">Lead</th>
+                                <th>Source</th>
+                                <th>Agent</th>
+                                <th>Stage / Status</th>
+                                <th>Scheduled Follow-up</th>
+                                <th style="min-width: 250px;">Latest Note</th>
+                                <th class="pe-4 text-end">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($detailedLeads as $dl): ?>
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-semibold text-dark"><a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $dl['id'] ?>" class="text-decoration-none text-dark"><?= e($dl['name']) ?></a></div>
+                                    <div class="small text-muted"><i class="bi bi-telephone me-1"></i><?= e($dl['phone']) ?></div>
+                                </td>
+                                <td>
+                                    <?php if($dl['source'] === 'facebook_ads'): ?>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary"><i class="bi bi-facebook me-1"></i>Ads</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary"><?= e(ucfirst($dl['source'] ?: 'Manual')) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= e($dl['agent_name'] ?: 'Unassigned') ?></td>
+                                <td>
+                                    <?php if ($dl['stage_name']): ?>
+                                        <span class="badge rounded-pill px-2 py-1" style="background:<?= e($dl['stage_color'] ?? '#6366f1') ?>20;color:<?= e($dl['stage_color'] ?? '#6366f1') ?>; border:1px solid <?= e($dl['stage_color'] ?? '#6366f1') ?>30;">
+                                            <?= e($dl['stage_name']) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-light text-dark border"><?= e($dl['status']) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($dl['latest_followup_date']): ?>
+                                        <div class="small fw-semibold text-dark"><i class="bi bi-calendar-event text-muted me-1"></i><?= date('M d, h:i A', strtotime($dl['latest_followup_date'])) ?></div>
+                                        <div class="mt-1">
+                                            <?php if ($dl['latest_followup_status'] === 'completed'): ?>
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-0" style="font-size: 0.65rem;">Completed</span>
+                                            <?php elseif (strtotime($dl['latest_followup_date']) < time()): ?>
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-0" style="font-size: 0.65rem;">Overdue</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-0" style="font-size: 0.65rem;">Pending</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="small text-muted fst-italic">None scheduled</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($dl['latest_note']): ?>
+                                        <div class="small text-dark" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;" title="<?= e($dl['latest_note']) ?>">
+                                            <i class="bi bi-chat-left-text text-muted me-1"></i> <?= e($dl['latest_note']) ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="small text-muted fst-italic">No notes yet</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="pe-4 text-end small text-muted">
+                                    <?= date('M d, h:i A', strtotime($dl['created_at'])) ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($detailedLeads)): ?>
+                            <tr><td colspan="6" class="text-center text-muted py-5">No leads found in this period</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-    <!-- Pipeline Performance -->
-    <div class="col-lg-6">
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Follow-up Tracking Master List -->
+    <div class="col-12">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-funnel me-2 text-warning"></i>Pipeline Values</h6></div>
-            <div class="card-body">
-                <?php if (empty($pipelinePerf)): ?>
-                    <p class="text-muted small text-center mt-3">No data for selected period</p>
-                <?php else: ?>
-                    <canvas id="pipelineChart" height="250"></canvas>
-                <?php endif; ?>
+            <div class="card-header bg-white border-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2 text-danger"></i>Scheduled Follow-ups & Outcomes</h6>
+                <span class="badge bg-danger bg-opacity-10 text-danger">For Selected Date Range</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr class="small text-uppercase text-muted fw-semibold">
+                                <th class="ps-4">Sales Agent</th>
+                                <th>Lead</th>
+                                <th>Scheduled For</th>
+                                <th>Outcome Note / Task</th>
+                                <th class="pe-4 text-end">Current Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($followupsList as $fl): ?>
+                            <tr>
+                                <td class="ps-4 fw-semibold text-dark"><?= e($fl['agent_name'] ?: 'Unassigned') ?></td>
+                                <td>
+                                    <div class="fw-semibold text-primary"><a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $fl['lead_id'] ?>" class="text-decoration-none"><?= e($fl['lead_name']) ?></a></div>
+                                </td>
+                                <td>
+                                    <div class="small fw-bold text-dark"><i class="bi bi-clock text-muted me-1"></i><?= date('M d, Y', strtotime($fl['followup_date'])) ?></div>
+                                    <div class="small text-muted"><?= date('h:i A', strtotime($fl['followup_time'])) ?></div>
+                                </td>
+                                <td>
+                                    <?php if ($fl['notes']): ?>
+                                        <div class="small text-dark" style="max-width:300px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="<?= e($fl['notes']) ?>"><i class="bi bi-sticky text-muted me-1"></i><?= e($fl['notes']) ?></div>
+                                    <?php else: ?>
+                                        <span class="small text-muted fst-italic">No additional notes</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <?php if ($fl['status'] === 'completed'): ?>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2"><i class="bi bi-check2-all me-1"></i>Completed</span>
+                                    <?php else: ?>
+                                        <?php if (strtotime($fl['followup_date'] . ' ' . $fl['followup_time']) < time()): ?>
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2"><i class="bi bi-exclamation-triangle me-1"></i>Overdue</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($followupsList)): ?>
+                            <tr><td colspan="5" class="text-center text-muted py-5">No follow-ups scheduled for this period</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -424,54 +548,7 @@ if (document.getElementById('statusChart') && statusData.length > 0) {
     });
 }
 
-// Source Chart
-const sourceData = <?= json_encode($leadsBySource) ?>;
-if (document.getElementById('sourceChart') && sourceData.length > 0) {
-    new Chart(document.getElementById('sourceChart'), {
-        type: 'bar',
-        data: { 
-            labels: sourceData.map(d => d.source), 
-            datasets: [{ label: 'Leads', data: sourceData.map(d => d.count), backgroundColor: colors, borderRadius: 6 }] 
-        },
-        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } } }
-    });
-}
 
-// Pipeline Chart (Deals & Leads)
-const pipeData = <?= json_encode($pipelinePerf) ?>;
-if (document.getElementById('pipelineChart') && pipeData.length > 0) {
-    new Chart(document.getElementById('pipelineChart'), {
-        type: 'bar',
-        data: { 
-            labels: pipeData.map(p => p.name), 
-            datasets: [
-                { 
-                    label: 'Leads in Stage', 
-                    data: pipeData.map(p => p.leads_count), 
-                    backgroundColor: pipeData.map(p => p.color ? p.color : '#ccc'), 
-                    borderRadius: 4 
-                },
-                { 
-                    label: 'Deals in Stage', 
-                    data: pipeData.map(p => p.deals_count), 
-                    backgroundColor: 'rgba(100, 116, 139, 0.2)', 
-                    borderRadius: 4 
-                }
-            ] 
-        },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { 
-                legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } 
-            }, 
-            scales: { 
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, 
-                x: { grid: { display: false } } 
-            } 
-        }
-    });
-}
 </script>
 
 <?php include '../../includes/footer.php'; ?>
