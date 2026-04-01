@@ -144,6 +144,61 @@ class Lead {
     }
 
     /**
+     * Get all lead IDs matching specific filters (for bulk select across all pages)
+     */
+    public function getAllLeadIds($orgId, $filters = []) {
+        $sql = "SELECT l.id FROM leads l WHERE l.organization_id = :org_id";
+        $params = [':org_id' => $orgId];
+
+        if (!empty($filters['search'])) {
+            $sql .= " AND (l.name LIKE :search OR l.phone LIKE :search OR l.email LIKE :search OR l.company LIKE :search)";
+            $params[':search'] = "%" . $filters['search'] . "%";
+        }
+        if (!empty($filters['status'])) {
+            $sql .= " AND l.status = :status";
+            $params[':status'] = $filters['status'];
+        }
+        if (!empty($filters['priority'])) {
+            $sql .= " AND l.priority = :priority";
+            $params[':priority'] = $filters['priority'];
+        }
+        if (!empty($filters['source'])) {
+            $sql .= " AND l.source = :source";
+            $params[':source'] = $filters['source'];
+        }
+        if (!empty($filters['enforce_assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['enforce_assigned_to'];
+        } elseif (!empty($filters['assigned_to'])) {
+            $sql .= " AND l.assigned_to = :assigned_to";
+            $params[':assigned_to'] = $filters['assigned_to'];
+        }
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(l.created_at) >= :date_from";
+            $params[':date_from'] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(l.created_at) <= :date_to";
+            $params[':date_to'] = $filters['date_to'];
+        }
+        if (!empty($filters['tag_id'])) {
+            $sql .= " AND l.id IN (SELECT lead_id FROM lead_tag_map WHERE tag_id = :tag_id)";
+            $params[':tag_id'] = $filters['tag_id'];
+        }
+        if (!empty($filters['facebook_page_id'])) {
+            $sql .= " AND l.facebook_page_id = :fb_page_id";
+            $params[':fb_page_id'] = $filters['facebook_page_id'];
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
      * Get single lead by ID
      */
     public function getLeadById($id, $orgId = null) {

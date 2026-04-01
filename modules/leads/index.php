@@ -25,6 +25,26 @@ $filterStatus  = $_GET['status'] ?? '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['bulk_action'])) {
         $ids = $_POST['lead_ids'] ?? [];
+        
+        // Handle "Select All Across All Pages"
+        if (!empty($_POST['select_all_pages'])) {
+            $postFilters = [
+                'search'      => $_POST['filter_search'] ?? '',
+                'status'      => $_POST['filter_status'] ?? '',
+                'priority'    => $_POST['filter_priority'] ?? '',
+                'source'      => $_POST['filter_source'] ?? '',
+                'assigned_to' => $_POST['filter_assigned_to'] ?? '',
+                'date_from'   => $_POST['filter_date_from'] ?? '',
+                'date_to'     => $_POST['filter_date_to'] ?? '',
+                'tag_id'          => $_POST['filter_tag_id'] ?? '',
+                'facebook_page_id' => $_POST['filter_facebook_page_id'] ?? '',
+            ];
+            if (getUserRole() === 'agent') {
+                $postFilters['enforce_assigned_to'] = getUserId();
+            }
+            $ids = $leadModel->getAllLeadIds($orgId, $postFilters);
+        }
+
         if (!empty($ids)) {
             switch ($_POST['bulk_action']) {
                 case 'delete':
@@ -567,6 +587,16 @@ include '../../includes/header.php';
                 <button type="button" class="btn btn-light btn-sm fw-bold px-3" onclick="applyBulkAction(event)">Apply Action</button>
             </div>
 
+            <!-- Bulk Actions Across Pages Prompts -->
+            <div id="selectAllPagesBanner" class="alert custom-primary-banner border-0 rounded-3 mb-3 mx-3 py-2 px-3 d-none align-items-center justify-content-center gap-2" style="font-size:13px; background:#eff6ff; color:#1e40af;">
+                <span>All <strong><span id="currentPageSelectedCount">15</span></strong> leads on this page are selected.</span>
+                <button type="button" class="btn btn-sm btn-link text-primary fw-bold p-0 text-decoration-underline" id="selectAllPagesBtn">Select all <?= $totalLeads ?> leads in this view</button>
+            </div>
+            <div id="allPagesSelectedBanner" class="alert border-0 rounded-3 mx-3 mb-3 py-2 px-3 d-none align-items-center justify-content-center gap-2" style="font-size:13px; background:#f0fdf4; color:#166534;">
+                <span><i class="bi bi-check-circle-fill me-2"></i>All <strong><?= $totalLeads ?></strong> leads in this view are selected.</span>
+                <button type="button" class="btn btn-sm btn-link text-success p-0 text-decoration-underline" id="clearSelectionBtn">Clear selection</button>
+            </div>
+
             <div class="table-responsive border-0" style="min-height: 400px; padding-bottom: 2rem;">
                 <table class="table table-modern table-hover align-middle mb-0 w-100 mobile-card-table">
                     <thead>
@@ -765,7 +795,10 @@ include '../../includes/header.php';
         <?php else: ?>
             <div class="py-3"></div> <!-- Bottom spacing when no pagination -->
         <?php endif; ?>
-        <script>
+<script>
+window.globalTotalLeads = <?= $totalLeads ?>;
+window.isSelectAllPages = false;
+
 function rebindLeadEvents() {
     // Select All
     const selectAll = document.getElementById('selectAll');
@@ -776,6 +809,34 @@ function rebindLeadEvents() {
         });
     }
     document.querySelectorAll('.lead-check').forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+    const selAllPagesBtn = document.getElementById('selectAllPagesBtn');
+    if (selAllPagesBtn) {
+        selAllPagesBtn.onclick = function(e) {
+            e.preventDefault();
+            window.isSelectAllPages = true;
+            document.getElementById('selectAllPagesBanner').classList.add('d-none');
+            document.getElementById('selectAllPagesBanner').classList.remove('d-flex');
+            document.getElementById('allPagesSelectedBanner').classList.remove('d-none');
+            document.getElementById('allPagesSelectedBanner').classList.add('d-flex');
+            updateBulkBar();
+        };
+    }
+
+    const clearSelBtn = document.getElementById('clearSelectionBtn');
+    if (clearSelBtn) {
+        clearSelBtn.onclick = function(e) {
+            e.preventDefault();
+            window.isSelectAllPages = false;
+            document.querySelectorAll('.lead-check').forEach(cb => cb.checked = false);
+            if (selectAll) selectAll.checked = false;
+            document.getElementById('selectAllPagesBanner').classList.add('d-none');
+            document.getElementById('selectAllPagesBanner').classList.remove('d-flex');
+            document.getElementById('allPagesSelectedBanner').classList.add('d-none');
+            document.getElementById('allPagesSelectedBanner').classList.remove('d-flex');
+            updateBulkBar();
+        };
+    }
 
     // Agent Quick Actions
     document.querySelectorAll('.agent-quick-status').forEach(select => {
@@ -806,18 +867,40 @@ function rebindLeadEvents() {
 
 function updateBulkBar() {
     const checked = document.querySelectorAll('.lead-check:checked').length;
+    const totalVisible = document.querySelectorAll('.lead-check').length;
     const bar = document.getElementById('bulkBar');
+    const saBanner = document.getElementById('selectAllPagesBanner');
+    const apBanner = document.getElementById('allPagesSelectedBanner');
+    
     if (!bar) return;
+    
+    if (checked < totalVisible) {
+        window.isSelectAllPages = false;
+        if(saBanner) { saBanner.classList.add('d-none'); saBanner.classList.remove('d-flex'); }
+        if(apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
+        const selectAll = document.getElementById('selectAll');
+        if(selectAll) selectAll.checked = false;
+    }
     
     if (checked > 0) {
         bar.style.display = 'flex';
         bar.style.setProperty('display', 'flex', 'important');
         setTimeout(() => { bar.classList.add('active'); }, 10);
+        
+        let displayCount = window.isSelectAllPages ? window.globalTotalLeads : checked;
+        document.getElementById('selectedCount').textContent = displayCount + ' selected';
+
+        if (checked === totalVisible && window.globalTotalLeads > totalVisible && !window.isSelectAllPages) {
+            document.getElementById('currentPageSelectedCount').textContent = checked;
+            if(saBanner) { saBanner.classList.remove('d-none'); saBanner.classList.add('d-flex'); }
+            if(apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
+        }
     } else {
         bar.classList.remove('active');
         setTimeout(() => { bar.style.display = 'none'; }, 300);
+        if(saBanner) { saBanner.classList.add('d-none'); saBanner.classList.remove('d-flex'); }
+        if(apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
     }
-    document.getElementById('selectedCount').textContent = checked + ' selected';
 }
 
 function applyBulkAction(event) {
@@ -834,12 +917,13 @@ function applyBulkAction(event) {
     }
 
     const checked = Array.from(document.querySelectorAll('.lead-check:checked'));
-    if (checked.length === 0) {
+    if (checked.length === 0 && !window.isSelectAllPages) {
         alert("No leads selected.");
         return;
     }
 
-    if (!confirm('Execute bulk action on ' + checked.length + ' selected leads?')) return;
+    const targetCount = window.isSelectAllPages ? window.globalTotalLeads : checked.length;
+    if (!confirm('Execute bulk action on ' + targetCount + ' selected leads?')) return;
 
     const form = document.createElement('form');
     form.method = 'POST';
@@ -856,13 +940,29 @@ function applyBulkAction(event) {
         inputAgent.value = agent;
         form.appendChild(inputAgent);
     }
-
-    checked.forEach(cb => {
-        const inputId = document.createElement('input');
-        inputId.name = 'lead_ids[]';
-        inputId.value = cb.value;
-        form.appendChild(inputId);
-    });
+    
+    if (window.isSelectAllPages && window.globalTotalLeads > 0) {
+        const inputSA = document.createElement('input');
+        inputSA.name = 'select_all_pages';
+        inputSA.value = '1';
+        form.appendChild(inputSA);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        for (const [key, value] of urlParams) {
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = 'filter_' + key;
+            hiddenField.value = value;
+            form.appendChild(hiddenField);
+        }
+    } else {
+        checked.forEach(cb => {
+            const inputId = document.createElement('input');
+            inputId.name = 'lead_ids[]';
+            inputId.value = cb.value;
+            form.appendChild(inputId);
+        });
+    }
 
     document.body.appendChild(form);
     form.submit();
