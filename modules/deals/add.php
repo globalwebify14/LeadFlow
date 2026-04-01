@@ -5,14 +5,19 @@ requireLogin();
 require_once '../../config/db.php';
 require_once '../../models/User.php';
 require_once '../../models/Deal.php';
-
-
-
+require_once '../../models/Lead.php';
 
 $orgId = getOrgId();
 $dealModel = new Deal($pdo);
 $userModel = new User($pdo);
+$leadModel = new Lead($pdo);
 $agents = $userModel->getAgents($orgId);
+
+$fromLead = isset($_GET['lead_id']) && !empty($_GET['lead_id']);
+$leadData = null;
+if ($fromLead) {
+    $leadData = $leadModel->getLeadById($_GET['lead_id'], $orgId);
+}
 
 // Pipeline stages
 $stagesStmt = $pdo->prepare("SELECT id, name FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
@@ -61,13 +66,14 @@ include '../../includes/header.php';
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Linked Lead</label>
-                            <select class="form-select" name="lead_id">
+                            <select class="form-select" name="lead_id" <?= $fromLead ? 'style="pointer-events: none; background-color: #f8f9fa;" tabindex="-1"' : '' ?>>
                                 <option value="">No linked lead</option>
                                 <?php foreach ($leads as $l): ?>
                                     <option value="<?= $l['id'] ?>" <?= ($_GET['lead_id'] ?? '') == $l['id'] ? 'selected' : '' ?>><?= e($l['name']) ?> — <?= e($l['phone']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <?php if (!$fromLead): ?>
                         <div class="col-md-6">
                             <label class="form-label">Pipeline Stage</label>
                             <select class="form-select" name="stage_id">
@@ -86,6 +92,10 @@ include '../../includes/header.php';
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <?php else: ?>
+                            <input type="hidden" name="stage_id" value="<?= e($leadData['pipeline_stage_id'] ?? '') ?>">
+                            <input type="hidden" name="assigned_to" value="<?= e($leadData['assigned_to'] ?? '') ?>">
+                        <?php endif; ?>
                         <div class="col-md-6">
                             <label class="form-label">Expected Close Date</label>
                             <input type="date" class="form-control" name="expected_close_date">
