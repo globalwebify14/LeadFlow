@@ -384,10 +384,13 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-2 ps-2">
+                                <button type="button" class="action-btn-mini btn-complete-followup" data-id="<?= $f['id'] ?>" style="background:#dcfce7;color:#16a34a;border:none;cursor:pointer;" title="Mark Contacted / Completed">
+                                    <i class="bi bi-check-lg" style="stroke-width:2px;"></i>
+                                </button>
                                 <?php if (isset($f['lead_phone']) && $f['lead_phone']): ?>
-                                    <a href="tel:<?= e($f['lead_phone']) ?>" class="action-btn-mini" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-telephone-fill"></i></a>
+                                    <a href="tel:<?= e($f['lead_phone']) ?>" class="action-btn-mini" style="background:#e0e7ff;color:#4f46e5;" title="Call Lead"><i class="bi bi-telephone-fill"></i></a>
                                 <?php endif; ?>
-                                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="action-btn-mini"><i class="bi bi-arrow-right"></i></a>
+                                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="action-btn-mini" title="View Lead details"><i class="bi bi-arrow-right"></i></a>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -484,4 +487,39 @@ function refreshLeadData() {
             card.style.opacity = '1';
         });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-complete-followup').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            if (!confirm('Confirm you have contacted this lead and completed the task?')) return;
+            
+            const originalHtml = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm border-2" role="status" aria-hidden="true" style="width:14px;height:14px;"></span>';
+            this.disabled = true;
+
+            fetch('<?= BASE_URL ?>ajax/complete_followup.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.error || 'Failed to complete task.');
+                    this.innerHTML = originalHtml;
+                    this.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Connection error.');
+                this.innerHTML = originalHtml;
+                this.disabled = false;
+            });
+        });
+    });
+});
 </script>
