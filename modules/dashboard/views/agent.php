@@ -269,6 +269,9 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
             <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn-hero-primary">
                 <i class="bi bi-plus-circle-fill"></i> Add Lead
             </a>
+            <button type="button" class="btn-hero-secondary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <i class="bi bi-check2-square"></i> Create Task
+            </button>
             <a href="<?= BASE_URL ?>modules/followups/" class="btn-hero-secondary">
                 <i class="bi bi-calendar2-check-fill"></i> My Schedule
             </a>
@@ -523,3 +526,47 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- ═══════════════ ADD TASK MODAL ═══════════════ -->
+<div class="modal fade" id="addTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="" method="POST" class="modal-content" style="border-radius:20px;border:none;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Internal Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <input type="hidden" name="add_task" value="1">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Task Title</label>
+                    <input type="text" class="form-control" name="task_title" placeholder="e.g. Prepare proposal" required style="border-radius:12px;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Due Date</label>
+                    <input type="date" class="form-control" name="due_date" value="<?= date('Y-m-d') ?>" required style="border-radius:12px;">
+                </div>
+                <?php if (isAdmin() && !empty($orgAgents)): ?>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Assign To</label>
+                    <select class="form-select" name="assigned_to" style="border-radius:12px;">
+                        <option value="<?= getUserId() ?>">Myself</option>
+                        <?php foreach ($orgAgents as $ag): ?>
+                            <?php if ($ag['id'] != getUserId()): ?>
+                            <option value="<?= $ag['id'] ?>"><?= e($ag['name']) ?></option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
+                <div class="mb-0">
+                    <label class="form-label fw-semibold small">Notes</label>
+                    <textarea class="form-control" name="description" rows="2" style="border-radius:12px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;">Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>
