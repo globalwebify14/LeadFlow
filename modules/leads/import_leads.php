@@ -9,7 +9,8 @@ if (!hasModuleAccess('import_leads')) {
     die(header("HTTP/1.0 403 Forbidden") . 'Access Denied: Your organization does not have access to the Import Leads module.');
 }
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
+// Removed PhpSpreadsheet requirement
+require_once '../../includes/SimpleXLSX.php';
 
 $orgId = getOrgId();
 $userId = getUserId();
@@ -69,12 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                     fclose($handle);
                 }
             } else {
-                if (file_exists('../../vendor/autoload.php')) require_once '../../vendor/autoload.php';
-                if (!class_exists(IOFactory::class)) throw new Exception("PhpSpreadsheet is missing. Save file as .CSV instead!");
-
-                $spreadsheet = IOFactory::load($tempFilePath);
-                $worksheet = $spreadsheet->getActiveSheet();
-                $headers = $worksheet->toArray()[0] ?? [];
+                if ($xlsx = \Shuchkin\SimpleXLSX::parse($tempFilePath)) {
+                    $headers = $xlsx->rows()[0] ?? [];
+                } else {
+                    throw new Exception("Excel Parsing Error: " . \Shuchkin\SimpleXLSX::parseError());
+                }
             }
 
             if (empty($headers)) throw new Exception("Could not read any column headers from the file. The file may be empty or corrupted.");

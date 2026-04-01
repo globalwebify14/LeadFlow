@@ -1,15 +1,12 @@
 <?php
-use PhpOffice\PhpSpreadsheet\IOFactory;
+require_once '../../includes/SimpleXLSX.php';
 
 require_once '../../config/auth.php';
 requireLogin();
 require_once '../../config/db.php';
 require_once '../../models/Lead.php';
 
-// Optional: include vendor autoload if it exists (for Excel support)
-if (file_exists('../../vendor/autoload.php')) {
-    require_once '../../vendor/autoload.php';
-}
+// Removed Composer autoloader check
 
 $orgId = getOrgId();
 $userId = getUserId();
@@ -66,14 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
                 $error = "Failed to open the uploaded CSV file.";
             }
         } else {
-            // Excel import via PhpSpreadsheet
+            // Excel import via SimpleXLSX
             try {
-                if (!class_exists(IOFactory::class)) {
-                    throw new Exception("PhpSpreadsheet library not found. Please run 'composer install' in the project root.");
+                if ($xlsx = \Shuchkin\SimpleXLSX::parse($file['tmp_name'])) {
+                    $rows = $xlsx->rows();
+                } else {
+                    throw new Exception("Excel Parsing Error: " . \Shuchkin\SimpleXLSX::parseError());
                 }
-                $spreadsheet = IOFactory::load($file['tmp_name']);
-                    $worksheet = $spreadsheet->getActiveSheet();
-                    $rows = $worksheet->toArray();
                     
                     foreach ($rows as $index => $data) {
                         if ($index === 0) continue; // Skip header

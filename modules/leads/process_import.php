@@ -54,13 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['temp_file'])) {
                     fclose($handle);
                 }
             } else {
-                if (file_exists('../../vendor/autoload.php')) require_once '../../vendor/autoload.php';
-                if (!class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
-                    throw new Exception("PhpSpreadsheet library not found. Excel parsing is disabled.");
+                require_once '../../includes/SimpleXLSX.php';
+                if ($xlsx = \Shuchkin\SimpleXLSX::parse($tempFile)) {
+                    $rows = $xlsx->rows();
+                } else {
+                    throw new Exception("Excel Parsing Error: " . \Shuchkin\SimpleXLSX::parseError());
                 }
-                $className = '\PhpOffice\PhpSpreadsheet\IOFactory';
-                $spreadsheet = $className::load($tempFile);
-                $rows = $spreadsheet->getActiveSheet()->toArray();
             }
 
             if (count($rows) > 1) {
