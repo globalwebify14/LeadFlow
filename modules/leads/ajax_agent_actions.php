@@ -59,12 +59,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'add_note') {
         $note = trim($_POST['note'] ?? '');
+        $createFollowup = $_POST['create_followup'] ?? '0';
+        $followupDate = $_POST['followup_date'] ?? '';
+        $followupTime = $_POST['followup_time'] ?? '';
+
         if (!empty($note)) {
             $success = $leadModel->addNote($leadId, $note, $userId);
             if ($success) {
                 // Update the lead's main context note as well for quick view
                 $stmt = $pdo->prepare("UPDATE leads SET note = :note WHERE id = :id");
                 $stmt->execute(['note' => $note, 'id' => $leadId]);
+                
+                if ($createFollowup === '1' && !empty($followupDate)) {
+                    require_once '../../models/Followup.php';
+                    $followupModel = new Followup($pdo);
+                    $fTitle = mb_substr($note, 0, 40) . (mb_strlen($note) > 40 ? '...' : '');
+                    $followupModel->create([
+                        'organization_id' => $orgId,
+                        'lead_id'         => $leadId,
+                        'deal_id'         => null,
+                        'user_id'         => $userId,
+                        'title'           => 'Note Follow-up: ' . $fTitle,
+                        'description'     => $note,
+                        'followup_date'   => $followupDate,
+                        'followup_time'   => !empty($followupTime) ? $followupTime : null,
+                        'priority'        => 'medium'
+                    ]);
+                }
                 
                 echo json_encode(['success' => true]);
             } else {

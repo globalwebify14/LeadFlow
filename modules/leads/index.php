@@ -1023,14 +1023,32 @@ function saveQuickNote() {
         return;
     }
     
+    const isFollowup = document.getElementById('quickNoteCreateFollowup').checked;
+    const fDate = document.getElementById('quickNoteFDate').value;
+    const fTime = document.getElementById('quickNoteFTime').value;
+
+    if (isFollowup && !fDate) {
+        alert("Please select a follow-up date.");
+        return;
+    }
+    
     const saveBtn = document.getElementById('saveQuickNoteBtn');
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
 
+    const params = new URLSearchParams({ 
+        'action': 'add_note', 
+        'lead_id': currentNoteLeadId, 
+        'note': noteText.trim(),
+        'create_followup': isFollowup ? '1' : '0',
+        'followup_date': fDate,
+        'followup_time': fTime
+    });
+
     fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ 'action': 'add_note', 'lead_id': currentNoteLeadId, 'note': noteText.trim() })
+        body: params
     })
     .then(res => res.json())
     .then(data => {
@@ -1103,7 +1121,25 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="modal-body p-4">
                 <div class="mb-3">
                     <label class="form-label fw-bold">Note Details</label>
-                    <textarea class="form-control" id="quickNoteText" rows="5" placeholder="Enter multi-line notes here..."></textarea>
+                    <textarea class="form-control" id="quickNoteText" rows="4" placeholder="Enter multi-line notes here..."></textarea>
+                </div>
+                
+                <div class="bg-light rounded-3 p-3 border">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="quickNoteCreateFollowup" onchange="document.getElementById('quickNoteFollowupFields').classList.toggle('d-none', !this.checked); document.getElementById('quickNoteFDate').required = this.checked;">
+                        <label class="form-check-label fw-semibold text-dark ms-1" for="quickNoteCreateFollowup">Also create this note as a Follow-up</label>
+                    </div>
+                    
+                    <div id="quickNoteFollowupFields" class="d-none mt-3 row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted mb-1">Follow-up Date <span class="text-danger">*</span></label>
+                            <input type="date" id="quickNoteFDate" class="form-control form-control-sm" style="border-radius:8px;" min="<?= date('Y-m-d') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold text-muted mb-1">Time (Optional)</label>
+                            <input type="time" id="quickNoteFTime" class="form-control form-control-sm" style="border-radius:8px;">
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0 bg-light">

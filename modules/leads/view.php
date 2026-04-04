@@ -65,6 +65,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_note'])) {
     $note = trim($_POST['note']);
     if ($note) {
         $leadModel->addNote($lead['id'], $note, getUserId());
+        
+        // Also create as a follow-up if checked
+        if (!empty($_POST['create_followup']) && !empty($_POST['followup_date'])) {
+            $followupModel = new Followup($pdo);
+            $fTitle = mb_substr($note, 0, 40) . (mb_strlen($note) > 40 ? '...' : '');
+            $followupModel->create([
+                'organization_id' => $orgId,
+                'lead_id'         => $lead['id'],
+                'deal_id'         => null,
+                'user_id'         => getUserId(),
+                'title'           => 'Note Follow-up: ' . $fTitle,
+                'description'     => $note,
+                'followup_date'   => $_POST['followup_date'],
+                'followup_time'   => !empty($_POST['followup_time']) ? $_POST['followup_time'] : null,
+                'priority'        => 'medium'
+            ]);
+        }
+        
         redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Note added!', 'success');
     }
 }
@@ -621,9 +639,28 @@ include '../../includes/header.php';
                 <!-- Add note form -->
                 <form method="POST" class="mb-4">
                     <textarea class="note-input" name="note" rows="2" placeholder="Write a note about this lead..." required></textarea>
-                    <div class="d-flex justify-content-end mt-2">
+                    
+                    <div class="mt-3 bg-light rounded-3 p-3 border">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="create_followup_note" name="create_followup" onchange="document.getElementById('note_followup_fields').classList.toggle('d-none', !this.checked); document.getElementById('note_f_date').required = this.checked;">
+                            <label class="form-check-label fw-semibold text-dark ms-1" for="create_followup_note">Also create this note as a Follow-up</label>
+                        </div>
+                        
+                        <div id="note_followup_fields" class="d-none mt-3 row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Follow-up Date <span class="text-danger">*</span></label>
+                                <input type="date" id="note_f_date" name="followup_date" class="form-control form-control-sm" style="border-radius:8px;" min="<?= date('Y-m-d') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Time (Optional)</label>
+                                <input type="time" name="followup_time" class="form-control form-control-sm" style="border-radius:8px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
                         <button type="submit" name="add_note" value="1" class="note-submit">
-                            <i class="bi bi-plus-circle-fill me-1"></i> Add Note
+                            <i class="bi bi-plus-circle-fill me-1"></i> Save Note
                         </button>
                     </div>
                 </form>
