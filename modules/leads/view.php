@@ -648,19 +648,16 @@ include '../../includes/header.php';
                             <div class="note-meta"><strong><?= e($n['user_name'] ?? 'System') ?></strong> &bull; <?= timeAgo($n['created_at']) ?></div>
                         </div>
                         <?php if (getUserId() == $n['user_id'] || getUserRole() !== 'agent'): ?>
-                        <div class="dropdown">
-                            <button class="btn btn-sm dropdown-toggle-none text-muted" type="button" data-bs-toggle="dropdown" style="background:none;border:none;box-shadow:none;">
-                                <i class="bi bi-three-dots"></i>
+                        <div class="d-flex align-items-start gap-3 ms-3 mt-1">
+                            <button class="btn btn-sm text-primary p-0 d-flex align-items-center" type="button" onclick="toggleEditNote(<?= $n['id'] ?>)" style="background:none;border:none;font-size:12px;font-weight:600;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                                <i class="bi bi-pencil me-1"></i>Edit
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius:12px;font-size:13px;">
-                                <li><button class="dropdown-item py-2" type="button" onclick="toggleEditNote(<?= $n['id'] ?>)"><i class="bi bi-pencil me-2 text-primary"></i> Edit</button></li>
-                                <li>
-                                    <form method="POST" onsubmit="return confirm('Delete this note?');">
-                                        <input type="hidden" name="note_id" value="<?= $n['id'] ?>">
-                                        <button class="dropdown-item py-2 text-danger" type="submit" name="delete_note" value="1"><i class="bi bi-trash me-2"></i> Delete</button>
-                                    </form>
-                                </li>
-                            </ul>
+                            <form method="POST" onsubmit="return confirm('Delete this note?');" class="m-0 p-0">
+                                <input type="hidden" name="note_id" value="<?= $n['id'] ?>">
+                                <button class="btn btn-sm text-danger p-0 d-flex align-items-center" type="submit" name="delete_note" value="1" style="background:none;border:none;font-size:12px;font-weight:600;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </button>
+                            </form>
                         </div>
                         <?php endif; ?>
                     </div>
