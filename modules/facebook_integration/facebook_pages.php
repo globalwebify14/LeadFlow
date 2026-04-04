@@ -21,7 +21,7 @@ $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 $response = curl_exec($ch);
-curl_close($ch);
+unset($ch); // curl_close is deprecated in PHP 8.5+
 
 $data = json_decode($response, true);
 if (isset($data['error'])) {
@@ -71,7 +71,7 @@ function subscribePageToApp($pageId, $pageToken) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     $response = curl_exec($ch);
     $info = curl_getinfo($ch);
-    curl_close($ch);
+    unset($ch); // curl_close is deprecated in PHP 8.5+
 
     $res = json_decode($response, true);
     if ($info['http_code'] !== 200 || !($res['success'] ?? false)) {

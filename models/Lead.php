@@ -595,6 +595,29 @@ class Lead {
     }
 
     /**
+     * Edit a note for a lead
+     */
+    public function editNote($noteId, $newNote, $leadId, $userId = null) {
+        $stmt = $this->pdo->prepare("UPDATE lead_notes SET note = :note WHERE id = :id");
+        $result = $stmt->execute([
+            'id' => $noteId,
+            'note' => $newNote,
+        ]);
+        $this->logActivity($leadId, 'note', 'Note updated', null, null, $userId);
+        return $result;
+    }
+
+    /**
+     * Delete a note for a lead
+     */
+    public function deleteNote($noteId, $leadId, $userId = null) {
+        $stmt = $this->pdo->prepare("DELETE FROM lead_notes WHERE id = :id");
+        $result = $stmt->execute(['id' => $noteId]);
+        $this->logActivity($leadId, 'note', 'Note deleted', null, null, $userId);
+        return $result;
+    }
+
+    /**
      * Get activities for a lead
      */
     public function getActivities($leadId) {

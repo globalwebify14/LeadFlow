@@ -69,6 +69,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_note'])) {
     }
 }
 
+// Handle edit note
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_note'])) {
+    $noteId = (int)$_POST['note_id'];
+    $noteText = trim($_POST['note_text']);
+    if ($noteId && $noteText) {
+        $leadModel->editNote($noteId, $noteText, $lead['id'], getUserId());
+        redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Note updated!', 'success');
+    }
+}
+
+// Handle delete note
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_note'])) {
+    $noteId = (int)$_POST['note_id'];
+    if ($noteId) {
+        $leadModel->deleteNote($noteId, $lead['id'], getUserId());
+        redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Note deleted!', 'success');
+    }
+}
+
 // Handle quick status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_status'])) {
     $leadModel->updateStatus($lead['id'], $_POST['quick_status'], '', getUserId());
@@ -611,12 +630,39 @@ include '../../includes/header.php';
                 <!-- Notes list -->
                 <?php if (!empty($notes)): ?>
                     <?php foreach ($notes as $n): ?>
-                    <div class="note-item">
+                    <div class="note-item position-relative">
                         <div class="note-avatar"><?= strtoupper(substr($n['user_name'] ?? 'S', 0, 1)) ?></div>
                         <div class="flex-grow-1">
-                            <div class="note-text"><?= nl2br(e($n['note'])) ?></div>
+                            <div class="note-text" id="note-text-<?= $n['id'] ?>"><?= nl2br(e($n['note'])) ?></div>
+                            
+                            <!-- Note Edit Form (Hidden by default) -->
+                            <form method="POST" id="note-edit-form-<?= $n['id'] ?>" class="d-none mt-2">
+                                <input type="hidden" name="note_id" value="<?= $n['id'] ?>">
+                                <textarea class="note-input" name="note_text" rows="2" required><?= e($n['note']) ?></textarea>
+                                <div class="d-flex justify-content-end gap-2 mt-2">
+                                    <button type="button" class="btn btn-sm btn-light rounded-pill px-3" onclick="toggleEditNote(<?= $n['id'] ?>)">Cancel</button>
+                                    <button type="submit" name="edit_note" value="1" class="btn btn-sm btn-primary rounded-pill px-3" style="background:#6366f1;border:none;">Save</button>
+                                </div>
+                            </form>
+
                             <div class="note-meta"><strong><?= e($n['user_name'] ?? 'System') ?></strong> &bull; <?= timeAgo($n['created_at']) ?></div>
                         </div>
+                        <?php if (getUserId() == $n['user_id'] || getUserRole() !== 'agent'): ?>
+                        <div class="dropdown">
+                            <button class="btn btn-sm dropdown-toggle-none text-muted" type="button" data-bs-toggle="dropdown" style="background:none;border:none;box-shadow:none;">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius:12px;font-size:13px;">
+                                <li><button class="dropdown-item py-2" type="button" onclick="toggleEditNote(<?= $n['id'] ?>)"><i class="bi bi-pencil me-2 text-primary"></i> Edit</button></li>
+                                <li>
+                                    <form method="POST" onsubmit="return confirm('Delete this note?');">
+                                        <input type="hidden" name="note_id" value="<?= $n['id'] ?>">
+                                        <button class="dropdown-item py-2 text-danger" type="submit" name="delete_note" value="1"><i class="bi bi-trash me-2"></i> Delete</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 <?php else: ?>
@@ -978,6 +1024,20 @@ document.querySelectorAll('.tag-selector').forEach(label => {
         }, 10);
     });
 });
+</script>
+
+<script>
+function toggleEditNote(id) {
+    const textDiv = document.getElementById('note-text-' + id);
+    const formDiv = document.getElementById('note-edit-form-' + id);
+    if (formDiv.classList.contains('d-none')) {
+        formDiv.classList.remove('d-none');
+        textDiv.classList.add('d-none');
+    } else {
+        formDiv.classList.add('d-none');
+        textDiv.classList.remove('d-none');
+    }
+}
 </script>
 
 <?php include '../../includes/footer.php'; ?>

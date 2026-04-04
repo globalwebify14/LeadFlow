@@ -79,7 +79,7 @@ class Followup {
         return $stmt->execute(['id' => $id]);
     }
 
-    public function getOverdueCount($orgId, $userId = null) {
+    public function getOverdueCount($orgId, $userId = null): int {
         $sql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org AND followup_date < CURDATE() AND status = 'pending'";
         $params = ['org' => $orgId];
         if ($userId) {
@@ -88,10 +88,10 @@ class Followup {
         }
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchColumn();
+        return (int)$stmt->fetchColumn();
     }
 
-    public function getTodayCount($orgId, $userId = null) {
+    public function getTodayCount($orgId, $userId = null): int {
         $sql = "SELECT COUNT(*) FROM followups WHERE organization_id = :org AND followup_date <= CURDATE() AND status = 'pending'";
         $params = ['org' => $orgId];
         if ($userId) {
@@ -100,7 +100,7 @@ class Followup {
         }
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchColumn();
+        return (int)$stmt->fetchColumn();
     }
 }
 ?>

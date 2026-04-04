@@ -37,7 +37,7 @@ try {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch); // curl_close is deprecated in PHP 8.5+
 
         if ($httpCode === 200) {
             $formsData = json_decode($response, true);
