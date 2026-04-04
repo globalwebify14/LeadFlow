@@ -69,13 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_note'])) {
         // Also create as a follow-up if checked
         if (!empty($_POST['create_followup']) && !empty($_POST['followup_date'])) {
             $followupModel = new Followup($pdo);
-            $fTitle = mb_substr($note, 0, 40) . (mb_strlen($note) > 40 ? '...' : '');
             $followupModel->create([
                 'organization_id' => $orgId,
                 'lead_id'         => $lead['id'],
                 'deal_id'         => null,
                 'user_id'         => getUserId(),
-                'title'           => 'Note Follow-up: ' . $fTitle,
+                'title'           => $lead['name'],
                 'description'     => $note,
                 'followup_date'   => $_POST['followup_date'],
                 'followup_time'   => !empty($_POST['followup_time']) ? $_POST['followup_time'] : null,

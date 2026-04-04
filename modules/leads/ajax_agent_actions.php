@@ -73,13 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($createFollowup === '1' && !empty($followupDate)) {
                     require_once '../../models/Followup.php';
                     $followupModel = new Followup($pdo);
-                    $fTitle = mb_substr($note, 0, 40) . (mb_strlen($note) > 40 ? '...' : '');
                     $followupModel->create([
                         'organization_id' => $orgId,
                         'lead_id'         => $leadId,
                         'deal_id'         => null,
                         'user_id'         => $userId,
-                        'title'           => 'Note Follow-up: ' . $fTitle,
+                        'title'           => $lead['name'] ?? 'Follow-up',
                         'description'     => $note,
                         'followup_date'   => $followupDate,
                         'followup_time'   => !empty($followupTime) ? $followupTime : null,
