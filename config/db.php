@@ -18,6 +18,8 @@ if ($isLocal) {
     $database = 'u823573651_lead';
 }
 
+
+
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
     // Set PDO error mode to exception
