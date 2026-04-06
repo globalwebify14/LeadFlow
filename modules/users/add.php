@@ -37,6 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Password must be at least 6 characters.';
     } else {
         $userModel->createUser($data);
+        require_once '../../models/ActivityLog.php';
+        ActivityLog::write($pdo, 'user_created', "Created team member: {$data['name']}", getUserId(), getOrgId());
         redirect(BASE_URL . 'modules/users/', 'Team member created successfully!', 'success');
     }
 }

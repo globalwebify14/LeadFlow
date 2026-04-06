@@ -1,0 +1,4 @@
+# Block ALL web access to this directory.
+# Scripts here are intended for CLI/cron use only.
+# Run via: php /full/path/to/scripts/automation_worker.php
+Require all denied

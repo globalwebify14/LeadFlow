@@ -1,8 +1,11 @@
 <?php
 // super_admin.php view
+require_once '../../models/ActivityLog.php';
+$alModel = new ActivityLog($pdo);
 $stats = $dashboard->getSuperAdminStats();
 $recentActivities = $dashboard->getPlatformRecentActivity(8);
 $monthlyGrowth = $dashboard->getPlatformOrgGrowth();
+$sysLogs = $alModel->getAll(5);
 ?>
 
 <div class="welcome-banner mb-4">
@@ -12,10 +15,25 @@ $monthlyGrowth = $dashboard->getPlatformOrgGrowth();
             <p class="text-white-50 mb-0 small">Platform Overview & Metrics</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="<?= BASE_URL ?>modules/superadmin/activity_logs.php" class="btn btn-warning btn-sm fw-semibold"><i class="bi bi-shield-lock-fill me-1"></i>Monitor</a>
             <a href="<?= BASE_URL ?>modules/organizations/create.php" class="btn btn-light btn-sm fw-semibold"><i class="bi bi-building-add me-1"></i>New Organization</a>
         </div>
     </div>
 </div>
+
+<?php if (!empty($sysLogs)): 
+    $lastLog = $sysLogs[0];
+    $isErr = isset($lastLog['severity']) && $lastLog['severity'] === 'critical';
+?>
+<div class="alert <?= $isErr ? 'alert-danger' : 'alert-primary' ?> border-0 rounded-3 shadow-sm d-flex align-items-center mb-4 py-2 px-3">
+    <div class="spinner-grow spinner-grow-sm text-<?= $isErr ? 'danger' : 'primary' ?> me-3" role="status"></div>
+    <div class="small fw-semibold flex-grow-1">
+        Latest System Event: <span class="ms-1"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $lastLog['action']))) ?> — <?= htmlspecialchars($lastLog['description']) ?></span>
+    </div>
+    <a href="<?= BASE_URL ?>modules/superadmin/activity_logs.php" class="btn btn-sm btn-outline-<?= $isErr ? 'danger' : 'primary' ?> rounded-pill px-3 py-1" style="font-size:12px;">View All</a>
+</div>
+<?php endif; ?>
+
 
 <div class="row g-3 mb-4">
     <div class="col-xl-3 col-md-6">

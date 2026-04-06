@@ -18,6 +18,7 @@ if (isset($_SESSION['login_error'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once 'config/db.php';
     require_once 'models/User.php';
+    require_once 'models/ActivityLog.php';
     
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -51,11 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Update last login
                 $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
                 
+                // Track login
+                ActivityLog::write($pdo, 'login_success', 'User logged in successfully', $user['id'], $user['organization_id']);
+                
                 header('Location: modules/dashboard/');
                 exit;
+            } else {
+                ActivityLog::security($pdo, 'login_failed', "Login blocked for suspended/inactive org with email: $email", $user['id'], $user['organization_id']);
             }
         } else {
             $error = 'Invalid email or password.';
+            ActivityLog::security($pdo, 'login_failed', "Failed login attempt for email: $email");
         }
     }
 }

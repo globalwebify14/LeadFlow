@@ -229,3 +229,27 @@ CREATE TABLE IF NOT EXISTS `meta_integrations` (
 ALTER TABLE `organizations`
 ADD COLUMN IF NOT EXISTS `logo` varchar(255) DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS `assignment_mode` enum('manual','auto') DEFAULT 'manual';
+
+-- Activity logs (platform-wide audit trail)
+CREATE TABLE IF NOT EXISTS `activity_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `organization_id` int(11) DEFAULT NULL,
+  `action` varchar(100) NOT NULL,
+  `description` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `severity` enum('info','warning','critical') DEFAULT 'info',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `organization_id` (`organization_id`),
+  KEY `action` (`action`),
+  KEY `severity` (`severity`),
+  KEY `created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Add severity + user_agent columns to existing activity_logs (if table already exists without them)
+ALTER TABLE `activity_logs`
+ADD COLUMN IF NOT EXISTS `severity` enum('info','warning','critical') DEFAULT 'info',
+ADD COLUMN IF NOT EXISTS `user_agent` varchar(255) DEFAULT NULL;

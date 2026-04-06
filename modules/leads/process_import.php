@@ -118,6 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['temp_file'])) {
 
             // Cleanup
             @unlink($tempFile);
+            require_once '../../models/ActivityLog.php';
+            ActivityLog::write($pdo, 'lead_imported', "Imported {$stats['imported']} leads from file", $userId, $orgId);
 
         } catch (Exception $e) {
             $errorMsg = "Execution Error: " . $e->getMessage();

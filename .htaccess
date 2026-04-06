@@ -1,41 +1,100 @@
+# ================================================================
+#  LeadFlow CRM — Hardened .htaccess
+#  Last updated: 2026-04-06
+# ================================================================
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Prevent directory listing
+    # ── Prevent directory listing ─────────────────────────────
     Options -Indexes
 
-    # --- URL Routing: map clean public URLs to actual file locations ---
-    # legal/* → public/legal/*
+    # ── HTTPS enforcement (uncomment in production) ───────────
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # ── Block access to hidden files (.git, .env, .htaccess) ──
+    RewriteRule ^\.                    - [F,L]
+    RewriteRule (^|/)\.               - [F,L]
+
+    # ── Block common exploit/scanner probes ───────────────────
+    RewriteCond %{REQUEST_URI} (phpMyAdmin|pma|adminer|phpmyadmin|myadmin) [NC]
+    RewriteRule .* - [F,L]
+
+    RewriteCond %{REQUEST_URI} (\.git|\.env|wp-admin|wp-login|xmlrpc) [NC]
+    RewriteRule .* - [F,L]
+
+    # ── Block sensitive directories from direct access ─────────
+    RewriteRule ^config/              - [F,L]
+    RewriteRule ^includes/            - [F,L]
+    RewriteRule ^core/                - [F,L]
+    RewriteRule ^database/            - [F,L]
+    RewriteRule ^models/              - [F,L]
+    RewriteRule ^install/             - [F,L]
+    RewriteRule ^scripts/             - [F,L]
+    RewriteRule ^vendor/              - [F,L]
+    RewriteRule ^\.git/               - [F,L]
+
+    # ── Block PHP execution inside uploads/ ───────────────────
+    RewriteCond %{REQUEST_URI} ^/uploads/ [NC]
+    RewriteCond %{REQUEST_FILENAME} \.php$ [NC]
+    RewriteRule .* - [F,L]
+
+    # ── URL Routing: legal/* → public/legal/* ─────────────────
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^legal/(.*)$ public/legal/$1 [L]
 
-    # Protect sensitive directories (must come AFTER routing rules)
-    RewriteRule ^config/ - [F,L]
-    RewriteRule ^includes/ - [F,L]
-    RewriteRule ^core/ - [F,L]
-    RewriteRule ^database/ - [F,L]
-
-    # Block access to error logs and database dumps
-    <FilesMatch "\.(log|sql|bak|ini|env|sh)$">
-        Require all denied
-    </FilesMatch>
-
-    # Handle URL rewriting to enforce HTTPS if desired (uncomment below if SSL is active)
-    # RewriteCond %{HTTPS} off
-    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-    # Allow CSS, JS, Images to be accessed normally 
-    # (By default Apache handles this, but ensures no rewrite conflicts)
 </IfModule>
 
-# Caching for Production performance
+# ── Block dangerous file types from being served ──────────────
+<FilesMatch "\.(sql|log|bak|ini|env|sh|bat|exe|DS_Store|conf|cfg|json)$">
+    Require all denied
+</FilesMatch>
+
+# ── Allow composer.json (needed for some hosts) ──────────────
+<FilesMatch "^composer\.(json|lock)$">
+    Require all denied
+</FilesMatch>
+
+# ── Security Headers ─────────────────────────────────────────
+<IfModule mod_headers.c>
+    # Prevent MIME-type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # XSS Protection for older browsers
+    Header always set X-XSS-Protection "1; mode=block"
+    # Referrer policy — don't leak URL to third parties
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    # Remove PHP version fingerprint
+    Header unset X-Powered-By
+    # Basic permissions policy
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    # Content Security Policy (adjust cdn sources as needed)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self';"
+</IfModule>
+
+# ── Block bad user agents (bots / scanners) ───────────────────
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} (sqlmap|nikto|nmap|masscan|ZGrab|Go-http-client|python-requests) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ── Block requests with suspicious query strings ──────────────
+<IfModule mod_rewrite.c>
+    RewriteCond %{QUERY_STRING} (union.*select|insert.*into|drop.*table|information_schema) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ── Production caching for assets ────────────────────────────
 <IfModule mod_expires.c>
     ExpiresActive On
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType application/javascript "access plus 1 month"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/svg+xml "access plus 1 year"
-    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType text/css                  "access plus 1 month"
+    ExpiresByType application/javascript    "access plus 1 month"
+    ExpiresByType image/jpeg                "access plus 1 year"
+    ExpiresByType image/png                 "access plus 1 year"
+    ExpiresByType image/webp                "access plus 1 year"
+    ExpiresByType image/svg+xml             "access plus 1 year"
+    ExpiresByType font/woff2                "access plus 1 year"
 </IfModule>

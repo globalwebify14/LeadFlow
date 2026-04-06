@@ -45,6 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($duplicates) || !empty($_POST['confirm_duplicate'])) {
         $leadId = $leadModel->addLead($data);
         if ($leadId) {
+            require_once '../../models/ActivityLog.php';
+            ActivityLog::write($pdo, 'lead_created', "Manually added lead: {$data['name']}", getUserId(), getOrgId());
             redirect(BASE_URL . 'modules/leads/view.php?id=' . $leadId, 'Lead added successfully!', 'success');
         } else {
             $error = 'Failed to add lead.';

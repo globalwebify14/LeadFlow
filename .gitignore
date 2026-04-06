@@ -1,8 +1,45 @@
+# ── Dependencies ──────────────────────────────────────────────
 vendor/
-.vscode/
-*.log
-uploads/
-config/db.php
 composer.phar
+
+# ── IDE / OS files ────────────────────────────────────────────
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+
+# ── Credentials & sensitive config ───────────────────────────
+config/db.php
+.env
+*.env
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── User uploads ─────────────────────────────────────────────
+uploads/
+
+# ── Database files — NEVER commit SQL dumps or schema ────────
+*.sql
+database/*.php
+database/*.sql
+database/schema.txt
+
+# ── Install wizard — dangerous if committed ───────────────────
+install/setup.php
+install/seed_test_users.php
+install/repair_models.php
+install/fix_dates.php
+install/tmp_fix_dates.php
+
+# ── Migration runners — delete after use ─────────────────────
+database/run_migrations.php
+database/inspect_db.php
+
+# ── Backup files ──────────────────────────────────────────────
+*.bak
+*.backup
+*.old
