@@ -72,16 +72,9 @@ try {
     $stmtStatuses->execute(['org' => $orgId]);
     $allStatuses = $stmtStatuses->fetchAll(PDO::FETCH_COLUMN);
 
-    // Also append any statuses in leads that are NOT already in pipeline stages (legacy/custom)
-    $stmtExtra = $pdo->prepare("
-        SELECT DISTINCT status FROM leads 
-        WHERE organization_id = :org AND status IS NOT NULL AND status != ''
-          AND status NOT IN (SELECT name FROM pipeline_stages WHERE organization_id = :org2)
-        ORDER BY status
-    ");
-    $stmtExtra->execute(['org' => $orgId, 'org2' => $orgId]);
-    $extraStatuses = $stmtExtra->fetchAll(PDO::FETCH_COLUMN);
-    $allStatuses = array_merge($allStatuses, $extraStatuses);
+    // We ONLY show the active pipeline stages to keep the reports professional
+    // and consistent with your current funnel. Legacy statuses are excluded.
+    $allStatuses = $allStatuses;
 } catch (Exception $e) {
     $allStatuses = [];
 }
