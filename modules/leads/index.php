@@ -522,6 +522,8 @@ include '../../includes/header.php';
             
             <?php if ($userRole !== 'agent'): ?>
             <div class="col-6 col-md-2">
+                <select class="form-select filter-input" name="source">
+                    <option value="">Source: All</option>
                     <option value="manual" <?= $filters['source']==='manual'?'selected':'' ?>>Manual Entry</option>
                     <option value="import" <?= $filters['source']==='import'?'selected':'' ?>>Excel Import</option>
                 </select>
