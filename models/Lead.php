@@ -513,17 +513,21 @@ class Lead {
     }
 
     /**
-     * Finds leads with missing or invalid pipeline stage IDs and repairs them.
+     * Finds leads with missing, invalid, or cross-organization pipeline stage IDs and repairs them.
      */
     public function repairOrphanedLeads($orgId) {
-        // 1. Find leads where pipeline_stage_id is NULL, 0, OR points to a non-existent stage
+        // Find leads where pipeline_stage_id is NULL, 0, points to a non-existent stage, 
+        // OR points to a stage belonging to a different organization.
         $stmt = $this->pdo->prepare("
             SELECT l.id, l.status 
             FROM leads l 
             LEFT JOIN pipeline_stages ps ON l.pipeline_stage_id = ps.id
             WHERE l.organization_id = :org 
-              AND (l.pipeline_stage_id IS NULL OR l.pipeline_stage_id = 0 OR ps.id IS NULL)
-            LIMIT 100
+              AND (l.pipeline_stage_id IS NULL 
+                   OR l.pipeline_stage_id = 0 
+                   OR ps.id IS NULL 
+                   OR ps.organization_id != l.organization_id)
+            LIMIT 250
         ");
         $stmt->execute(['org' => $orgId]);
         $orphans = $stmt->fetchAll();

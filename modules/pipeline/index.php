@@ -126,7 +126,7 @@ include '../../includes/header.php';
         <a href="index.php" class="btn btn-sm btn-link text-decoration-none text-danger">Clear</a>
         <?php endif; ?>
     </form>
-    <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Lead</a>
+    <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-primary d-flex align-items-center fw-bold px-3 py-2" style="border-radius: 10px; font-size: 13px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);"><i class="bi bi-plus-lg me-2"></i>Add Lead</a>
 </div>
 
 <div class="pipeline-board d-flex gap-4 pb-3">

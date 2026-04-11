@@ -492,8 +492,8 @@ include '../../includes/header.php';
         </a>
         
         <?php if (hasModuleAccess('manual_leads')): ?>
-        <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-light text-primary shadow-sm" style="font-weight: 600;">
-            <i class="bi bi-plus-lg me-1"></i> Add Lead
+        <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-light text-primary d-flex align-items-center shadow-sm fw-bold px-3 py-2" style="border-radius: 10px; font-size: 13.5px; border: 1px solid rgba(255,255,255,0.4);">
+            <i class="bi bi-plus-lg me-2"></i> Add Lead
         </a>
         <?php endif; ?>
     </div>
