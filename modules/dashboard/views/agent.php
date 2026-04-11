@@ -369,31 +369,18 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                         $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
                         $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
                     ?>
-                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mx-3 my-2">
-                            <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
-                                <?= $pLabel ?>
-                            </span>
-
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="sc-icon" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
-                                    <i class="bi bi-telephone"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="sc-title" style="color: <?= $isUrgent ? '#ef4444' : '#0f172a' ?>;"><?= e($f['title']) ?></div>
-                                    <div class="sc-desc"><i class="bi bi-person me-1"></i> <?= e($f['lead_name'] ?? 'Lead') ?></div>
-                                </div>
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card">
+                        <div class="sc-main">
+                            <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                                <i class="bi bi-telephone"></i>
                             </div>
-
-                            <div class="sc-meta">
-                                <div class="sc-meta-item">
-                                    <i class="bi bi-clock"></i>
-                                    <span style="font-weight: <?= $isUrgent ? '700' : '500' ?>; color: <?= $isUrgent ? '#ef4444' : 'inherit' ?>;">
-                                        <?= date('h:i A', strtotime($f['followup_time'])) ?>
+                            <div class="sc-content">
+                                <div class="sc-header">
+                                    <h6 class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></h6>
+                                    <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                                        <?= strtoupper($f['priority']) ?>
                                     </span>
                                 </div>
-
-                                <div class="d-flex gap-2 ms-auto align-items-center" onclick="event.stopPropagation();">
-                                    <button type="button" class="action-btn-mini btn-complete-followup" data-id="<?= $f['id'] ?>" style="background:#dcfce7;color:#16a34a;border:none;cursor:pointer;" title="Mark Completed">
                                         <i class="bi bi-check-lg"></i>
                                     </button>
                                     <?php if (isset($f['lead_phone']) && $f['lead_phone']): ?>

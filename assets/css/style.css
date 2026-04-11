@@ -21,6 +21,116 @@
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.schedule-card {
+    display: block !important;
+    background: #fff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    padding: 20px !important;
+    margin-bottom: 16px !important;
+    text-decoration: none !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    color: inherit !important;
+}
+
+.schedule-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+    border-color: #cbd5e1 !important;
+}
+
+.schedule-card .sc-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 15px;
+}
+
+.schedule-card .sc-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.schedule-card .sc-content {
+    flex-grow: 1;
+}
+
+.schedule-card .sc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.schedule-card .sc-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a !important;
+    margin: 0;
+}
+
+.schedule-card .sc-priority {
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.schedule-card .sc-desc {
+    font-size: 14px;
+    color: #64748b !important;
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.schedule-card .sc-divider {
+    border-top: 1px dashed #e2e8f0;
+    margin: 0 -20px 15px;
+    padding: 0 20px;
+}
+
+.schedule-card .sc-footer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+    color: #94a3b8 !important;
+    font-weight: 600;
+}
+
+.schedule-card .sc-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.schedule-card .sc-meta-item i {
+    font-size: 16px;
+    color: #6366f1;
+}
+
+.schedule-card .sc-view-link {
+    margin-left: auto;
+    font-weight: 600;
+    color: #6366f1 !important;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+}
+
 /* === Base === */
 body {
     font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
@@ -280,74 +390,6 @@ h6,
 /* ================================
    SCHEDULE & TASK CARDS
    ================================ */
-.schedule-card {
-    display: block;
-    background: #fff;
-    border: 1px solid #f1f5f9;
-    border-radius: 16px;
-    padding: 16px 20px;
-    margin-bottom: 12px;
-    text-decoration: none !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-}
-
-.schedule-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.06);
-    border-color: #e2e8f0;
-}
-
-.schedule-card .sc-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-.schedule-card .sc-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 2px;
-}
-
-.schedule-card .sc-desc {
-    font-size: 13px;
-    color: #64748b;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.schedule-card .sc-meta {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed #f1f5f9;
-    font-size: 12px;
-    color: #94a3b8;
-    font-weight: 500;
-}
-
-.schedule-card .sc-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.schedule-card .sc-meta-item i {
     font-size: 14px;
 }
 

@@ -129,31 +129,33 @@ $recentActivities = $dashboard->getRecentActivities($orgId, 8, null, 'team_lead'
                         $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
                 ?>
                     <div class="col-xl-4 col-md-6">
-                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mb-0">
-                            <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
-                                <?= $pLabel ?>
-                            </span>
-                            
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="sc-icon" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
-                                    <i class="bi bi-telephone"></i>
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card">
+                            <div class="sc-main">
+                                <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                                    <i class="bi bi-person-fill"></i>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <div class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></div>
-                                    <div class="sc-desc"><?= e($f['title']) ?></div>
+                                <div class="sc-content">
+                                    <div class="sc-header">
+                                        <h6 class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></h6>
+                                        <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                                            <?= strtoupper($f['priority']) ?>
+                                        </span>
+                                    </div>
+                                    <p class="sc-desc"><?= e($f['title']) ?></p>
                                 </div>
                             </div>
                             
-                            <div class="sc-meta">
+                            <div class="sc-divider"></div>
+                            
+                            <div class="sc-footer">
                                 <div class="sc-meta-item">
-                                    <i class="bi bi-person-badge text-primary"></i>
-                                    <span><?= e($f['agent_name'] ?? 'Admin') ?></span>
+                                    <i class="bi bi-person-badge"></i>
+                                    <span><?= e($f['agent_name'] ?? 'Agent') ?></span>
                                 </div>
                                 <div class="sc-meta-item">
                                     <i class="bi bi-clock"></i>
                                     <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
                                 </div>
-                                <div class="sc-view-link">
                                     View Lead <i class="bi bi-arrow-right"></i>
                                 </div>
                             </div>

@@ -420,14 +420,16 @@ function dashColor($i) {
     <!-- Team Follow-ups -->
     <div class="col-xl-5 col-lg-12">
         <div class="dash-card h-100" style="min-height:350px;">
-            <div class="dash-card-header">
-                <div class="section-title">
-                    <div class="st-icon" style="background:#fff1f2;color:#e11d48;"><i class="bi bi-calendar-check-fill"></i></div>
-                    Team Schedule (Today)
+            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-pill d-flex align-items-center justify-content-center" style="width:32px;height:32px;background:#fff1f2;color:#ef4444;">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0">Team Schedule (Today)</h6>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="<?= BASE_URL ?>modules/followups/" class="btn btn-sm btn-light border" style="font-size:11px;font-weight:700;">View All</a>
-                    <a href="<?= BASE_URL ?>modules/followups/" class="btn btn-sm btn-primary" style="font-size:11px;font-weight:700;border:none;">+ New</a>
+                    <a href="<?= BASE_URL ?>modules/followups/" class="btn btn-sm btn-outline-secondary border-1 px-3" style="font-size:12px;font-weight:600;border-radius:8px;">View All</a>
+                    <a href="<?= BASE_URL ?>modules/followups/" class="btn btn-sm btn-primary px-3" style="font-size:12px;font-weight:600;border-radius:8px;background:#6366f1;">+ New</a>
                 </div>
             </div>
             <div class="dash-card-body scroll-y pt-0" style="max-height:400px;">
@@ -437,23 +439,26 @@ function dashColor($i) {
                         $pLabel = strtoupper($f['priority']);
                 ?>
                 <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mx-3 my-2">
-                    <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
-                        <?= $pLabel ?>
-                    </span>
-                    
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="sc-icon" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                    <div class="sc-main">
+                        <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
                             <i class="bi bi-telephone"></i>
                         </div>
-                        <div class="flex-grow-1">
-                            <div class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></div>
-                            <div class="sc-desc"><?= e($f['title']) ?></div>
+                        <div class="sc-content">
+                            <div class="sc-header">
+                                <h6 class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></h6>
+                                <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                                    <?= $pLabel ?>
+                                </span>
+                            </div>
+                            <p class="sc-desc"><?= e($f['title']) ?></p>
                         </div>
                     </div>
                     
-                    <div class="sc-meta">
+                    <div class="sc-divider"></div>
+                    
+                    <div class="sc-footer">
                         <div class="sc-meta-item">
-                            <i class="bi bi-person-badge text-primary"></i>
+                            <i class="bi bi-person-badge"></i>
                             <span><?= e($f['agent_name'] ?? 'Admin') ?></span>
                         </div>
                         <div class="sc-meta-item">
