@@ -112,8 +112,9 @@ class Report {
         $stmt->execute($params);
         $rawData = $stmt->fetchAll();
 
-        // If no filter is provided, we'll default to the last 15 days for a meaningful trend
-        if (!$dateFrom || !$dateTo) {
+        // If the date range is too short (e.g., today only), 
+        // we'll default to the last 15 days for the trend chart to look professional.
+        if (!$dateFrom || !$dateTo || $dateFrom === $dateTo) {
             $dateTo = date('Y-m-d');
             $dateFrom = date('Y-m-d', strtotime('-15 days'));
         }
