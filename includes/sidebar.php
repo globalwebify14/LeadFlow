@@ -106,9 +106,7 @@ $base = BASE_URL;
                     <a href="<?= $base ?>modules/deals/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/deals/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-trophy me-2"></i> Deals
                     </a>
-                    <a href="<?= $base ?>modules/tasks/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/tasks/') !== false ? 'active-link' : '' ?>">
-                        <i class="bi bi-check2-square me-2"></i> Tasks
-                    </a>
+
                     <a href="<?= $base ?>modules/followups/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/followups/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-clock-history me-2"></i> Follow-ups
                     </a>
@@ -149,8 +147,13 @@ $base = BASE_URL;
                         <i class="bi bi-building-gear me-2"></i> Org Settings
                     </a>
                     <?php endif; ?>
+                    <?php if (hasModuleAccess('org_settings')): ?>
+                    <a href="<?= $base ?>modules/settings/pipeline.php" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/settings/pipeline') !== false ? 'active-link' : '' ?>">
+                        <i class="bi bi-funnel me-2"></i> Pipeline Stages
+                    </a>
+                    <?php endif; ?>
                     <?php if (hasModuleAccess('profile_settings')): ?>
-                    <a href="<?= $base ?>modules/settings/" class="list-group-item list-group-item-action bg-transparent <?= (strpos($requestUri, '/modules/settings/') !== false && strpos($requestUri, 'organization.php') === false) ? 'active-link' : '' ?>">
+                    <a href="<?= $base ?>modules/settings/" class="list-group-item list-group-item-action bg-transparent <?= (strpos($requestUri, '/modules/settings/') !== false && strpos($requestUri, 'organization.php') === false && strpos($requestUri, 'pipeline.php') === false) ? 'active-link' : '' ?>">
                         <i class="bi bi-code-square me-2"></i> API
                     </a>
                     <?php endif; ?>
@@ -169,9 +172,6 @@ $base = BASE_URL;
                     </a>
                     <a href="<?= $base ?>modules/deals/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/deals/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-trophy me-2"></i> Deals
-                    </a>
-                    <a href="<?= $base ?>modules/tasks/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/tasks/') !== false ? 'active-link' : '' ?>">
-                        <i class="bi bi-check2-square me-2"></i> Tasks
                     </a>
                     <a href="<?= $base ?>modules/followups/" class="list-group-item list-group-item-action bg-transparent <?= strpos($requestUri, '/modules/followups/') !== false ? 'active-link' : '' ?>">
                         <i class="bi bi-clock-history me-2"></i> Follow-ups

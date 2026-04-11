@@ -44,13 +44,13 @@ try {
             'success' => true,
             'has_new' => true,
             'lead' => [
-                'id' => $lead['id'],
-                'name' => htmlspecialchars((string)$lead['name']),
-                'phone' => htmlspecialchars((string)$lead['phone']),
-                'source' => htmlspecialchars((string)$lead['source']),
-                'time' => date('h:i A', strtotime($lead['created_at']))
+                'id'     => $lead['id'],
+                'name'   => strip_tags((string)$lead['name']),
+                'phone'  => strip_tags((string)$lead['phone']),
+                'source' => strip_tags((string)$lead['source']),
+                'time'   => date('h:i A', strtotime($lead['created_at']))
             ]
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     } else {
         echo json_encode(['success' => true, 'has_new' => false]);
     }

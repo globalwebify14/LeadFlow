@@ -61,11 +61,38 @@ $unassignedStmt = $pdo->prepare($unassignedSql);
 $unassignedStmt->execute($unap);
 $unassignedLeads = $unassignedStmt->fetchAll();
 
+// ── Followup Column Data ─────────────────────────────────
+try {
+    $fuSql = "SELECT f.id, f.lead_id, f.followup_date, f.followup_time, f.status, f.description,
+                     l.name as lead_name, l.phone as lead_phone,
+                     u.name as agent_name
+              FROM followups f
+              JOIN leads l ON f.lead_id = l.id
+              LEFT JOIN users u ON f.user_id = u.id
+              WHERE f.organization_id = :org";
+    $fuParams = ['org' => $orgId];
+    if ($filterAgentId) {
+        $fuSql .= " AND f.user_id = :uid";
+        $fuParams['uid'] = $filterAgentId;
+    }
+    $fuSql .= " ORDER BY f.followup_date ASC, f.followup_time ASC LIMIT 100";
+    $fuStmt = $pdo->prepare($fuSql);
+    $fuStmt->execute($fuParams);
+    $allFollowups = $fuStmt->fetchAll();
+
+    $today = date('Y-m-d');
+    $fuToday     = array_filter($allFollowups, fn($f) => $f['status'] !== 'completed' && $f['followup_date'] <= $today);
+    $fuUpcoming  = array_filter($allFollowups, fn($f) => $f['status'] !== 'completed' && $f['followup_date'] > $today);
+    $fuCompleted = array_filter($allFollowups, fn($f) => $f['status'] === 'completed');
+} catch (Exception $e) {
+    $fuToday = $fuUpcoming = $fuCompleted = [];
+}
+
 include '../../includes/header.php';
 ?>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
-    <form class="d-flex flex-wrap gap-2 align-items-center">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <form class="d-flex flex-wrap gap-2 align-items-center w-100 w-md-auto">
         <?php if (getUserRole() !== 'agent'): ?>
         <?php 
         $stmtUsers = $pdo->prepare("SELECT id, name FROM users WHERE organization_id = ? AND role IN ('agent', 'team_lead')");
@@ -132,6 +159,81 @@ include '../../includes/header.php';
         </div>
     </div>
     <?php endforeach; ?>
+
+    <!-- ══ FOLLOW-UPS COLUMN ════════════════════════════════ -->
+    <div class="pipeline-column fu-column" style="flex:0 0 270px;">
+        <div class="pipeline-header rounded-top p-3 text-white fw-bold d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#f59e0b,#d97706);flex:0 0 auto;">
+            <span><i class="bi bi-calendar-check me-2"></i>Follow-ups</span>
+            <span class="badge bg-white bg-opacity-25 rounded-pill"><?= count($fuToday) + count($fuUpcoming) + count($fuCompleted) ?></span>
+        </div>
+        <div class="pipeline-cards p-2 rounded-bottom" style="background:#fffbeb;flex:1;overflow-y:auto;">
+
+            <?php if (!empty($fuToday)): ?>
+            <div class="fu-section-label">📌 Today &amp; Overdue (<?= count($fuToday) ?>)</div>
+            <?php foreach ($fuToday as $fu):
+                $fuTs = @strtotime($fu['followup_date'] . ' ' . ($fu['followup_time'] ?? '00:00:00'));
+                $isOd = $fuTs && $fuTs < strtotime('today');
+            ?>
+            <div class="fu-card <?= $isOd ? 'fu-overdue' : 'fu-today' ?>">
+                <div class="fu-lead-name"><a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $fu['lead_id'] ?>" class="text-decoration-none text-dark fw-semibold" style="font-size:13px;"><?= e($fu['lead_name']) ?></a></div>
+                <div class="fu-meta"><i class="bi bi-telephone me-1"></i><?= e($fu['lead_phone']) ?></div>
+                <div class="fu-time">
+                    <i class="bi bi-<?= $isOd ? 'alarm-fill text-danger' : 'clock text-warning' ?> me-1"></i>
+                    <strong><?= $fuTs ? date('M d', $fuTs) : e($fu['followup_date']) ?></strong>
+                    <?php if (!empty($fu['followup_time'])): ?> · <?= $fuTs ? date('h:i A', $fuTs) : '' ?><?php endif; ?>
+                    <?php if ($isOd): ?><span class="text-danger fw-bold ms-1" style="font-size:10px;">OVERDUE</span><?php endif; ?>
+                </div>
+                <?php if (!empty($fu['description'])): ?><div class="fu-note"><?= e(mb_substr($fu['description'], 0, 60)) ?><?= mb_strlen($fu['description']) > 60 ? '…' : '' ?></div><?php endif; ?>
+                <?php if ($fu['agent_name']): ?><div class="fu-agent"><i class="bi bi-person me-1"></i><?= e($fu['agent_name']) ?></div><?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+
+            <?php if (!empty($fuUpcoming)): ?>
+            <div class="fu-section-label">🗓️ Upcoming (<?= count($fuUpcoming) ?>)</div>
+            <?php foreach ($fuUpcoming as $fu):
+                $fuTs = @strtotime($fu['followup_date'] . ' ' . ($fu['followup_time'] ?? '00:00:00'));
+            ?>
+            <div class="fu-card fu-upcoming">
+                <div class="fu-lead-name"><a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $fu['lead_id'] ?>" class="text-decoration-none text-dark fw-semibold" style="font-size:13px;"><?= e($fu['lead_name']) ?></a></div>
+                <div class="fu-meta"><i class="bi bi-telephone me-1"></i><?= e($fu['lead_phone']) ?></div>
+                <div class="fu-time">
+                    <i class="bi bi-calendar-event text-primary me-1"></i>
+                    <strong><?= $fuTs ? date('M d', $fuTs) : e($fu['followup_date']) ?></strong>
+                    <?php if (!empty($fu['followup_time'])): ?> · <?= $fuTs ? date('h:i A', $fuTs) : '' ?><?php endif; ?>
+                </div>
+                <?php if (!empty($fu['description'])): ?><div class="fu-note"><?= e(mb_substr($fu['description'], 0, 60)) ?><?= mb_strlen($fu['description']) > 60 ? '…' : '' ?></div><?php endif; ?>
+                <?php if ($fu['agent_name']): ?><div class="fu-agent"><i class="bi bi-person me-1"></i><?= e($fu['agent_name']) ?></div><?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+
+            <?php if (!empty($fuCompleted)): ?>
+            <div class="fu-section-label">✅ Completed (<?= count($fuCompleted) ?>)</div>
+            <?php foreach (array_slice($fuCompleted, 0, 20) as $fu):
+                $fuTs = @strtotime($fu['followup_date'] . ' ' . ($fu['followup_time'] ?? '00:00:00'));
+            ?>
+            <div class="fu-card fu-completed">
+                <div class="fu-lead-name"><a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $fu['lead_id'] ?>" class="text-decoration-none fw-semibold" style="font-size:13px;color:#64748b;"><?= e($fu['lead_name']) ?></a></div>
+                <div class="fu-time" style="color:#94a3b8;">
+                    <i class="bi bi-check2-all me-1 text-success"></i>
+                    <strong><?= $fuTs ? date('M d', $fuTs) : e($fu['followup_date']) ?></strong>
+                    <?php if (!empty($fu['followup_time'])): ?> · <?= $fuTs ? date('h:i A', $fuTs) : '' ?><?php endif; ?>
+                </div>
+                <?php if ($fu['agent_name']): ?><div class="fu-agent"><?= e($fu['agent_name']) ?></div><?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+            <?php if (count($fuCompleted) > 20): ?><div class="text-center text-muted" style="font-size:11px;padding:6px;">+ <?= count($fuCompleted) - 20 ?> more completed</div><?php endif; ?>
+            <?php endif; ?>
+
+            <?php if (empty($fuToday) && empty($fuUpcoming) && empty($fuCompleted)): ?>
+            <div class="text-center text-muted py-4" style="font-size:12px;">
+                <i class="bi bi-calendar2-x d-block mb-2" style="font-size:1.6rem;"></i>No follow-ups scheduled
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
 </div>
 
 <?php if (count($unassignedLeads) > 0): ?>
@@ -193,56 +295,62 @@ include '../../includes/header.php';
     border-radius: 10px;
 }
 
-/* ============================================================
-   PIPELINE — Mobile Responsive Overhaul
-   ============================================================ */
-@media (max-width: 768px) {
+/* ── Follow-up Column Cards ─────────────────────────────── */
+.fu-section-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+    text-transform: uppercase; color: #94a3b8;
+    padding: 8px 4px 4px; margin-bottom: 4px;
+}
+.fu-card {
+    border-radius: 10px; padding: 10px 12px;
+    margin-bottom: 8px; transition: box-shadow 0.15s;
+}
+.fu-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+.fu-today    { background: #fff; border: 1px solid #fde68a; }
+.fu-overdue  { background: #fff5f5; border: 1px solid #fca5a5; }
+.fu-upcoming { background: #f0f9ff; border: 1px solid #bae6fd; }
+.fu-completed{ background: #f8fafc; border: 1px solid #e2e8f0; opacity: 0.75; }
+.fu-lead-name { margin-bottom: 2px; }
+.fu-meta  { font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+.fu-time  { font-size: 12px; color: #475569; margin-bottom: 4px; }
+.fu-note  { font-size: 11px; color: #64748b; background: rgba(0,0,0,0.03); border-radius: 6px; padding: 3px 6px; margin-bottom: 4px; }
+.fu-agent { font-size: 10px; color: #94a3b8; }
+
+
+@media (max-width: 991px) {
+    /* Board: allow horizontal scroll on tablets, stack on small mobile if needed */
+    .pipeline-board {
+        gap: 1rem !important;
+        height: calc(100vh - 240px) !important;
+    }
+    .pipeline-column {
+        flex: 0 0 260px !important;
+    }
+}
+
+@media (max-width: 576px) {
     /* Filter bar: stack full width */
-    .d-flex.flex-column.flex-md-row.justify-content-between {
-        gap: 10px !important;
-    }
-    .d-flex.flex-column.flex-md-row.justify-content-between form {
-        width: 100%;
-    }
     .d-flex.flex-column.flex-md-row.justify-content-between form select,
     .d-flex.flex-column.flex-md-row.justify-content-between form input[type="date"] {
-        width: 100% !important;
-        flex: 1;
+        flex: 1 1 120px;
     }
+    .btn-primary.btn-sm { width: 100%; }
 
-    /* Pipeline board: stack vertically */
+    /* Pipeline board: stack vertically on very small mobile */
     .pipeline-board {
         flex-direction: column !important;
         overflow-x: hidden !important;
         height: auto !important;
         gap: 16px !important;
-        padding-bottom: 0 !important;
     }
 
-    /* Each column: full width, auto height */
     .pipeline-column {
+        width: 100% !important;
         flex: 0 0 auto !important;
-        width: 100% !important;
-        height: auto !important;
     }
 
-    /* Cards container: limited height with scroll */
     .pipeline-cards {
-        max-height: 300px;
-        overflow-y: auto !important;
-    }
-
-    /* Pipeline cards: smaller padding */
-    .pipeline-card .card-body {
-        padding: 10px !important;
-    }
-    .pipeline-card .fw-semibold {
-        font-size: 13px !important;
-    }
-
-    /* Unassigned leads: wrap nicely */
-    .d-flex.flex-wrap.gap-2 .pipeline-card {
-        width: 100% !important;
+        max-height: 320px;
     }
 }
 </style>

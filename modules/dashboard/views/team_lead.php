@@ -106,6 +106,71 @@ $recentActivities = $dashboard->getRecentActivities($orgId, 8, null, 'team_lead'
     </div>
 </div>
 
+<!-- ============================================================
+     TODAY'S SCHEDULE
+     ============================================================ -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <div class="section-title">
+                    <div class="st-icon" style="background:#fff1f2;color:#e11d48;"><i class="bi bi-calendar2-check-fill"></i></div>
+                    Team Schedule (Today)
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="<?= BASE_URL ?>modules/followups/" class="btn btn-sm btn-light border" style="font-size:11px;font-weight:700;">View All</a>
+                </div>
+            </div>
+            <div class="dash-card-body p-3 scroll-y" style="max-height: 400px;">
+                <div class="row g-3">
+                <?php if (!empty($todayFollowups)):
+                    foreach ($todayFollowups as $f):
+                        $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
+                        $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
+                ?>
+                    <div class="col-xl-4 col-md-6">
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mb-0">
+                            <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                                <?= $pLabel ?>
+                            </span>
+                            
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="sc-icon" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                                    <i class="bi bi-telephone"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></div>
+                                    <div class="sc-desc"><?= e($f['title']) ?></div>
+                                </div>
+                            </div>
+                            
+                            <div class="sc-meta">
+                                <div class="sc-meta-item">
+                                    <i class="bi bi-person-badge text-primary"></i>
+                                    <span><?= e($f['agent_name'] ?? 'Admin') ?></span>
+                                </div>
+                                <div class="sc-meta-item">
+                                    <i class="bi bi-clock"></i>
+                                    <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
+                                </div>
+                                <div class="sc-view-link">
+                                    View Lead <i class="bi bi-arrow-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <?php endforeach; else: ?>
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-calendar-x fs-2 text-muted d-block mb-2"></i>
+                        <span class="text-muted small">No follow-ups scheduled for today.</span>
+                    </div>
+                <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4 mb-4">
     <div class="col-xl-8">
         <div class="card shadow-sm border-0 h-100">

@@ -479,8 +479,10 @@ class Lead {
         $mapping = [
             'Working'   => 'Contacted',
             'Follow Up' => 'Contacted',
-            'Done'      => 'Closed Won',
-            'Rejected'  => 'Closed Lost'
+            'Done'      => 'Converted',
+            'Closed Won'=> 'Converted',
+            'Rejected'  => 'Dropped',
+            'Closed Lost'=> 'Dropped'
         ];
 
         $stageName = $status ?: 'New Lead';
@@ -779,7 +781,11 @@ class Lead {
      * Get leads for pipeline view
      */
     public function getLeadsByStage($orgId, $stageId, $userId = null, $dateFrom = null, $dateTo = null) {
-        $sql = "SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.assigned_to = u.id WHERE l.organization_id = :org_id AND l.pipeline_stage_id = :stage_id";
+        $sql = "SELECT l.*, u.name as agent_name,
+                       (SELECT f.followup_date FROM followups f WHERE f.lead_id = l.id AND f.status = 'pending' ORDER BY f.followup_date ASC, f.followup_time ASC LIMIT 1) as next_followup_date,
+                       (SELECT f.followup_time FROM followups f WHERE f.lead_id = l.id AND f.status = 'pending' ORDER BY f.followup_date ASC, f.followup_time ASC LIMIT 1) as next_followup_time
+                FROM leads l LEFT JOIN users u ON l.assigned_to = u.id
+                WHERE l.organization_id = :org_id AND l.pipeline_stage_id = :stage_id";
         $params = ['org_id' => $orgId, 'stage_id' => $stageId];
         if ($userId) {
             $sql .= " AND l.assigned_to = :user_id";

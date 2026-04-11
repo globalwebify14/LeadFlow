@@ -57,6 +57,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'get_notes') {
+        $stmt = $pdo->prepare("SELECT ln.*, u.name as user_name FROM lead_notes ln LEFT JOIN users u ON ln.user_id = u.id WHERE ln.lead_id = ? ORDER BY ln.created_at DESC");
+        $stmt->execute([$leadId]);
+        $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'notes' => $notes]);
+        exit;
+    }
+
     if ($action === 'add_note') {
         $note = trim($_POST['note'] ?? '');
         $createFollowup = $_POST['create_followup'] ?? '0';

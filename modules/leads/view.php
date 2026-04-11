@@ -105,10 +105,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_note'])) {
     }
 }
 
-// Handle quick status update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quick_status'])) {
-    $leadModel->updateStatus($lead['id'], $_POST['quick_status'], '', getUserId());
-    redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Status updated!', 'success');
+// Handle add alternate phone
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_phone'])) {
+    $newPhone = trim($_POST['new_phone'] ?? '');
+    $phoneLabel = trim($_POST['phone_label'] ?? 'Alternate');
+    if ($newPhone) {
+        $stmt = $pdo->prepare("INSERT INTO lead_phones (lead_id, phone, label, is_primary) VALUES (?, ?, ?, 0)");
+        $stmt->execute([$lead['id'], $newPhone, $phoneLabel]);
+        $leadModel->logActivity($lead['id'], 'note', 'Added alternate phone: ' . $newPhone, null, null, getUserId());
+        redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Phone number added!', 'success');
+    }
+}
+
+// Handle set primary phone
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_primary_phone'])) {
+    $phoneId = (int)($_POST['phone_id'] ?? 0);
+    $phoneNumber = trim($_POST['phone_number'] ?? '');
+    if ($phoneId && $phoneNumber) {
+        // Save current main phone as alternate first
+        $currentPhone = $lead['phone'];
+        $stmt = $pdo->prepare("INSERT INTO lead_phones (lead_id, phone, label, is_primary) VALUES (?, ?, 'Previous Main', 0)");
+        $stmt->execute([$lead['id'], $currentPhone]);
+        
+        // Set the new main phone on the leads table
+        $stmt = $pdo->prepare("UPDATE leads SET phone = ? WHERE id = ?");
+        $stmt->execute([$phoneNumber, $lead['id']]);
+        
+        // Remove the alternate entry that's now the main
+        $pdo->prepare("DELETE FROM lead_phones WHERE id = ?")->execute([$phoneId]);
+        
+        $leadModel->logActivity($lead['id'], 'note', 'Changed main phone to: ' . $phoneNumber . ' (previous: ' . $currentPhone . ')', null, null, getUserId());
+        redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Main phone number updated!', 'success');
+    }
+}
+
+// Handle Follow-up Completion from this page
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_followup'])) {
+    $fId = (int)$_POST['followup_id'];
+    $followupModel = new Followup($pdo);
+    $f = $followupModel->getById($fId);
+    
+    if ($f && (isAdmin() || $f['user_id'] == getUserId())) {
+        $followupModel->complete($fId);
+        
+        $noteText = trim($_POST['outcome_note'] ?? '');
+        if ($noteText && $f['lead_id']) {
+            $leadModel->addNote($f['lead_id'], $noteText, getUserId());
+        }
+        
+        if (!empty($_POST['schedule_next'])) {
+            $data = [
+                'organization_id' => getOrgId(),
+                'lead_id' => $f['lead_id'],
+                'deal_id' => $f['deal_id'],
+                'user_id' => getUserId(),
+                'title' => trim($_POST['next_title']),
+                'description' => '',
+                'followup_date' => $_POST['next_date'],
+                'followup_time' => $_POST['next_time'] ?: null,
+                'priority' => $_POST['next_priority'] ?? 'medium',
+            ];
+            $followupModel->create($data);
+        }
+        redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Follow-up marked as completed!', 'success');
+    }
+}
+
+// Handle delete alternate phone
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_phone'])) {
+    $phoneId = (int)($_POST['phone_id'] ?? 0);
+    if ($phoneId) {
+        $pdo->prepare("DELETE FROM lead_phones WHERE id = ? AND lead_id = ?")->execute([$phoneId, $lead['id']]);
+        redirect(BASE_URL . 'modules/leads/view.php?id=' . $lead['id'], 'Phone number removed!', 'success');
+    }
 }
 
 // Handle delete
@@ -121,6 +190,11 @@ $activities = $leadModel->getActivities($lead['id']);
 $notes      = $leadModel->getNotes($lead['id']);
 $currentTags = $leadModel->getTags($lead['id']);
 $allOrgTags = $leadModel->getOrgTags($orgId);
+
+// Fetch alternate phone numbers
+$altPhonesStmt = $pdo->prepare("SELECT * FROM lead_phones WHERE lead_id = ? ORDER BY created_at ASC");
+$altPhonesStmt->execute([$lead['id']]);
+$altPhones = $altPhonesStmt->fetchAll();
 
 $followupModel  = new Followup($pdo);
 $followupsStmt  = $pdo->prepare("SELECT * FROM followups WHERE lead_id = :lead AND organization_id = :org ORDER BY followup_date ASC");
@@ -352,7 +426,7 @@ include '../../includes/header.php';
 /* ============================================================
    LEAD DETAIL — Mobile Responsive
    ============================================================ */
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
     /* Hero card: compress */
     .ld-hero {
         padding: 16px !important;
@@ -529,7 +603,7 @@ include '../../includes/header.php';
 <div class="row g-4">
 
     <!-- LEFT: Main content -->
-    <div class="col-xl-8">
+    <div class="col-xl-8 col-lg-12">
 
         <!-- ── Contact Information ── -->
         <div class="ld-card">
@@ -543,9 +617,51 @@ include '../../includes/header.php';
             <div class="ld-card-body">
                 <div class="info-row">
                     <div class="info-icon" style="background:#eef2ff;color:#6366f1;"><i class="bi bi-telephone-fill"></i></div>
-                    <div>
-                        <div class="info-label">Phone</div>
-                        <div class="info-value"><a href="tel:<?= e($lead['phone']) ?>"><?= e($lead['phone']) ?></a></div>
+                    <div class="w-100">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="info-label mb-0" style="font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: #64748b; font-weight: 700;">Phone Numbers</div>
+                            <button class="btn btn-sm" style="background:#eef2ff; color:#4f46e5; border-radius:6px; font-size:11px; font-weight:600; padding: 4px 10px; border:none; transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#eef2ff'" data-bs-toggle="modal" data-bs-target="#addPhoneModal">
+                                <i class="bi bi-plus-circle me-1"></i> Add Number
+                            </button>
+                        </div>
+                        
+                        <!-- Main Phone -->
+                        <div class="d-flex justify-content-between align-items-center bg-light rounded-2 px-2 py-1 mb-1 border border-primary border-opacity-25">
+                            <div class="info-value d-flex align-items-center gap-2 mb-0">
+                                <a href="tel:<?= e($lead['phone']) ?>" class="fw-bold"><?= e($lead['phone']) ?></a>
+                                <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:10px;">Primary</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $lead['phone']) ?>" target="_blank" class="text-success p-1" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                            </div>
+                        </div>
+
+                        <!-- Alt Phones -->
+                        <?php foreach($altPhones as $ap): ?>
+                        <div class="d-flex justify-content-between align-items-center bg-light rounded-2 px-2 py-1 mb-1 border">
+                            <div class="info-value d-flex flex-column mb-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="tel:<?= e($ap['phone']) ?>" class="text-dark"><?= e($ap['phone']) ?></a>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:10px; font-weight:normal;"><?= e($ap['label']) ?></span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-1 align-items-center">
+                                <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $ap['phone']) ?>" target="_blank" class="text-success p-1" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                                
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('Make this the main phone?');">
+                                    <input type="hidden" name="set_primary_phone" value="1">
+                                    <input type="hidden" name="phone_id" value="<?= $ap['id'] ?>">
+                                    <input type="hidden" name="phone_number" value="<?= e($ap['phone']) ?>">
+                                    <button type="submit" class="btn btn-link text-primary p-1 border-0" title="Set as main"><i class="bi bi-arrow-bar-up"></i></button>
+                                </form>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this phone?');">
+                                    <input type="hidden" name="delete_phone" value="1">
+                                    <input type="hidden" name="phone_id" value="<?= $ap['id'] ?>">
+                                    <button type="submit" class="btn btn-link text-danger p-1 border-0" title="Delete"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
                 <div class="info-row">
@@ -595,36 +711,7 @@ include '../../includes/header.php';
             </div>
         </div>
 
-        <!-- ── Facebook Form Data ── -->
-        <?php
-        $hasFbData = !empty($lead['note']) && strpos($lead['note'], '--- Facebook Lead Form Data ---') !== false;
-        if ($hasFbData):
-            $lines = explode("\n", trim(str_replace('--- Facebook Lead Form Data ---', '', $lead['note'])));
-        ?>
-        <div class="ld-card">
-            <div class="ld-card-header">
-                <div class="ld-section-title">
-                    <div class="icon-wrap" style="background:#eff6ff;color:#1877f2;"><i class="bi bi-facebook"></i></div>
-                    Facebook Form Submission
-                </div>
-            </div>
-            <div class="ld-card-body">
-                <?php foreach ($lines as $line):
-                    if (trim($line) === '') continue;
-                    $parts = explode(':', $line, 2);
-                ?>
-                <div class="fb-field">
-                    <?php if (count($parts) === 2): ?>
-                    <div class="fb-label"><?= e(trim($parts[0])) ?></div>
-                    <div class="fb-value"><?= e(trim($parts[1])) ?></div>
-                    <?php else: ?>
-                    <div class="fb-value"><?= e(trim($line)) ?></div>
-                    <?php endif; ?>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
+
 
         <!-- ── Notes ── -->
         <div class="ld-card">
@@ -663,41 +750,67 @@ include '../../includes/header.php';
                         </button>
                     </div>
                 </form>
-                <!-- Notes list -->
-                <?php if (!empty($notes)): ?>
-                    <?php foreach ($notes as $n): ?>
-                    <div class="note-item position-relative">
-                        <div class="note-avatar"><?= strtoupper(substr($n['user_name'] ?? 'S', 0, 1)) ?></div>
-                        <div class="flex-grow-1">
-                            <div class="note-text" id="note-text-<?= $n['id'] ?>"><?= nl2br(e($n['note'])) ?></div>
-                            
-                            <!-- Note Edit Form (Hidden by default) -->
+                <!-- Notes Timeline -->
+                <?php if (!empty($notes)):
+                    $noteColors = ['#6366f1','#10b981','#f59e0b','#ec4899','#8b5cf6','#06b6d4','#ef4444','#f97316','#14b8a6','#3b82f6'];
+                ?>
+                <div class="position-relative" style="padding-left: 28px;">
+                    <!-- Vertical line -->
+                    <div style="position:absolute; left:10px; top:0; bottom:0; width:2px; background: linear-gradient(to bottom, #e2e8f0, transparent);"></div>
+
+                    <?php foreach ($notes as $idx => $n):
+                        $authorName = $n['user_name'] ?? 'System';
+                        $initial = strtoupper(substr($authorName, 0, 1));
+                        $color = $noteColors[$idx % count($noteColors)];
+                    ?>
+                    <div class="position-relative mb-4">
+                        <!-- Timeline dot with avatar -->
+                        <div class="position-absolute d-flex align-items-center justify-content-center text-white fw-bold"
+                             style="left:-28px; top:4px; width:22px; height:22px; border-radius:50%; background:<?= $color ?>; font-size:10px; box-shadow:0 0 0 3px #fff, 0 0 0 5px <?= $color ?>33;">
+                            <?= $initial ?>
+                        </div>
+
+                        <!-- Note Card -->
+                        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.04); border-left: 3px solid <?= $color ?>;">
+                            <!-- Header -->
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="fw-semibold" style="font-size:12px; color:<?= $color ?>;"><?= e($authorName) ?></span>
+                                <span class="text-muted" style="font-size:10.5px;">
+                                    <i class="bi bi-clock me-1"></i><?= date('d M Y · h:i A', strtotime($n['created_at'])) ?>
+                                </span>
+                            </div>
+
+                            <!-- Note text -->
+                            <div class="note-text mb-2" id="note-text-<?= $n['id'] ?>" style="font-size:13px; color:#374151; line-height:1.6;"><?= nl2br(e($n['note'])) ?></div>
+
+                            <!-- Edit form (hidden) -->
                             <form method="POST" id="note-edit-form-<?= $n['id'] ?>" class="d-none mt-2">
                                 <input type="hidden" name="note_id" value="<?= $n['id'] ?>">
                                 <textarea class="note-input" name="note_text" rows="2" required><?= e($n['note']) ?></textarea>
                                 <div class="d-flex justify-content-end gap-2 mt-2">
                                     <button type="button" class="btn btn-sm btn-light rounded-pill px-3" onclick="toggleEditNote(<?= $n['id'] ?>)">Cancel</button>
-                                    <button type="submit" name="edit_note" value="1" class="btn btn-sm btn-primary rounded-pill px-3" style="background:#6366f1;border:none;">Save</button>
+                                    <button type="submit" name="edit_note" value="1" class="btn btn-sm rounded-pill px-3 text-white" style="background:<?= $color ?>;border:none;">Save</button>
                                 </div>
                             </form>
 
-                            <div class="note-meta"><strong><?= e($n['user_name'] ?? 'System') ?></strong> &bull; <?= timeAgo($n['created_at']) ?></div>
-                        </div>
-                        <?php if (getUserId() == $n['user_id'] || getUserRole() !== 'agent'): ?>
-                        <div class="d-flex align-items-start gap-3 ms-3 mt-1">
-                            <button class="btn btn-sm text-primary p-0 d-flex align-items-center" type="button" onclick="toggleEditNote(<?= $n['id'] ?>)" style="background:none;border:none;font-size:12px;font-weight:600;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
-                                <i class="bi bi-pencil me-1"></i>Edit
-                            </button>
-                            <form method="POST" onsubmit="return confirm('Delete this note?');" class="m-0 p-0">
-                                <input type="hidden" name="note_id" value="<?= $n['id'] ?>">
-                                <button class="btn btn-sm text-danger p-0 d-flex align-items-center" type="submit" name="delete_note" value="1" style="background:none;border:none;font-size:12px;font-weight:600;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
-                                    <i class="bi bi-trash me-1"></i>Delete
+                            <!-- Actions -->
+                            <?php if (getUserId() == $n['user_id'] || getUserRole() !== 'agent'): ?>
+                            <div class="d-flex gap-3">
+                                <button type="button" onclick="toggleEditNote(<?= $n['id'] ?>)" style="background:none;border:none;padding:0;font-size:11px;font-weight:600;color:#6366f1;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                                    <i class="bi bi-pencil me-1"></i>Edit
                                 </button>
-                            </form>
+                                <form method="POST" onsubmit="return confirm('Delete this note?');" class="m-0 p-0">
+                                    <input type="hidden" name="note_id" value="<?= $n['id'] ?>">
+                                    <button type="submit" name="delete_note" value="1" style="background:none;border:none;padding:0;font-size:11px;font-weight:600;color:#ef4444;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                                        <i class="bi bi-trash me-1"></i>Delete
+                                    </button>
+                                </form>
+                            </div>
+                            <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
+                </div>
                 <?php else: ?>
                 <div class="text-center py-4">
                     <i class="bi bi-journal-x" style="font-size:2rem;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
@@ -753,35 +866,9 @@ include '../../includes/header.php';
     </div><!-- /col-xl-8 -->
 
     <!-- RIGHT: Sidebar -->
-    <div class="col-xl-4">
+    <div class="col-xl-4 col-lg-12">
 
-        <!-- ── Tags ── -->
-        <div class="ld-card">
-            <div class="ld-card-header">
-                <div class="ld-section-title">
-                    <div class="icon-wrap" style="background:#f0fdf4;color:#10b981;"><i class="bi bi-tags-fill"></i></div>
-                    Tags
-                </div>
-                <button type="button" class="btn-add-floating" data-bs-toggle="modal" data-bs-target="#editTagsModal">
-                    <i class="bi bi-pencil"></i> Manage
-                </button>
-            </div>
-            <div class="ld-card-body">
-                <?php if (!empty($currentTags)): ?>
-                <div class="d-flex flex-wrap gap-2">
-                    <?php foreach ($currentTags as $tag): ?>
-                    <span class="tag-chip" style="background:<?= e($tag['color']) ?>18;color:<?= e($tag['color']) ?>;border:1px solid <?= e($tag['color']) ?>35;">
-                        <i class="bi bi-circle-fill" style="font-size:6px;"></i><?= e($tag['name']) ?>
-                    </span>
-                    <?php endforeach; ?>
-                </div>
-                <?php else: ?>
-                <div class="text-center py-3">
-                    <span style="font-size:13px;color:#94a3b8;">No tags assigned</span>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
+
 
         <!-- ── Follow-ups ── -->
         <div class="ld-card">
@@ -799,20 +886,31 @@ include '../../includes/header.php';
                     <?php foreach ($followups as $f):
                         $isDone = $f['status'] === 'completed';
                         $isOverdue = !$isDone && strtotime($f['followup_date']) < strtotime('today');
+                        $isUpcoming = !$isDone && !$isOverdue;
                     ?>
-                    <div class="reminder-item">
-                        <div class="rem-check <?= $isDone ? 'done' : '' ?>">
-                            <?php if ($isDone): ?><i class="bi bi-check"></i><?php endif; ?>
+                    <div class="reminder-item" <?= $isUpcoming ? 'style="border-left: 3px solid #f97316; padding-left: 12px; margin-left: -15px; border-radius: 4px;"' : '' ?>>
+                        <?php if (!$isDone): ?>
+                        <div class="rem-check" style="cursor: pointer; transition: 0.2s; border-color: <?= $isUpcoming ? '#f97316' : '#ef4444' ?>; <?php if($isUpcoming): ?>background-color:#fff7ed;<?php else: ?>background-color:#fef2f2;<?php endif; ?>" 
+                             onmouseover="this.style.backgroundColor='<?= $isUpcoming ? '#f97316' : '#ef4444' ?>'; this.nextElementSibling.style.color='<?= $isUpcoming ? '#f97316' : '#ef4444' ?>'" 
+                             onmouseout="this.style.backgroundColor='<?= $isUpcoming ? '#fff7ed' : '#fef2f2' ?>'; this.nextElementSibling.style.color='inherit'" 
+                             onclick="openCompleteFollowupModal(<?= $f['id'] ?>, '<?= e(addslashes($f['title'])) ?>')"></div>
+                        <?php else: ?>
+                        <div class="rem-check done">
+                            <i class="bi bi-check"></i>
                         </div>
+                        <?php endif; ?>
                         <div class="flex-grow-1">
                             <div style="font-size:13px;font-weight:600;color:<?= $isDone ? '#94a3b8' : '#0f172a' ?>;<?= $isDone ? 'text-decoration:line-through;' : '' ?>">
                                 <?= e($f['title']) ?>
                             </div>
                             <div class="d-flex align-items-center gap-2 mt-1">
-                                <span class="rem-due <?= $isOverdue ? 'rem-overdue' : '' ?>">
+                                <span class="rem-due <?= $isOverdue ? 'rem-overdue' : '' ?>" style="<?= $isUpcoming ? 'color: #f97316; font-weight: 500;' : '' ?>">
                                     <?php if ($isOverdue): ?><i class="bi bi-exclamation-triangle-fill me-1"></i><?php endif; ?>
                                     <i class="bi bi-calendar3 me-1"></i><?= formatDate($f['followup_date']) ?>
                                     <?php if ($f['followup_time']): ?> &bull; <i class="bi bi-clock me-1"></i><?= date('h:i A', strtotime($f['followup_time'])) ?><?php endif; ?>
+                                    <?php if ($isUpcoming): ?>
+                                        <span class="ms-1" style="background:#ffedd5; color:#c2410c; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:700; text-transform:uppercase;">Upcoming</span>
+                                    <?php endif; ?>
                                 </span>
                             </div>
                         </div>
@@ -827,48 +925,7 @@ include '../../includes/header.php';
             </div>
         </div>
 
-        <!-- ── Tasks ── -->
-        <div class="ld-card">
-            <div class="ld-card-header">
-                <div class="ld-section-title">
-                    <div class="icon-wrap" style="background:#fdf4ff;color:#a855f7;"><i class="bi bi-check2-square"></i></div>
-                    Internal Tasks <span style="background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;"><?= count($leadTasks) ?></span>
-                </div>
-                <button type="button" class="btn-add-floating" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-                    <i class="bi bi-plus"></i> Add
-                </button>
-            </div>
-            <div class="ld-card-body">
-                <?php if (!empty($leadTasks)): ?>
-                    <?php foreach ($leadTasks as $t):
-                        $isDone = $t['status'] === 'completed';
-                        $isOverdue = !$isDone && strtotime($t['due_date']) < strtotime('today');
-                    ?>
-                    <div class="reminder-item">
-                        <div class="rem-check <?= $isDone ? 'done' : '' ?>">
-                            <?php if ($isDone): ?><i class="bi bi-check"></i><?php endif; ?>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div style="font-size:13px;font-weight:600;color:<?= $isDone ? '#94a3b8' : '#0f172a' ?>;<?= $isDone ? 'text-decoration:line-through;' : '' ?>">
-                                <?= e($t['task_title']) ?>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mt-1">
-                                <span class="rem-due <?= $isOverdue ? 'rem-overdue' : '' ?>">
-                                    <?php if ($isOverdue): ?><i class="bi bi-exclamation-triangle-fill me-1"></i><?php endif; ?>
-                                    <i class="bi bi-calendar3 me-1"></i>Due <?= formatDate($t['due_date']) ?>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                <div class="text-center py-4">
-                    <i class="bi bi-list-task" style="font-size:2rem;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
-                    <span style="font-size:13px;color:#94a3b8;">No internal tasks yet</span>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
+
 
         <!-- ── Linked Deals ── -->
         <?php if (!empty($deals)): ?>
@@ -967,7 +1024,7 @@ include '../../includes/header.php';
             <div class="modal-body px-4 py-3">
                 <input type="hidden" name="add_followup" value="1">
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small">Interaction Title</label>
+                    <label class="form-label fw-semibold small">Name</label>
                     <input type="text" class="form-control" name="title" placeholder="e.g. Call to discuss pricing" required style="border-radius:12px;">
                 </div>
                 <div class="row g-3 mb-3">
@@ -1000,6 +1057,82 @@ include '../../includes/header.php';
         </form>
     </div>
 </div>
+
+<!-- ═══════════════ COMPLETE FOLLOW-UP MODAL ═══════════════ -->
+<div class="modal fade" id="completeFollowupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="" method="POST" class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-success"><i class="bi bi-check-circle-fill me-2"></i>Complete Follow-up</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <input type="hidden" name="complete_followup" value="1">
+                <input type="hidden" name="followup_id" id="comp_followup_id" value="">
+                
+                <p class="small text-muted mb-3">Marking <strong id="comp_followup_title" class="text-dark"></strong> as complete.</p>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small">Interaction Notes (Optional)</label>
+                    <textarea class="form-control" name="outcome_note" rows="2" placeholder="What was the result of this follow-up?" style="border-radius:10px;"></textarea>
+                </div>
+                
+                <div class="bg-light rounded-3 p-3 mb-2 border">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="scheduleNextToggle" name="schedule_next" value="1" onchange="document.getElementById('nextFollowupFields').classList.toggle('d-none', !this.checked); document.getElementById('nextModeFDate').required = this.checked; document.getElementById('nextModeFTitle').required = this.checked;">
+                        <label class="form-check-label fw-semibold text-dark ms-1" for="scheduleNextToggle">Schedule Next Follow-up</label>
+                    </div>
+                    
+                    <div id="nextFollowupFields" class="d-none mt-3">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-muted mb-1">Follow-up Topic <span class="text-danger">*</span></label>
+                            <input type="text" id="nextModeFTitle" name="next_title" class="form-control form-control-sm" style="border-radius:8px;">
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold text-muted mb-1">Date <span class="text-danger">*</span></label>
+                                <input type="date" id="nextModeFDate" name="next_date" class="form-control form-control-sm" style="border-radius:8px;" min="<?= date('Y-m-d') ?>">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-muted mb-1">Time</label>
+                                <input type="time" name="next_time" class="form-control form-control-sm" style="border-radius:8px;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-muted mb-1">Priority</label>
+                                <select class="form-select form-select-sm" name="next_priority" style="border-radius:8px;">
+                                    <option value="high">High</option>
+                                    <option value="medium" selected>Med</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">Mark Complete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openCompleteFollowupModal(id, title) {
+    document.getElementById('comp_followup_id').value = id;
+    document.getElementById('comp_followup_title').textContent = title;
+    
+    // Reset fields
+    document.getElementById('scheduleNextToggle').checked = false;
+    document.getElementById('nextFollowupFields').classList.add('d-none');
+    document.getElementById('nextModeFDate').required = false;
+    document.getElementById('nextModeFTitle').required = false;
+    document.getElementById('nextModeFTitle').value = '';
+    
+    var modal = new bootstrap.Modal(document.getElementById('completeFollowupModal'));
+    modal.show();
+}
+</script>
 
 <!-- ═══════════════ EDIT TAGS MODAL ═══════════════ -->
 <div class="modal fade" id="editTagsModal" tabindex="-1">
@@ -1034,6 +1167,41 @@ include '../../includes/header.php';
             <div class="modal-footer border-0 pt-0 pb-4 px-4">
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
                 <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;">Save Tags</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ═══════════════ ADD PHONE MODAL ═══════════════ -->
+<div class="modal fade" id="addPhoneModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="" method="POST" class="modal-content" style="border-radius:20px;border:none;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Add Phone Number</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <input type="hidden" name="add_phone" value="1">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Phone Number</label>
+                    <input type="text" class="form-control" name="new_phone" placeholder="e.g. +1 555-0123" required style="border-radius:12px;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Label</label>
+                    <select class="form-select" name="phone_label" required style="border-radius:12px;">
+                        <option value="Alternate">Alternate</option>
+                        <option value="Work">Work</option>
+                        <option value="Home">Home</option>
+                        <option value="Mobile">Mobile</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="Spouse">Spouse / Partner</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;">Save Phone</button>
             </div>
         </form>
     </div>

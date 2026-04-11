@@ -334,13 +334,16 @@ include '../../includes/header.php';
 /* ============================================================
    LEADS MODULE — Compact Mobile Cards
    ============================================================ */
-@media (max-width: 768px) {
+/* Mobile Layout for Leads Index */
+@media (max-width: 1100px) {
+    .filter-row {
     /* Hero header: stack vertically */
     .page-header-bg {
-        padding: 16px !important;
+        padding: 20px 16px !important;
         flex-direction: column !important;
         align-items: flex-start !important;
-        gap: 10px;
+        gap: 14px;
+        text-align: left;
     }
     .page-header-bg h4 { font-size: 1rem; }
     .page-header-bg p { font-size: 11px !important; display: none; }
@@ -368,15 +371,27 @@ include '../../includes/header.php';
         padding: 12px 14px 6px !important;
     }
 
-    /* Bulk bar */
+    /* Bulk bar responsiveness */
     .bulk-bar {
-        flex-direction: column !important;
-        gap: 8px !important;
-        padding: 10px !important;
+        flex-wrap: wrap !important;
+        padding: 12px !important;
+        gap: 12px !important;
+        height: auto !important;
     }
-    .bulk-bar .d-flex.align-items-center.gap-3 { flex-wrap: wrap; width: 100%; }
-    .bulk-bar select { width: 100% !important; }
-    .bulk-bar button { width: 100%; }
+    .bulk-bar .d-flex.align-items-center.gap-3 {
+        width: 100%;
+        gap: 8px !important;
+        justify-content: flex-start;
+    }
+    .bulk-bar select {
+        flex: 1;
+        min-width: 120px;
+        font-size: 11px !important;
+    }
+    .bulk-bar button {
+        width: 100%;
+        margin-top: 4px;
+    }
 
     /* ---- COMPACT CARD REDESIGN ---- */
     .mobile-card-table tr {
@@ -458,7 +473,8 @@ include '../../includes/header.php';
 }
 </style>
 
-<!-- Hero Header -->
+<!-- Hero Header (admin/team lead only) -->
+<?php if ($userRole !== 'agent'): ?>
 <div class="page-header-bg d-flex justify-content-between align-items-center">
     <div style="z-index: 1;">
         <h4 class="fw-bold mb-1 text-white">Lead Management</h4>
@@ -482,6 +498,7 @@ include '../../includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Advanced Filters -->
 <div class="filter-card mb-4">
@@ -503,6 +520,7 @@ include '../../includes/header.php';
                 </select>
             </div>
             
+            <?php if ($userRole !== 'agent'): ?>
             <div class="col-6 col-md-2">
                 <select class="form-select filter-input" name="priority">
                     <option value="">Priority: All</option>
@@ -520,6 +538,7 @@ include '../../includes/header.php';
                     <option value="import" <?= $filters['source']==='import'?'selected':'' ?>>Excel Import</option>
                 </select>
             </div>
+            <?php endif; ?>
             
             <?php if ($userRole !== 'agent'): ?>
             <div class="col-6 col-md-2">
@@ -602,17 +621,24 @@ include '../../includes/header.php';
                     <thead>
                         <tr>
                             <th width="40" class="ps-4 border-0 text-muted" style="font-size:10px;font-weight:600;letter-spacing:0.5px;"><input type="checkbox" id="selectAll" class="form-check-input custom-checkbox"></th>
+                            <?php if ($userRole === 'agent'): ?>
+                            <!-- Agent view: 6 columns -->
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 20%;">Name</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Phone</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Status</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 28%;">Latest Note</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Notes</th>
+                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Actions</th>
+                            <?php else: ?>
+                            <!-- Admin view: all columns -->
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 22%;">Name</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Phone</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Status</th>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Pipeline</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Priority</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Source</th>
-                            <?php if ($userRole !== 'agent'): ?>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Assigned</th>
-                            <?php endif; ?>
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Notes</th>
                             <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Actions</th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody style="border-top: none;">
@@ -672,6 +698,8 @@ include '../../includes/header.php';
                                 <?php endforeach; ?>
                             </td>
                             
+                            <!-- PIPELINE (admin only) -->
+                            <?php if ($userRole !== 'agent'): ?>
                             <td data-label="Pipeline" class="border-bottom border-light py-3">
                                 <?php if ($lead['stage_name']): ?>
                                     <span class="badge rounded-pill text-white shadow-sm" style="background: <?= e($lead['stage_color'] ?: '#3b82f6') ?>; font-size: 11.5px; padding: 5px 14px; font-weight: 600;">
@@ -681,28 +709,7 @@ include '../../includes/header.php';
                                     <span class="badge rounded-pill text-white shadow-sm bg-primary" style="font-size: 11.5px; padding: 5px 14px; font-weight: 600;">New Lead</span>
                                 <?php endif; ?>
                             </td>
-
-                            <!-- PRIORITY -->
-                            <td data-label="Priority" class="border-bottom border-light py-3">
-                                <?php 
-                                    $pri = $lead['priority'] ?: 'Warm';
-                                    $priColor = strtolower($pri) === 'hot' ? '#ef4444' : (strtolower($pri) === 'warm' ? '#f59e0b' : '#64748b');
-                                ?>
-                                <span class="d-inline-flex align-items-center gap-2" style="font-size: 12px; color: <?= $priColor ?>; font-weight: 500;">
-                                    <span style="width:6px;height:6px;border-radius:50%;background-color:currentColor;"></span>
-                                    <?= ucfirst(strtolower($pri)) ?>
-                                </span>
-                            </td>
-
-                            <!-- SOURCE -->
-                            <td data-label="Source" class="border-bottom border-light py-3">
-                                <span class="text-secondary" style="font-size: 12px;">
-                                    <?php 
-                                        $displaySource = $lead['source'] ?: 'manual'; 
-                                        echo $displaySource === 'facebook' ? 'facebook_ads' : e($displaySource);
-                                    ?>
-                                </span>
-                            </td>
+                            <?php endif; ?>
 
                             <!-- ASSIGNED -->
                             <?php if ($userRole !== 'agent'): ?>
@@ -740,12 +747,38 @@ include '../../includes/header.php';
                             </td>
                             <?php endif; ?>
 
+                            <!-- LATEST NOTE (Agent Only) -->
+                            <?php if ($userRole === 'agent'): ?>
+                            <td data-label="Latest Note" class="border-bottom border-light py-3 pe-3">
+                                <?php $latestNote = trim($lead['note'] ?? ''); ?>
+                                <div class="d-flex align-items-start gap-2" style="cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'" onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                    <i class="bi bi-chat-left-text text-muted mt-1" style="font-size: 11px; opacity: 0.7;"></i>
+                                    <div id="note_text_<?= $lead['id'] ?>" style="font-size: 11.5px; line-height: 1.5; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-width: 280px;" title="<?= e($latestNote) ?>">
+                                        <?php if ($latestNote): ?>
+                                            <?= e($latestNote) ?>
+                                        <?php else: ?>
+                                            <span class="fst-italic opacity-50">No notes yet</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </td>
+                            <?php endif; ?>
+
                             <!-- NOTES -->
                             <td data-label="Notes" class="border-bottom border-light py-3">
+                                <?php if ($userRole === 'agent'): ?>
+                                <!-- Agent view: static Add Note button -->
                                 <button type="button" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1" style="font-size:11.5px; font-weight:500; border-radius:6px; color:#475569; max-width: 120px;" onclick="openQuickNote(<?= $lead['id'] ?>)">
                                     <i class="bi bi-pencil-square text-primary"></i> 
-                                    <span id="note_text_<?= $lead['id'] ?>" class="text-truncate" style="max-width: 80px;">Add Note</span>
+                                    <span>Add Note</span>
                                 </button>
+                                <?php else: ?>
+                                <!-- Admin view: compact note preview button -->
+                                <button type="button" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1" style="font-size:11.5px; font-weight:500; border-radius:6px; color:#475569; max-width: 120px;" onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                    <i class="bi bi-pencil-square text-primary"></i> 
+                                    <span id="note_text_<?= $lead['id'] ?>" class="text-truncate" style="max-width: 80px;"><?= !empty($lead['note']) ? e(mb_substr($lead['note'], 0, 20)) . '...' : 'Add Note' ?></span>
+                                </button>
+                                <?php endif; ?>
                             </td>
 
                             <!-- ACTIONS -->
@@ -1009,9 +1042,64 @@ document.addEventListener('hide.bs.dropdown', function (event) {
 
 let currentNoteLeadId = null;
 
+function loadNoteHistory(leadId) {
+    const historyContainer = document.getElementById('quickNoteHistory');
+    historyContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Loading notes...</div>';
+    
+    const params = new URLSearchParams({ 'action': 'get_notes', 'lead_id': parseInt(leadId) });
+    fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.notes.length > 0) {
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#ef4444', '#84cc16'];
+            let html = '<div class="mb-0">';
+            html += '<div class="d-flex align-items-center justify-content-between mb-2">';
+            html += '<label class="form-label fw-bold mb-0" style="color:#6366f1;"><i class="bi bi-journal-text me-1"></i> Conversation History</label>';
+            html += '<span class="badge rounded-pill text-white" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size:11px;">' + data.notes.length + ' notes</span>';
+            html += '</div>';
+            html += '<div class="overflow-auto" style="max-height: 300px; padding-right: 4px;">';
+            data.notes.forEach((n, idx) => {
+                const dateObj = new Date(n.created_at);
+                const dateStr = dateObj.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'}) + ' · ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const userName = n.user_name || 'System';
+                const borderColor = colors[idx % colors.length];
+                html += `
+                    <div class="mb-2 rounded-3 p-3" style="background: ${borderColor}12; border-left: 4px solid ${borderColor}; box-shadow: 0 2px 8px ${borderColor}20; border: 1px solid ${borderColor}25; border-left: 4px solid ${borderColor};">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold d-inline-flex align-items-center gap-1 rounded-pill px-2 py-1" style="font-size:11px; color: white; background:${borderColor};"><i class="bi bi-person-fill"></i>${userName}</span>
+                            <span class="text-muted" style="font-size:10px;"><i class="bi bi-calendar3 me-1"></i>${dateStr}</span>
+                        </div>
+                        <div class="text-dark" style="font-size: 13px; white-space: pre-wrap; word-break: break-word; line-height:1.6;">${n.note}</div>
+                    </div>`;
+            });
+            html += '</div></div>';
+            historyContainer.innerHTML = html;
+        } else {
+            historyContainer.innerHTML = '<div class="text-center py-4 rounded-3" style="background:#f8fafc;"><i class="bi bi-chat-left-dots" style="font-size:2rem;color:#cbd5e1;"></i><br><span class="text-muted small mt-2 d-block">No previous notes yet. Start the conversation!</span></div>';
+        }
+    })
+    .catch(() => {
+        historyContainer.innerHTML = '<div class="text-center py-4 rounded-3" style="background:#f8fafc;"><i class="bi bi-chat-left-dots" style="font-size:2rem;color:#cbd5e1;"></i><br><span class="text-muted small mt-2 d-block">No previous notes yet. Start the conversation!</span></div>';
+    });
+}
+
 function openQuickNote(leadId) {
     currentNoteLeadId = leadId;
     document.getElementById('quickNoteText').value = '';
+    
+    // Reset followup toggle and fields
+    const followupCheckbox = document.getElementById('quickNoteCreateFollowup');
+    followupCheckbox.checked = false;
+    document.getElementById('quickNoteFollowupFields').classList.add('d-none');
+    document.getElementById('quickNoteFDate').required = false;
+    document.getElementById('quickNoteFDate').value = '';
+    document.getElementById('quickNoteFTime').value = '';
+
+    loadNoteHistory(leadId);
     var modal = new bootstrap.Modal(document.getElementById('quickNoteModal'));
     modal.show();
 }
@@ -1055,13 +1143,19 @@ function saveQuickNote() {
         saveBtn.disabled = false;
         saveBtn.innerHTML = 'Save Note';
         if (data.success) {
+            // Update button text on table
             const noteDiv = document.getElementById('note_text_' + currentNoteLeadId);
             if (noteDiv) { 
                 noteDiv.textContent = noteText.trim(); 
                 noteDiv.title = noteText.trim(); 
             }
-            var modal = bootstrap.Modal.getInstance(document.getElementById('quickNoteModal'));
-            modal.hide();
+            
+            // Close the modal
+            const modalEl = document.getElementById('quickNoteModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
         } else { 
             alert(data.message || 'Error adding note'); 
         }
@@ -1112,22 +1206,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Quick Note Modal -->
 <div class="modal fade" id="quickNoteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-light border-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Add Lead Note</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
+            <div class="modal-header border-0 py-3 px-4" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                <h5 class="modal-title fw-bold text-white"><i class="bi bi-pencil-square me-2"></i>Lead Notes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+                <!-- Add New Note -->
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Note Details</label>
-                    <textarea class="form-control" id="quickNoteText" rows="4" placeholder="Enter multi-line notes here..."></textarea>
+                    <label class="form-label fw-bold"><i class="bi bi-plus-circle text-primary me-1"></i> Add New Note</label>
+                    <textarea class="form-control" id="quickNoteText" rows="3" placeholder="Write your note here..." style="border-radius:12px; border: 1.5px solid #e2e8f0;"></textarea>
                 </div>
                 
-                <div class="bg-light rounded-3 p-3 border">
+                <!-- Follow-up Toggle -->
+                <div class="rounded-3 p-3 mb-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0;">
                     <div class="form-check form-switch mb-0">
-                        <input class="form-check-input" type="checkbox" id="quickNoteCreateFollowup" onchange="document.getElementById('quickNoteFollowupFields').classList.toggle('d-none', !this.checked); document.getElementById('quickNoteFDate').required = this.checked;">
-                        <label class="form-check-label fw-semibold text-dark ms-1" for="quickNoteCreateFollowup">Also create this note as a Follow-up</label>
+                        <input class="form-check-input" type="checkbox" id="quickNoteCreateFollowup" style="cursor:pointer;" onchange="document.getElementById('quickNoteFollowupFields').classList.toggle('d-none', !this.checked); document.getElementById('quickNoteFDate').required = this.checked;">
+                        <label class="form-check-label fw-semibold text-dark ms-1" for="quickNoteCreateFollowup" style="cursor:pointer;">
+                            <i class="bi bi-telephone-forward text-success me-1"></i> Also create this note as a Follow-up
+                        </label>
                     </div>
                     
                     <div id="quickNoteFollowupFields" class="d-none mt-3 row g-2">
@@ -1141,10 +1239,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
+
+                <!-- Previous Notes Timeline -->
+                <div id="quickNoteHistory"></div>
             </div>
-            <div class="modal-footer border-0 bg-light">
-                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary px-4 shadow-sm" id="saveQuickNoteBtn" onclick="saveQuickNote()">Save Note</button>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn px-4 rounded-pill text-white shadow-sm" id="saveQuickNoteBtn" onclick="saveQuickNote()" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                    <i class="bi bi-check-lg me-1"></i> Save Note
+                </button>
             </div>
         </div>
     </div>

@@ -2,6 +2,7 @@
 // org_admin.php view
 $stats = $dashboard->getStatistics($orgId, null, 'org_admin');
 $recentLeads = $dashboard->getRecentLeads($orgId, 6, null, 'org_admin');
+$todayFollowups = $dashboard->getTodayFollowups($orgId, null);
 $pipelineOverview = $dashboard->getPipelineOverview($orgId, null, 'org_admin');
 $monthlyGrowth = $dashboard->getMonthlyLeadGrowth($orgId, null, 'org_admin');
 $agentPerf = $dashboard->getAgentPerformance($orgId);
@@ -77,40 +78,73 @@ $sourceData = $stats['leads_by_source'] ?? [];
     <div class="col-xl-4 col-md-6">
         <div class="stat-card">
             <div class="stat-card-icon" style="background:linear-gradient(135deg,#84cc16,#65a30d);"><i class="bi bi-person-badge"></i></div>
-            <div class="stat-card-info">
-                <span class="stat-card-label">Team Members</span>
-                <h3 class="stat-card-number"><?= $stats['team_members'] ?></h3>
-                <a href="<?= BASE_URL ?>modules/users/" class="stat-card-change text-success text-decoration-none"><i class="bi bi-arrow-right-short"></i>Manage Team</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     TODAY'S SCHEDULE
+     ============================================================ -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="dash-card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-calendar2-week me-2 text-danger"></i>Team Schedule (Today)</h6>
+                <a href="<?= BASE_URL ?>modules/followups/" class="text-primary small text-decoration-none fw-semibold">View All</a>
+            </div>
+            <div class="card-body p-3 scroll-y" style="max-height: 420px;">
+                <div class="row g-3">
+                <?php if (!empty($todayFollowups)):
+                    foreach ($todayFollowups as $f):
+                        $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
+                        $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
+                ?>
+                    <div class="col-xl-4 col-md-6">
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mb-0">
+                            <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                                <?= $pLabel ?>
+                            </span>
+                            
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="sc-icon" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                                    <i class="bi bi-telephone"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></div>
+                                    <div class="sc-desc"><?= e($f['title']) ?></div>
+                                </div>
+                            </div>
+                            
+                            <div class="sc-meta">
+                                <div class="sc-meta-item">
+                                    <i class="bi bi-person-badge text-primary"></i>
+                                    <span><?= e($f['agent_name'] ?? 'Admin') ?></span>
+                                </div>
+                                <div class="sc-meta-item">
+                                    <i class="bi bi-clock"></i>
+                                    <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
+                                </div>
+                                <div class="sc-view-link">
+                                    View Lead <i class="bi bi-arrow-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <?php endforeach; else: ?>
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-calendar-x fs-2 text-muted d-block mb-2"></i>
+                        <span class="text-muted small">No follow-ups scheduled for today.</span>
+                    </div>
+                <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-xl-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Lead Growth</h6>
-            </div>
-            <div class="card-body" style="height:340px;">
-                <canvas id="leadGrowthChart"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart me-2 text-primary"></i>Leads by Status</h6>
-            </div>
-            <div class="card-body d-flex flex-column justify-content-center" style="height:340px;">
-                <canvas id="leadsByStatusChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
-    <div class="col-xl-4">
+    <div class="col-xl-4 col-lg-6">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0"><i class="bi bi-funnel me-2 text-primary"></i>Pipeline Overview</h6>
@@ -143,7 +177,7 @@ $sourceData = $stats['leads_by_source'] ?? [];
         </div>
     </div>
     
-    <div class="col-xl-4">
+    <div class="col-xl-4 col-lg-6 col-md-12">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-steps me-2 text-info"></i>Leads by Source</h6>
@@ -154,7 +188,7 @@ $sourceData = $stats['leads_by_source'] ?? [];
         </div>
     </div>
 
-    <div class="col-xl-4">
+    <div class="col-xl-4 col-lg-12 col-md-12">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-4 pb-0">
                 <h6 class="fw-bold mb-0"><i class="bi bi-people me-2 text-success"></i>Agent Performance</h6>
@@ -180,6 +214,29 @@ $sourceData = $stats['leads_by_source'] ?? [];
                 <?php else: ?>
                     <div class="text-center py-4"><span class="text-muted small">No agent data</span></div>
                 <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8 col-lg-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Lead Growth</h6>
+            </div>
+            <div class="card-body" style="height:340px;">
+                <canvas id="leadGrowthChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart me-2 text-primary"></i>Leads by Status</h6>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center" style="height:340px;">
+                <canvas id="leadsByStatusChart"></canvas>
             </div>
         </div>
     </div>

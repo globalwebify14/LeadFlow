@@ -37,6 +37,15 @@ class Deal {
             $params[':assigned_to'] = $filters['assigned_to'];
         }
 
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(d.created_at) >= :date_from";
+            $params[':date_from'] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(d.created_at) <= :date_to";
+            $params[':date_to'] = $filters['date_to'];
+        }
+
         $sql .= " ORDER BY d.id DESC LIMIT :limit OFFSET :offset";
         $stmt = $this->pdo->prepare($sql);
         foreach ($params as $key => &$val) { $stmt->bindParam($key, $val); }
@@ -68,6 +77,16 @@ class Deal {
             $sql .= " AND d.assigned_to = :assigned_to";
             $params[':assigned_to'] = $filters['assigned_to'];
         }
+
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(d.created_at) >= :date_from";
+            $params[':date_from'] = $filters['date_from'];
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(d.created_at) <= :date_to";
+            $params[':date_to'] = $filters['date_to'];
+        }
+
         $stmt = $this->pdo->prepare($sql);
         foreach ($params as $key => &$val) { $stmt->bindParam($key, $val); }
         $stmt->execute();

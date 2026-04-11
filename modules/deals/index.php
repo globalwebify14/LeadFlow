@@ -16,6 +16,8 @@ $filters = [
     'status' => $_GET['status'] ?? '',
     'stage_id' => $_GET['stage_id'] ?? '',
     'assigned_to' => $_GET['assigned_to'] ?? '',
+    'date_from' => $_GET['date_from'] ?? '',
+    'date_to' => $_GET['date_to'] ?? '',
 ];
 
 if (getUserRole() === 'agent') {
@@ -44,7 +46,7 @@ include '../../includes/header.php';
 /* ============================================================
    DEALS MODULE — Compact Mobile Cards
    ============================================================ */
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
     /* ---- COMPACT CARD REDESIGN ---- */
     .mobile-card-table tr {
         display: flex;
@@ -184,6 +186,16 @@ include '../../includes/header.php';
             </div>
             <div class="col-md-2"><button class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filter</button></div>
         </form>
+
+        <?php if (!empty($filters['date_from']) || !empty($filters['date_to'])): ?>
+        <div class="mb-3">
+            <span class="badge bg-info bg-opacity-10 text-info p-2 border border-info border-opacity-25 rounded-3">
+                <i class="bi bi-calendar3 me-1"></i>
+                Date: <?= e($filters['date_from'] ?: '...') ?> to <?= e($filters['date_to'] ?: '...') ?>
+                <a href="?<?= http_build_query(array_diff_key($_GET, ['date_from'=>'', 'date_to'=>''])) ?>" class="ms-2 text-info text-decoration-none"><i class="bi bi-x-circle-fill"></i></a>
+            </span>
+        </div>
+        <?php endif; ?>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 text-nowrap mobile-card-table">

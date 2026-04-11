@@ -114,12 +114,12 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
     gap: 14px;
     margin-bottom: 28px;
 }
-@media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1100px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px)  { .kpi-grid { grid-template-columns: 1fr; } }
 
 /* Mobile Dashboard Compression */
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
     .dash-hero { padding: 20px 18px; }
     .hero-stats-row { gap: 10px; margin-top: 18px; }
     .hero-stat-pill { min-width: 45%; flex: 1; padding: 12px 14px; }
@@ -269,9 +269,6 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
             <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn-hero-primary">
                 <i class="bi bi-plus-circle-fill"></i> Add Lead
             </a>
-            <button type="button" class="btn-hero-secondary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-                <i class="bi bi-check2-square"></i> Create Task
-            </button>
             <a href="<?= BASE_URL ?>modules/followups/" class="btn-hero-secondary">
                 <i class="bi bi-calendar2-check-fill"></i> My Schedule
             </a>
@@ -300,7 +297,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
 <div class="kpi-grid mb-4">
 
     <!-- Total Leads -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/leads/" class="kpi-card text-decoration-none" style="cursor:pointer;">
         <div class="kpi-glow" style="background:#6366f1;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
             <i class="bi bi-people-fill"></i>
@@ -308,10 +305,10 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
         <div class="kpi-label">Total Leads</div>
         <div class="kpi-value"><?= number_format($stats['total_leads']) ?></div>
         <div class="kpi-sub" style="color:#6366f1;"><i class="bi bi-arrow-up-right me-1"></i> Assigned to you</div>
-    </div>
+    </a>
 
     <!-- Contacted -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/leads/?status=Contacted" class="kpi-card text-decoration-none" style="cursor:pointer;">
         <div class="kpi-glow" style="background:#06b6d4;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2);">
             <i class="bi bi-telephone-outbound-fill"></i>
@@ -319,10 +316,10 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
         <div class="kpi-label">Contacted Leads</div>
         <div class="kpi-value"><?= number_format($stats['contacted_leads']) ?></div>
         <div class="kpi-sub" style="color:#06b6d4;"><i class="bi bi-chat-dots me-1"></i> Engagement</div>
-    </div>
+    </a>
 
     <!-- Due Today -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/followups/?filter=today" class="kpi-card text-decoration-none" style="cursor:pointer;">
         <div class="kpi-glow" style="background:#f59e0b;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
             <i class="bi bi-calendar-event-fill"></i>
@@ -330,10 +327,10 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
         <div class="kpi-label">Tasks Today</div>
         <div class="kpi-value"><?= count($todayFollowups) ?></div>
         <div class="kpi-sub" style="color:#f59e0b;"><i class="bi bi-clock-history me-1"></i> Pending action</div>
-    </div>
+    </a>
 
     <!-- Won Deals -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/deals/" class="kpi-card text-decoration-none" style="cursor:pointer;">
         <div class="kpi-glow" style="background:#10b981;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#10b981,#059669);">
             <i class="bi bi-trophy-fill"></i>
@@ -341,7 +338,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
         <div class="kpi-label">Deals Won</div>
         <div class="kpi-value"><?= number_format($stats['won_deals']) ?></div>
         <div class="kpi-sub" style="color:#10b981;"><i class="bi bi-graph-up-arrow me-1"></i> Successfully closed</div>
-    </div>
+    </a>
 
 </div>
 
@@ -351,7 +348,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
 <div class="row g-4 mb-4">
     
     <!-- Today's Schedule -->
-    <div class="col-xl-5">
+    <div class="col-xl-5 col-lg-12">
         <div class="dash-card">
             <div class="dash-card-header">
                 <div class="section-title">
@@ -369,33 +366,45 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                 <?php else: ?>
                     <?php foreach (array_slice($todayFollowups, 0, 6) as $f): 
                         $isUrgent = (strtotime($f['followup_time']) < time());
-                        $iconColor = $isUrgent ? '#ef4444' : '#6366f1';
+                        $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
+                        $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
                     ?>
-                        <div class="feed-item">
-                            <div class="feed-dot-wrap pt-1">
-                                <div class="feed-dot" style="background:<?= $iconColor ?>18;color:<?= $iconColor ?>;"><i class="bi <?= $isUrgent ? 'bi-exclamation-circle-fill' : 'bi-check2-circle' ?>"></i></div>
-                            </div>
-                            <div class="feed-content">
-                                <div class="feed-who"><?= e($f['title']) ?></div>
-                                <div class="feed-desc">
-                                    <i class="bi bi-person"></i> <?= e($f['lead_name'] ?? 'Lead') ?>
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mx-3 my-2">
+                            <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                                <?= $pLabel ?>
+                            </span>
+
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="sc-icon" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                                    <i class="bi bi-telephone"></i>
                                 </div>
-                                <div class="feed-time">
-                                    <span style="color:<?= $isUrgent ? '#ef4444' : '#64748b' ?>; font-weight: <?= $isUrgent ? '600' : 'normal' ?>;">
-                                        <i class="bi bi-clock me-1"></i><?= date('h:i A', strtotime($f['followup_time'])) ?>
+                                <div class="flex-grow-1">
+                                    <div class="sc-title" style="color: <?= $isUrgent ? '#ef4444' : '#0f172a' ?>;"><?= e($f['title']) ?></div>
+                                    <div class="sc-desc"><i class="bi bi-person me-1"></i> <?= e($f['lead_name'] ?? 'Lead') ?></div>
+                                </div>
+                            </div>
+
+                            <div class="sc-meta">
+                                <div class="sc-meta-item">
+                                    <i class="bi bi-clock"></i>
+                                    <span style="font-weight: <?= $isUrgent ? '700' : '500' ?>; color: <?= $isUrgent ? '#ef4444' : 'inherit' ?>;">
+                                        <?= date('h:i A', strtotime($f['followup_time'])) ?>
                                     </span>
                                 </div>
+
+                                <div class="d-flex gap-2 ms-auto align-items-center" onclick="event.stopPropagation();">
+                                    <button type="button" class="action-btn-mini btn-complete-followup" data-id="<?= $f['id'] ?>" style="background:#dcfce7;color:#16a34a;border:none;cursor:pointer;" title="Mark Completed">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <?php if (isset($f['lead_phone']) && $f['lead_phone']): ?>
+                                        <a href="tel:<?= e($f['lead_phone']) ?>" class="action-btn-mini" style="background:#e0e7ff;color:#4f46e5; border:none;" title="Call Lead"><i class="bi bi-telephone-fill"></i></a>
+                                    <?php endif; ?>
+                                    <div class="sc-view-link ms-2">
+                                        View Lead <i class="bi bi-arrow-right"></i>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center gap-2 ps-2">
-                                <button type="button" class="action-btn-mini btn-complete-followup" data-id="<?= $f['id'] ?>" style="background:#dcfce7;color:#16a34a;border:none;cursor:pointer;" title="Mark Contacted / Completed">
-                                    <i class="bi bi-check-lg" style="stroke-width:2px;"></i>
-                                </button>
-                                <?php if (isset($f['lead_phone']) && $f['lead_phone']): ?>
-                                    <a href="tel:<?= e($f['lead_phone']) ?>" class="action-btn-mini" style="background:#e0e7ff;color:#4f46e5;" title="Call Lead"><i class="bi bi-telephone-fill"></i></a>
-                                <?php endif; ?>
-                                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="action-btn-mini" title="View Lead details"><i class="bi bi-arrow-right"></i></a>
-                            </div>
-                        </div>
+                        </a>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
@@ -403,7 +412,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
     </div>
 
     <!-- Recent Inbox -->
-    <div class="col-xl-7">
+    <div class="col-xl-7 col-lg-12">
         <div class="dash-card" id="dashboardLeadsCard">
             <div class="dash-card-header">
                 <div class="section-title">
@@ -431,12 +440,14 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                         <tbody>
                         <?php foreach ($recentLeads as $l):
                             $statusColors = [
-                                'New Lead'   => ['#6366f1','#eef2ff'],
-                                'Working'    => ['#3b82f6','#eff6ff'],
-                                'Interested' => ['#10b981','#f0fdf4'],
-                                'Follow Up'  => ['#f59e0b','#fffbeb'],
-                                'Converted'  => ['#059669','#ecfdf5'],
-                                'Lost'       => ['#ef4444','#fef2f2'],
+                                'New Lead'              => ['#6366f1','#eef2ff'],
+                                'Contacted'             => ['#3b82f6','#eff6ff'],
+                                'Interested'            => ['#10b981','#f0fdf4'],
+                                'Office Visited'        => ['#f59e0b','#fffbeb'],
+                                'Site Visited'          => ['#84cc16','#fefce8'],
+                                'Site + Office Visited' => ['#ec4899','#fdf2f8'],
+                                'Converted'             => ['#059669','#ecfdf5'],
+                                'Dropped'               => ['#ef4444','#fef2f2'],
                             ];
                             $sc = $statusColors[$l['status']] ?? ['#64748b','#f8fafc'];
                         ?>
@@ -527,46 +538,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- ═══════════════ ADD TASK MODAL ═══════════════ -->
-<div class="modal fade" id="addTaskModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <form action="" method="POST" class="modal-content" style="border-radius:20px;border:none;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title fw-bold">Internal Task</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body px-4 py-3">
-                <input type="hidden" name="add_task" value="1">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold small">Task Title</label>
-                    <input type="text" class="form-control" name="task_title" placeholder="e.g. Prepare proposal" required style="border-radius:12px;">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold small">Due Date</label>
-                    <input type="date" class="form-control" name="due_date" value="<?= date('Y-m-d') ?>" required style="border-radius:12px;">
-                </div>
-                <?php if (!empty($orgAgents)): ?>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold small">Assign To</label>
-                    <select class="form-select" name="assigned_to" style="border-radius:12px;">
-                        <option value="<?= getUserId() ?>">Myself</option>
-                        <?php foreach ($orgAgents as $ag): ?>
-                            <?php if ($ag['id'] != getUserId()): ?>
-                            <option value="<?= $ag['id'] ?>"><?= e($ag['name']) ?></option>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <?php endif; ?>
-                <div class="mb-0">
-                    <label class="form-label fw-semibold small">Notes</label>
-                    <textarea class="form-control" name="description" rows="2" style="border-radius:12px;"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0 pb-4 px-4">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold" style="background:linear-gradient(135deg,#6366f1,#4f46e5);border:none;">Save Task</button>
-            </div>
-        </form>
-    </div>
-</div>
+

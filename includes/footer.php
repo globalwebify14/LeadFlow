@@ -29,8 +29,8 @@
             });
         }
 
-        <?php if (in_array(getUserRole(), ['agent', 'team_lead', 'org_owner'])): ?>
-        // Instant Lead Popup Poller
+        <?php if (in_array(getUserRole(), ['agent', 'team_lead', 'org_owner']) && strpos($_SERVER['REQUEST_URI'], 'modules/dashboard') !== false): ?>
+        // Instant Lead Popup Poller (only on dashboard)
         function checkNewLeads() {
             console.log("Checking for new leads at: <?= BASE_URL ?>ajax/check_new_leads.php");
             fetch('<?= BASE_URL ?>ajax/check_new_leads.php')

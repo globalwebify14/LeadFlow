@@ -58,44 +58,129 @@ if (!$isAgent) {
     $agents = $stmtAgents->fetchAll();
 }
 
+// Status filter
+$statusFilter = $_GET['status_filter'] ?? '';
+
+// Fetch ALL possible statuses in pipeline stage order (same as lead edit form)
+try {
+    // Primary: pipeline stages ordered by position (exactly as they appear in lead status dropdown)
+    $stmtStatuses = $pdo->prepare("
+        SELECT name as status FROM pipeline_stages 
+        WHERE organization_id = :org AND name IS NOT NULL AND name != ''
+        ORDER BY position ASC
+    ");
+    $stmtStatuses->execute(['org' => $orgId]);
+    $allStatuses = $stmtStatuses->fetchAll(PDO::FETCH_COLUMN);
+
+    // Also append any statuses in leads that are NOT already in pipeline stages (legacy/custom)
+    $stmtExtra = $pdo->prepare("
+        SELECT DISTINCT status FROM leads 
+        WHERE organization_id = :org AND status IS NOT NULL AND status != ''
+          AND status NOT IN (SELECT name FROM pipeline_stages WHERE organization_id = :org2)
+        ORDER BY status
+    ");
+    $stmtExtra->execute(['org' => $orgId, 'org2' => $orgId]);
+    $extraStatuses = $stmtExtra->fetchAll(PDO::FETCH_COLUMN);
+    $allStatuses = array_merge($allStatuses, $extraStatuses);
+} catch (Exception $e) {
+    $allStatuses = [];
+}
+
+// Fetch pipeline stages for dropdown
+try {
+    $stmtStages = $pdo->prepare("SELECT id, name, color FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
+    $stmtStages->execute(['org' => $orgId]);
+    $pipelineStages = $stmtStages->fetchAll();
+} catch (Exception $e) {
+    $pipelineStages = [];
+}
+
 // Get metrics
-$summary = $reportModel->getLeadSummary($orgId, $agentIdFilter, $dateFrom, $dateTo);
-$conversion = $reportModel->getConversionRate($orgId, $agentIdFilter, $dateFrom, $dateTo);
-$leadsBySource = $reportModel->getLeadsBySource($orgId, $agentIdFilter, $dateFrom, $dateTo);
-$leadsByStatus = $reportModel->getLeadsByStatus($orgId, $agentIdFilter, $dateFrom, $dateTo);
-$dealsRev = $reportModel->getDealsRevenueReport($orgId, $agentIdFilter, $dateFrom, $dateTo);
-$followUps = $reportModel->getFollowUpStatusReport($orgId, $agentIdFilter, $dateFrom, $dateTo);
+$summary     = $reportModel->getLeadSummary($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+$conversion  = $reportModel->getConversionRate($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+$leadsBySource = $reportModel->getLeadsBySource($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+$leadsByStatus = $reportModel->getLeadsByStatus($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+$dealsRev    = $reportModel->getDealsRevenueReport($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+$followUps   = $reportModel->getFollowUpStatusReport($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+
+// Status-wise lead breakdown (for the new full status table)
+try {
+    $sbQuerySql = "SELECT l.status, COUNT(*) as count,
+                      SUM(CASE WHEN l.assigned_to IS NOT NULL THEN 1 ELSE 0 END) as assigned,
+                      SUM(CASE WHEN l.priority='Hot' THEN 1 ELSE 0 END) as hot,
+                      SUM(CASE WHEN l.priority='Warm' THEN 1 ELSE 0 END) as warm,
+                      SUM(CASE WHEN l.priority='Cold' THEN 1 ELSE 0 END) as cold
+               FROM leads l
+               WHERE l.organization_id = :org";
+    $sbQueryParams = ['org' => $orgId];
+    if ($agentIdFilter) { $sbQuerySql .= " AND l.assigned_to = :uid"; $sbQueryParams['uid'] = $agentIdFilter; }
+    if ($dateFrom)      { $sbQuerySql .= " AND DATE(l.created_at) >= :df"; $sbQueryParams['df'] = $dateFrom; }
+    if ($dateTo)        { $sbQuerySql .= " AND DATE(l.created_at) <= :dt"; $sbQueryParams['dt'] = $dateTo; }
+    $sbQuerySql .= " GROUP BY l.status";
+    $stmtSb = $pdo->prepare($sbQuerySql);
+    $stmtSb->execute($sbQueryParams);
+    $rawStatusBreakdown = $stmtSb->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
+
+    // Merge with $allStatuses to ensure every status shows up, even with 0 counts
+    $statusBreakdown = [];
+    foreach ($allStatuses as $stName) {
+        $statusBreakdown[] = [
+            'status'   => $stName,
+            'count'    => $rawStatusBreakdown[$stName]['count'] ?? 0,
+            'assigned' => $rawStatusBreakdown[$stName]['assigned'] ?? 0,
+            'hot'      => $rawStatusBreakdown[$stName]['hot'] ?? 0,
+            'warm'     => $rawStatusBreakdown[$stName]['warm'] ?? 0,
+            'cold'     => $rawStatusBreakdown[$stName]['cold'] ?? 0,
+        ];
+    }
+} catch (Exception $e) {
+    $statusBreakdown = [];
+}
+
+// Source-wise breakdown
+try {
+    $srcSql = "SELECT COALESCE(source,'unknown') as source, COUNT(*) as count FROM leads WHERE organization_id = :org";
+    $srcParams = ['org' => $orgId];
+    if ($agentIdFilter) { $srcSql .= " AND assigned_to = :uid"; $srcParams['uid'] = $agentIdFilter; }
+    if ($dateFrom)      { $srcSql .= " AND DATE(created_at) >= :df"; $srcParams['df'] = $dateFrom; }
+    if ($dateTo)        { $srcSql .= " AND DATE(created_at) <= :dt"; $srcParams['dt'] = $dateTo; }
+    $srcSql .= " GROUP BY source ORDER BY count DESC";
+    $stmtSrc = $pdo->prepare($srcSql);
+    $stmtSrc->execute($srcParams);
+    $sourceBreakdown = $stmtSrc->fetchAll();
+} catch (Exception $e) {
+    $sourceBreakdown = [];
+}
 
 // Only for Admins
 $agentPerf = [];
-$leadDist = [];
+$leadDist  = [];
 $agentResp = [];
 $campaigns = [];
 if (!$isAgent) {
-    $agentPerf = $reportModel->getAgentAdvancedPerformance($orgId, $agentIdFilter, $dateFrom, $dateTo);
-    $leadDist = $reportModel->getLeadDistribution($orgId, $agentIdFilter, $dateFrom, $dateTo);
-    $agentResp = $reportModel->getAgentResponseTime($orgId, $agentIdFilter, $dateFrom, $dateTo);
-    $campaigns = $reportModel->getFacebookCampaignReport($orgId, $agentIdFilter, $dateFrom, $dateTo);
+    $agentPerf = $reportModel->getAgentAdvancedPerformance($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+    $leadDist  = $reportModel->getLeadDistribution($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+    $agentResp = $reportModel->getAgentResponseTime($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+    $campaigns = $reportModel->getFacebookCampaignReport($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
 }
 
-$monthlyGrowth = $reportModel->getMonthlyGrowth($orgId, $agentIdFilter, $dateFrom, $dateTo);
-$pipelinePerf = $reportModel->getPipelinePerformance($orgId, $agentIdFilter, $dateFrom, $dateTo);
+$monthlyGrowth = $reportModel->getMonthlyGrowth($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
+$pipelinePerf  = $reportModel->getPipelinePerformance($orgId, $agentIdFilter, $dateFrom, $dateTo, $statusFilter);
 
-// New Detailed Leads Feed
-$detailedLeads = $reportModel->getDetailedLeadsReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 10);
-$followupsList = $reportModel->getFollowUpsListReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 100);
+// Detailed leads feed — apply status filter if set
+$detailedLeads = $reportModel->getDetailedLeadsReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 50, $statusFilter);
+$followupsList = $reportModel->getFollowUpsListReport($orgId, $agentIdFilter, $dateFrom, $dateTo, 100, $statusFilter);
 
 include '../../includes/header.php';
 ?>
-
-<!-- Global Date Filter Bar -->
+<!-- Global Filter Bar -->
 <div class="card shadow-sm border-0 mb-4 bg-white">
     <div class="card-body p-3">
-        <form method="GET" class="row g-2 align-items-end" id="filterForm">
+        <form method="GET" class="row g-3 align-items-end" id="filterForm">
             <?php if (!$isAgent): ?>
-            <div class="col-md-3">
-                <label class="form-label small fw-semibold text-muted mb-1">Agent Filter</label>
-                <select name="agent_id" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
+            <div class="col-6 col-lg-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Agent</label>
+                <select name="agent_id" class="form-select form-select-sm">
                     <option value="">All Agents</option>
                     <?php foreach ($agents as $a): ?>
                         <option value="<?= $a['id'] ?>" <?= $agentIdFilter == $a['id'] ? 'selected' : '' ?>><?= e($a['name']) ?></option>
@@ -103,57 +188,90 @@ include '../../includes/header.php';
                 </select>
             </div>
             <?php endif; ?>
-            <div class="col-md-3">
+            <div class="col-6 col-lg-2">
                 <label class="form-label small fw-semibold text-muted mb-1">Date Range</label>
-                <select name="date_filter" id="dateFilter" class="form-select form-select-sm" onchange="toggleCustomDates(); document.getElementById('filterForm').submit()">
-                    <option value="today" <?= $dateFilter === 'today' ? 'selected' : '' ?>>Today</option>
-                    <option value="yesterday" <?= $dateFilter === 'yesterday' ? 'selected' : '' ?>>Yesterday</option>
-                    <option value="last_7_days" <?= $dateFilter === 'last_7_days' ? 'selected' : '' ?>>Last 7 Days</option>
-                    <option value="last_30_days" <?= $dateFilter === 'last_30_days' ? 'selected' : '' ?>>Last 30 Days</option>
-                    <option value="this_month" <?= $dateFilter === 'this_month' ? 'selected' : '' ?>>This Month</option>
-                    <option value="last_month" <?= $dateFilter === 'last_month' ? 'selected' : '' ?>>Last Month</option>
-                    <option value="all_time" <?= $dateFilter === 'all_time' ? 'selected' : '' ?>>All Time</option>
-                    <option value="custom" <?= $dateFilter === 'custom' ? 'selected' : '' ?>>Custom Range...</option>
+                <select name="date_filter" id="dateFilter" class="form-select form-select-sm" onchange="toggleCustomDates()">
+                    <option value="today"      <?= $dateFilter==='today'      ?'selected':'' ?>>Today</option>
+                    <option value="yesterday"  <?= $dateFilter==='yesterday'  ?'selected':'' ?>>Yesterday</option>
+                    <option value="last_7_days"<?= $dateFilter==='last_7_days'?'selected':'' ?>>Last 7 Days</option>
+                    <option value="last_30_days"<?=$dateFilter==='last_30_days'?'selected':'' ?>>Last 30 Days</option>
+                    <option value="this_month" <?= $dateFilter==='this_month' ?'selected':'' ?>>This Month</option>
+                    <option value="last_month" <?= $dateFilter==='last_month' ?'selected':'' ?>>Last Month</option>
+                    <option value="all_time"   <?= $dateFilter==='all_time'   ?'selected':'' ?>>All Time</option>
+                    <option value="custom"     <?= $dateFilter==='custom'     ?'selected':'' ?>>Custom...</option>
                 </select>
             </div>
-            <div class="col-md-2 custom-dates" style="<?= $dateFilter !== 'custom' ? 'display:none;' : '' ?>">
+            <div class="col-6 col-lg-1 custom-dates" style="<?= $dateFilter!=='custom'?'display:none;':'' ?>">
                 <label class="form-label small fw-semibold text-muted mb-1">From</label>
                 <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($dateFrom) ?>">
             </div>
-            <div class="col-md-2 custom-dates" style="<?= $dateFilter !== 'custom' ? 'display:none;' : '' ?>">
+            <div class="col-6 col-lg-1 custom-dates" style="<?= $dateFilter!=='custom'?'display:none;':'' ?>">
                 <label class="form-label small fw-semibold text-muted mb-1">To</label>
                 <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>">
             </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i> Apply</button>
+            <div class="col-6 col-lg-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Status</label>
+                <select name="status_filter" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <?php foreach ($allStatuses as $st): ?>
+                        <option value="<?= e($st) ?>" <?= $statusFilter===$st?'selected':'' ?>><?= e($st) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-12 col-lg-2 d-flex gap-2 align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel me-1"></i>Apply</button>
                 <?php if (!$isAgent): ?>
-                <a href="<?= BASE_URL ?>modules/reports/export.php?<?= http_build_query($_GET) ?>" class="btn btn-success btn-sm w-100"><i class="bi bi-download me-1"></i> Export</a>
+                <a href="<?= BASE_URL ?>modules/reports/export.php?<?= http_build_query($_GET) ?>" class="btn btn-success btn-sm"><i class="bi bi-download"></i></a>
                 <?php endif; ?>
             </div>
         </form>
     </div>
 </div>
+>
+
+
+
+<?php
+// Build filter query string to pass current filters to clicked pages
+$filterParams = [];
+if ($agentIdFilter && !$isAgent)       $filterParams['assigned_to'] = $agentIdFilter;
+if ($dateFrom)                          $filterParams['date_from']    = $dateFrom;
+if ($dateTo)                            $filterParams['date_to']      = $dateTo;
+if ($statusFilter)                      $filterParams['status']       = $statusFilter;
+$filterQs = $filterParams ? '?' . http_build_query($filterParams) : '';
+
+// Converted statuses for the converted leads link
+$convertedStatuses = implode(',', ['Converted','Done','Closed Won']);
+$convertedQs = http_build_query(array_merge($filterParams, ['status' => 'Converted']));
+?>
 
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 bg-white">
+    <!-- Card 1: Total Leads -->
+    <div class="col-xl-3 col-md-6">
+        <a href="<?= BASE_URL ?>modules/leads/<?= $filterQs ?>" class="text-decoration-none" title="View all leads with current filters">
+        <div class="card shadow-sm border-0 h-100 bg-white report-kpi-card" style="cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted fw-semibold small text-uppercase tracking-wide">Total Leads Data</span>
+                    <span class="text-muted fw-semibold small text-uppercase tracking-wide">Total Leads</span>
                     <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:32px;height:32px;background:rgba(99,102,241,0.1);color:#4f46e5;">
                         <i class="bi bi-people-fill"></i>
                     </div>
                 </div>
-                <h3 class="fw-bold mb-1"><?= number_format($summary['total_leads'] ?? 0) ?></h3>
+                <h3 class="fw-bold mb-1 text-dark"><?= number_format($summary['total_leads'] ?? 0) ?></h3>
                 <div class="small <?= ($summary['leads_today'] ?? 0) > 0 ? 'text-success' : 'text-muted' ?>">
                     <i class="bi <?= ($summary['leads_today'] ?? 0) > 0 ? 'bi-arrow-up-right' : 'bi-dash' ?>"></i> <?= number_format($summary['leads_today'] ?? 0) ?> arrived today
                 </div>
+                <div class="mt-2 small text-primary fw-semibold"><i class="bi bi-arrow-right-circle me-1"></i>View Leads</div>
             </div>
         </div>
+        </a>
     </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 bg-white">
+
+    <!-- Card 2: Converted Leads -->
+    <div class="col-xl-3 col-md-6">
+        <a href="<?= BASE_URL ?>modules/leads/?<?= $convertedQs ?>" class="text-decoration-none" title="View converted leads">
+        <div class="card shadow-sm border-0 h-100 bg-white report-kpi-card" style="cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-muted fw-semibold small text-uppercase tracking-wide">Converted Leads</span>
@@ -161,15 +279,26 @@ include '../../includes/header.php';
                         <i class="bi bi-check-circle-fill"></i>
                     </div>
                 </div>
-                <h3 class="fw-bold mb-1"><?= number_format($conversion['converted']) ?></h3>
+                <h3 class="fw-bold mb-1 text-dark"><?= number_format($conversion['converted']) ?></h3>
                 <div class="small fw-semibold <?= $conversion['rate'] >= 10 ? 'text-success' : 'text-warning' ?>">
                     <i class="bi bi-bullseye"></i> <?= $conversion['rate'] ?>% Conversion Rate
                 </div>
+                <div class="mt-2 small text-success fw-semibold"><i class="bi bi-arrow-right-circle me-1"></i>View Converted</div>
             </div>
         </div>
+        </a>
     </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 bg-white">
+
+    <!-- Card 3: Total Revenue -->
+    <div class="col-xl-3 col-md-6">
+        <?php
+        $dealsParams = $filterParams;
+        unset($dealsParams['status']); // deals don't use lead status
+        $dealsParams['status'] = 'won';
+        $dealsQs = $dealsParams ? '?' . http_build_query($dealsParams) : '';
+        ?>
+        <a href="<?= BASE_URL ?>modules/deals/<?= $dealsQs ?>" class="text-decoration-none" title="View won deals">
+        <div class="card shadow-sm border-0 h-100 bg-white report-kpi-card" style="cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-muted fw-semibold small text-uppercase tracking-wide">Total Revenue</span>
@@ -177,15 +306,26 @@ include '../../includes/header.php';
                         <i class="bi bi-currency-dollar"></i>
                     </div>
                 </div>
-                <h3 class="fw-bold mb-1"><?= formatCurrency($dealsRev['total_revenue'] ?? 0) ?></h3>
+                <h3 class="fw-bold mb-1 text-dark"><?= formatCurrency($dealsRev['total_revenue'] ?? 0) ?></h3>
                 <div class="small text-muted">
                     <i class="bi bi-trophy-fill text-warning"></i> <?= $dealsRev['total_closed_deals'] ?? 0 ?> Deals Won
                 </div>
+                <div class="mt-2 small text-warning fw-semibold"><i class="bi bi-arrow-right-circle me-1"></i>View Deals</div>
             </div>
         </div>
+        </a>
     </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 bg-white">
+
+    <!-- Card 4: Follow-up Action -->
+    <div class="col-xl-3 col-md-6">
+        <?php
+        $fuParams = [];
+        if ($agentIdFilter && !$isAgent) $fuParams['user_id'] = $agentIdFilter;
+        $fuParams['date'] = 'overdue';
+        $fuQs = '?' . http_build_query($fuParams);
+        ?>
+        <a href="<?= BASE_URL ?>modules/followups/<?= $fuQs ?>" class="text-decoration-none" title="View overdue follow-ups">
+        <div class="card shadow-sm border-0 h-100 bg-white report-kpi-card" style="cursor:pointer;transition:box-shadow 0.2s,transform 0.15s;">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-muted fw-semibold small text-uppercase tracking-wide">Follow-Up Action</span>
@@ -197,13 +337,22 @@ include '../../includes/header.php';
                 <div class="small text-muted">
                     <?= number_format($followUps['pending_tasks'] ?? 0) ?> Pending | <?= number_format($followUps['completed_tasks'] ?? 0) ?> Completed
                 </div>
+                <div class="mt-2 small text-danger fw-semibold"><i class="bi bi-arrow-right-circle me-1"></i>View Follow-ups</div>
             </div>
         </div>
+        </a>
     </div>
 </div>
 
+<style>
+.report-kpi-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.10) !important; transform: translateY(-3px); }
+</style>
+
+
+
 <div class="row g-4 mb-4">
     <!-- Daily Detailed Leads Feed -->
+
     <div class="col-12">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
@@ -249,12 +398,16 @@ include '../../includes/header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($dl['latest_followup_date']): ?>
-                                        <div class="small fw-semibold text-dark"><i class="bi bi-calendar-event text-muted me-1"></i><?= date('M d, h:i A', strtotime($dl['latest_followup_date'])) ?></div>
+                                    <?php
+                                    $fuTs = !empty($dl['latest_followup_date']) ? @strtotime($dl['latest_followup_date']) : false;
+                                    ?>
+                                    <?php if ($fuTs): ?>
+                                        <div class="small fw-semibold text-dark"><?= date('M d, Y', $fuTs) ?></div>
+                                        <div class="small text-primary fw-bold"><?= date('h:i A', $fuTs) ?></div>
                                         <div class="mt-1">
                                             <?php if ($dl['latest_followup_status'] === 'completed'): ?>
                                                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-0" style="font-size: 0.65rem;">Completed</span>
-                                            <?php elseif (strtotime($dl['latest_followup_date']) < time()): ?>
+                                            <?php elseif ($fuTs < time()): ?>
                                                 <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-0" style="font-size: 0.65rem;">Overdue</span>
                                             <?php else: ?>
                                                 <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-0" style="font-size: 0.65rem;">Pending</span>
@@ -273,8 +426,9 @@ include '../../includes/header.php';
                                         <span class="small text-muted fst-italic">No notes yet</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="pe-4 text-end small text-muted">
-                                    <?= date('M d, h:i A', strtotime($dl['created_at'])) ?>
+                                <td class="pe-4 text-end">
+                                    <div class="small text-muted fw-semibold"><?= date('M d, Y', strtotime($dl['created_at'])) ?></div>
+                                    <div class="small text-muted"><?= date('h:i A', strtotime($dl['created_at'])) ?></div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -317,12 +471,21 @@ include '../../includes/header.php';
                                     <div class="fw-semibold text-primary"><a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $fl['lead_id'] ?>" class="text-decoration-none"><?= e($fl['lead_name']) ?></a></div>
                                 </td>
                                 <td>
-                                    <div class="small fw-bold text-dark"><i class="bi bi-clock text-muted me-1"></i><?= date('M d, Y', strtotime($fl['followup_date'])) ?></div>
-                                    <div class="small text-muted"><?= date('h:i A', strtotime($fl['followup_time'])) ?></div>
+                                    <?php
+                                    $flDate = !empty($fl['followup_date']) ? $fl['followup_date'] : null;
+                                    $flTime = !empty($fl['followup_time']) ? $fl['followup_time'] : '00:00:00';
+                                    $flTs   = $flDate ? @strtotime($flDate . ' ' . $flTime) : false;
+                                    ?>
+                                    <?php if ($flTs): ?>
+                                    <div class="small fw-bold text-dark"><?= date('M d, Y', $flTs) ?></div>
+                                    <div class="small text-primary fw-bold"><?= date('h:i A', $flTs) ?></div>
+                                    <?php else: ?>
+                                    <span class="small text-muted">—</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php if ($fl['notes']): ?>
-                                        <div class="small text-dark" style="max-width:300px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="<?= e($fl['notes']) ?>"><i class="bi bi-sticky text-muted me-1"></i><?= e($fl['notes']) ?></div>
+                                    <?php if (!empty($fl['description'])): ?>
+                                        <div class="small text-dark" style="max-width:300px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="<?= e($fl['description']) ?>"><i class="bi bi-sticky text-muted me-1"></i><?= e($fl['description']) ?></div>
                                     <?php else: ?>
                                         <span class="small text-muted fst-italic">No additional notes</span>
                                     <?php endif; ?>
@@ -351,24 +514,62 @@ include '../../includes/header.php';
     </div>
 </div>
 
+
 <div class="row g-4 mb-4">
     <!-- Monthly Lead Trend -->
-    <div class="col-lg-8">
+    <div class="col-xl-7">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-graph-up me-2 text-primary"></i>Daily Lead Trend</h6></div>
             <div class="card-body"><canvas id="monthlyChart" height="280"></canvas></div>
         </div>
     </div>
-    <!-- Leads by Status (Pie) -->
-    <div class="col-lg-4">
+    <!-- Status Breakdown Sidebar -->
+    <div class="col-xl-5">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-4 pb-0"><h6 class="fw-bold"><i class="bi bi-pie-chart me-2 text-info"></i>Leads by Pipeline Stage</h6></div>
-            <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                <?php if (empty($leadsByStatus)): ?>
-                    <p class="text-muted small">No data for selected period</p>
-                <?php else: ?>
-                    <canvas id="statusChart" height="240"></canvas>
-                <?php endif; ?>
+            <div class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-layers me-2 text-primary"></i>Pipeline Funnel Breakdown</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light sticky-top">
+                            <tr class="small text-uppercase text-muted fw-semibold">
+                                <th class="ps-3" style="font-size: 11px;">Status</th>
+                                <th class="text-center" style="font-size: 11px;">Leads</th>
+                                <th class="pe-3 text-end" style="font-size: 11px;">Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                            $totalLeads = array_sum(array_column($statusBreakdown, 'count')) ?: 1;
+                            $statusColors = [
+                                'New Lead'=>'#6366f1','Contacted'=>'#3b82f6','Working'=>'#8b5cf6',
+                                'Follow Up'=>'#f59e0b','Site Visit'=>'#14b8a6','Office Visit'=>'#06b6d4',
+                                'Visited Site'=>'#14b8a6','Visited Office'=>'#06b6d4',
+                                'Done'=>'#10b981','Converted'=>'#10b981',
+                                'Rejected'=>'#ef4444','Not Interested'=>'#ef4444','Closed Lost'=>'#ef4444',
+                            ];
+                        ?>
+                        <?php if(!empty($statusBreakdown)): foreach ($statusBreakdown as $sb):
+                            $color = $statusColors[$sb['status']] ?? '#94a3b8';
+                            $pct   = round(($sb['count'] / $totalLeads) * 100, 1);
+                        ?>
+                        <tr class="<?= $sb['count'] > 0 ? '' : 'text-muted opacity-50' ?>">
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="width:8px;height:8px;border-radius:50%;background:<?= $color ?>;display:inline-block;flex-shrink:0;"></span>
+                                    <span class="fw-semibold text-dark" style="font-size:12px;"><?= e($sb['status']) ?></span>
+                                </div>
+                            </td>
+                            <td class="text-center fw-bold" style="color:<?= $sb['count'] > 0 ? $color : '#cbd5e1' ?>; font-size:12px;"><?= number_format($sb['count']) ?></td>
+                            <td class="pe-3 text-end">
+                                <span class="small text-muted" style="font-size:11px;"><?= $pct ?>%</span>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

@@ -116,11 +116,12 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, null);
     gap: 14px;
     margin-bottom: 28px;
 }
-@media (max-width: 768px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+@media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1100px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .kpi-grid { grid-template-columns: 1fr; gap: 10px; } }
 
 /* Mobile Dashboard Compression */
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
     .dash-hero { padding: 20px 18px; }
     .hero-stats-row { gap: 10px; margin-top: 18px; }
     .hero-stat-pill { min-width: 45%; flex: 1; padding: 12px 14px; }
@@ -337,7 +338,7 @@ function dashColor($i) {
 <div class="kpi-grid mb-4">
 
     <!-- Total Leads -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/leads/" class="kpi-card text-decoration-none" style="cursor: pointer;">
         <div class="kpi-glow" style="background:#6366f1;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
             <i class="bi bi-people-fill"></i>
@@ -345,10 +346,10 @@ function dashColor($i) {
         <div class="kpi-label">Total Leads</div>
         <div class="kpi-value"><?= $stats['total_leads'] ?></div>
         <div class="kpi-sub" style="color:#6366f1;"><i class="bi bi-person-plus-fill"></i> <?= $stats['new_leads'] ?> New Today</div>
-    </div>
+    </a>
 
     <!-- Deal Value -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/deals/" class="kpi-card text-decoration-none" style="cursor: pointer;">
         <div class="kpi-glow" style="background:#10b981;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#10b981,#059669);">
             <i class="bi bi-currency-rupee"></i>
@@ -356,10 +357,10 @@ function dashColor($i) {
         <div class="kpi-label">Deal Value</div>
         <div class="kpi-value"><?= formatCurrency($stats['deal_value']) ?></div>
         <div class="kpi-sub" style="color:#10b981;"><i class="bi bi-trophy-fill"></i> <?= $stats['won_deals'] ?> Won</div>
-    </div>
+    </a>
 
     <!-- Conversion Rate -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/reports/" class="kpi-card text-decoration-none" style="cursor: pointer;">
         <div class="kpi-glow" style="background:#f59e0b;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
             <i class="bi bi-bullseye"></i>
@@ -367,10 +368,10 @@ function dashColor($i) {
         <div class="kpi-label">Conversion Rate</div>
         <div class="kpi-value"><?= $stats['conversion_rate'] ?>%</div>
         <div class="kpi-sub" style="color:#f59e0b;"><i class="bi bi-graph-up-arrow"></i> Win Ratio</div>
-    </div>
+    </a>
 
     <!-- Due Follow-ups -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/followups/?filter=today" class="kpi-card text-decoration-none" style="cursor: pointer;">
         <div class="kpi-glow" style="background:#ef4444;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">
             <i class="bi bi-clock-history"></i>
@@ -378,17 +379,17 @@ function dashColor($i) {
         <div class="kpi-label">Due Follow-ups</div>
         <div class="kpi-value"><?= $stats['pending_followups'] ?></div>
         <div class="d-flex flex-column gap-1 mt-2">
-            <a href="<?= BASE_URL ?>modules/followups/?filter=overdue" class="kpi-sub text-decoration-none d-flex align-items-center gap-1" style="color:#ef4444; font-size: 11px;">
+            <span class="kpi-sub d-flex align-items-center gap-1" style="color:#ef4444; font-size: 11px;">
                 <i class="bi bi-exclamation-circle-fill"></i> <?= $stats['missed_followups'] ?> Missed
-            </a>
-            <a href="<?= BASE_URL ?>modules/followups/?filter=upcoming" class="kpi-sub text-decoration-none d-flex align-items-center gap-1" style="color:#6366f1; font-size: 11px;">
+            </span>
+            <span class="kpi-sub d-flex align-items-center gap-1" style="color:#6366f1; font-size: 11px;">
                 <i class="bi bi-calendar-event-fill"></i> <?= $stats['upcoming_followups'] ?> Upcoming
-            </a>
+            </span>
         </div>
-    </div>
+    </a>
 
     <!-- Assigned Today -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/leads/" class="kpi-card text-decoration-none" style="cursor: pointer;">
         <div class="kpi-glow" style="background:#8b5cf6;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
             <i class="bi bi-person-lines-fill"></i>
@@ -396,10 +397,10 @@ function dashColor($i) {
         <div class="kpi-label">Assigned Today</div>
         <div class="kpi-value"><?= $stats['assigned_today'] ?></div>
         <div class="kpi-sub" style="color:#8b5cf6;"><i class="bi bi-arrow-down-circle-fill"></i> Distributed</div>
-    </div>
+    </a>
 
     <!-- Contacted Leads -->
-    <div class="kpi-card">
+    <a href="<?= BASE_URL ?>modules/leads/?status=Contacted" class="kpi-card text-decoration-none" style="cursor: pointer;">
         <div class="kpi-glow" style="background:#06b6d4;"></div>
         <div class="kpi-icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2);">
             <i class="bi bi-chat-dots-fill"></i>
@@ -407,52 +408,17 @@ function dashColor($i) {
         <div class="kpi-label">Contacted Leads</div>
         <div class="kpi-value"><?= $stats['contacted_leads'] ?></div>
         <div class="kpi-sub" style="color:#06b6d4;"><i class="bi bi-check-circle-fill"></i> Engaged</div>
-    </div>
+    </a>
 
 </div>
 
 <!-- ============================================================
-     ROW 2 — Charts (Lead Growth + Leads by Status)
-     ============================================================ -->
-<div class="row g-4 mb-4">
-    <!-- Lead Growth Chart -->
-    <div class="col-xl-8">
-        <div class="dash-card h-100">
-            <div class="dash-card-header">
-                <div class="section-title">
-                    <div class="st-icon" style="background:#eef2ff;color:#6366f1;"><i class="bi bi-graph-up"></i></div>
-                    Lead Growth
-                </div>
-                <span style="font-size:11px;font-weight:600;color:#94a3b8;background:#f8fafc;padding:4px 12px;border-radius:20px;border:1px solid #e2e8f0;">Last 6 Months</span>
-            </div>
-            <div class="dash-card-body" style="height:300px;">
-                <canvas id="leadGrowthChart"></canvas>
-            </div>
-        </div>
-    </div>
-    <!-- Leads by Status Doughnut -->
-    <div class="col-xl-4">
-        <div class="dash-card h-100">
-            <div class="dash-card-header">
-                <div class="section-title">
-                    <div class="st-icon" style="background:#f0fdf4;color:#10b981;"><i class="bi bi-pie-chart-fill"></i></div>
-                    Leads by Status
-                </div>
-            </div>
-            <div class="dash-card-body d-flex flex-column justify-content-center" style="height:300px;">
-                <canvas id="leadsByStatusChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================
-     ROW 3 — Pipeline + Agent Performance + Activity Feed
+     ROW 2 — Daily Operations (Team Schedule + Pipeline + Agent Performance)
      ============================================================ -->
 <div class="row g-4 mb-4">
 
-    <!-- Team Follow-ups (Added as requested) -->
-    <div class="col-xl-5 col-lg-6">
+    <!-- Team Follow-ups -->
+    <div class="col-xl-5 col-lg-12">
         <div class="dash-card h-100" style="min-height:350px;">
             <div class="dash-card-header">
                 <div class="section-title">
@@ -467,31 +433,38 @@ function dashColor($i) {
             <div class="dash-card-body scroll-y pt-0" style="max-height:400px;">
                 <?php if (!empty($todayFollowups)):
                     foreach ($todayFollowups as $f):
-                        $isUrgent = (strtotime($f['followup_time']) < time()) && $f['followup_date'] == date('Y-m-d');
                         $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
+                        $pLabel = strtoupper($f['priority']);
                 ?>
-                <div class="feed-item px-3 py-3" style="border-bottom: 1px solid #f8fafc;">
-                    <div class="feed-dot-wrap">
-                        <div class="feed-dot" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;"><i class="bi bi-telephone"></i></div>
-                    </div>
-                    <div class="feed-content">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="feed-who"><?= e($f['title']) ?></div>
-                            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:<?= $pColor ?>15;color:<?= $pColor ?>;text-transform:uppercase;">
-                                <?= $f['priority'] ?>
-                            </span>
+                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mx-3 my-2">
+                    <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                        <?= $pLabel ?>
+                    </span>
+                    
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="sc-icon" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                            <i class="bi bi-telephone"></i>
                         </div>
-                        <div class="feed-desc mt-1">
-                            <i class="bi bi-person me-1"></i><?= e($f['lead_name'] ?? 'General') ?>
-                            <span class="mx-1">•</span>
-                            <span style="color:#6366f1;font-weight:600;"><i class="bi bi-person-badge me-1"></i><?= e($f['agent_name'] ?? 'Admin') ?></span>
-                        </div>
-                        <div class="feed-time mt-2 d-flex justify-content-between">
-                            <span><i class="bi bi-clock me-1"></i><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
-                            <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="text-primary text-decoration-none small fw-bold">View Lead <i class="bi bi-arrow-right"></i></a>
+                        <div class="flex-grow-1">
+                            <div class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></div>
+                            <div class="sc-desc"><?= e($f['title']) ?></div>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="sc-meta">
+                        <div class="sc-meta-item">
+                            <i class="bi bi-person-badge text-primary"></i>
+                            <span><?= e($f['agent_name'] ?? 'Admin') ?></span>
+                        </div>
+                        <div class="sc-meta-item">
+                            <i class="bi bi-clock"></i>
+                            <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
+                        </div>
+                        <div class="sc-view-link">
+                            View Lead <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                </a>
                 <?php endforeach; else: ?>
                 <div class="text-center py-5">
                     <i class="bi bi-calendar-x fs-1 d-block mb-2" style="color:#e2e8f0;"></i>
@@ -503,7 +476,7 @@ function dashColor($i) {
     </div>
 
     <!-- Pipeline Overview -->
-    <div class="col-xl-3 col-lg-4">
+    <div class="col-xl-3 col-lg-6 col-md-12">
         <div class="dash-card h-100" style="min-height:280px;">
             <div class="dash-card-header">
                 <div class="section-title">
@@ -544,7 +517,7 @@ function dashColor($i) {
     </div>
 
     <!-- Agent Performance -->
-    <div class="col-xl-4 col-lg-4">
+    <div class="col-xl-4 col-lg-6 col-md-12">
         <div class="dash-card h-100" style="min-height:280px;">
             <div class="dash-card-header">
                 <div class="section-title">
@@ -582,8 +555,49 @@ function dashColor($i) {
         </div>
     </div>
 
+</div>
+
+<!-- ============================================================
+     ROW 3 — Charts (Lead Growth + Leads by Status)
+     ============================================================ -->
+<div class="row g-4 mb-4">
+    <!-- Lead Growth Chart -->
+    <div class="col-xl-8">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <div class="section-title">
+                    <div class="st-icon" style="background:#eef2ff;color:#6366f1;"><i class="bi bi-graph-up"></i></div>
+                    Lead Growth
+                </div>
+                <span style="font-size:11px;font-weight:600;color:#94a3b8;background:#f8fafc;padding:4px 12px;border-radius:20px;border:1px solid #e2e8f0;">Last 6 Months</span>
+            </div>
+            <div class="dash-card-body" style="height:300px;">
+                <canvas id="leadGrowthChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Leads by Status Doughnut -->
+    <div class="col-xl-4">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <div class="section-title">
+                    <div class="st-icon" style="background:#f0fdf4;color:#10b981;"><i class="bi bi-pie-chart-fill"></i></div>
+                    Leads by Status
+                </div>
+            </div>
+            <div class="dash-card-body d-flex flex-column justify-content-center" style="height:300px;">
+                <canvas id="leadsByStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     ROW 4 — Activity Feed
+     ============================================================ -->
+<div class="row g-4 mb-4">
     <!-- Recent Activity Feed -->
-    <div class="col-xl-5 col-lg-4">
+    <div class="col-xl-6 col-lg-12">
         <div class="dash-card h-100" style="min-height:280px;">
             <div class="dash-card-header">
                 <div class="section-title">

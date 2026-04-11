@@ -54,7 +54,7 @@ include '../../includes/header.php';
 ?>
 
 <style>
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
     .team-header {
         flex-direction: column !important;
         align-items: flex-start !important;

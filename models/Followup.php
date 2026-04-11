@@ -33,6 +33,18 @@ class Followup {
             } elseif ($filters['date'] === 'upcoming') {
                 $sql .= " AND f.followup_date > CURDATE() AND f.status = 'pending'";
             }
+        } elseif (!empty($filters['date_from']) || !empty($filters['date_to'])) {
+            if (!empty($filters['date_from'])) {
+                $sql .= " AND f.followup_date >= :date_from";
+                $params['date_from'] = $filters['date_from'];
+            }
+            if (!empty($filters['date_to'])) {
+                $sql .= " AND f.followup_date <= :date_to";
+                $params['date_to'] = $filters['date_to'];
+            }
+            if (!empty($filters['status'])) {
+                // status already handled above
+            }
         }
 
         $sql .= " ORDER BY f.followup_date ASC, f.followup_time ASC";

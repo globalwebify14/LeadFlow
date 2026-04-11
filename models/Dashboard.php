@@ -312,7 +312,7 @@ class Dashboard {
         try {
             $stmt = $this->pdo->prepare(
                 "SELECT u.name, COUNT(l.id) as total_leads,
-                        SUM(CASE WHEN l.status IN ('Done','Closed Won') THEN 1 ELSE 0 END) as converted
+                        SUM(CASE WHEN l.status IN ('Done', 'Converted', 'Closed Won') THEN 1 ELSE 0 END) as converted
                  FROM users u
                  LEFT JOIN leads l ON l.assigned_to = u.id AND l.organization_id = :org_id
                  WHERE u.organization_id = :org_id2 AND u.role IN ('agent','team_lead')
