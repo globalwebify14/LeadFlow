@@ -74,7 +74,6 @@ try {
 
     // We ONLY show the active pipeline stages to keep the reports professional
     // and consistent with your current funnel. Legacy statuses are excluded.
-    $allStatuses = $allStatuses;
 } catch (Exception $e) {
     $allStatuses = [];
 }
