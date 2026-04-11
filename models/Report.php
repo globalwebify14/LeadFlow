@@ -97,7 +97,7 @@ class Report {
     }
 
     public function getMonthlyGrowth($orgId, $userId = null, $dateFrom = null, $dateTo = null, $status = null) {
-        $sql = "SELECT DATE_FORMAT(created_at, '%b %d') as label, DATE_FORMAT(created_at, '%Y-%m-%d') as day, COUNT(*) as count 
+        $sql = "SELECT DATE_FORMAT(created_at, '%b %d') as month_label, DATE_FORMAT(created_at, '%Y-%m-%d') as day_key, COUNT(*) as lead_count 
              FROM leads WHERE organization_id = :org";
         $params = ['org' => $orgId];
         if ($userId) {
@@ -106,14 +106,16 @@ class Report {
         }
         $this->applyDateFilter($sql, $params, 'leads', $dateFrom, $dateTo);
         $this->applyStatusFilter($sql, $params, 'leads', $status);
-        $sql .= " GROUP BY label, day ORDER BY day";
+        $sql .= " GROUP BY month_label, day_key ORDER BY day_key ASC";
         
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $rawData = $stmt->fetchAll();
 
+        // If no filter is provided, we'll default to the last 15 days for a meaningful trend
         if (!$dateFrom || !$dateTo) {
-            return $rawData;
+            $dateTo = date('Y-m-d');
+            $dateFrom = date('Y-m-d', strtotime('-15 days'));
         }
 
         try {
@@ -123,13 +125,15 @@ class Report {
             return $rawData;
         }
 
+        // Avoid infinite loops or massive datasets
         if ($startDate->diff($endDate)->days > 366) {
-            return $rawData;
+            $startDate = clone $endDate;
+            $startDate->modify('-30 days');
         }
 
         $mapped = [];
         foreach ($rawData as $r) {
-            $mapped[$r['day']] = $r['count'];
+            $mapped[$r['day_key']] = $r['lead_count'];
         }
 
         $results = [];
@@ -140,7 +144,7 @@ class Report {
             $results[] = [
                 'label' => $labelStr,
                 'day' => $dayStr,
-                'count' => $mapped[$dayStr] ?? 0
+                'count' => (int)($mapped[$dayStr] ?? 0)
             ];
             $current->modify('+1 day');
         }

@@ -273,18 +273,47 @@ class Dashboard {
 
     public function getMonthlyLeadGrowth($orgId, $userId = null, $role = 'org_owner') {
         try {
-            $sql = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, DATE_FORMAT(created_at, '%b %Y') as label, COUNT(*) as count
+            $sql = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month_key, DATE_FORMAT(created_at, '%b %Y') as month_label, COUNT(*) as lead_count
                  FROM leads WHERE organization_id = :org_id
                  AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)";
+            
             $params = ['org_id' => $orgId];
             if ($role === 'agent' && $userId) {
                 $sql .= " AND assigned_to = :user_id";
                 $params['user_id'] = $userId;
             }
-            $sql .= " GROUP BY month, label ORDER BY month";
+            $sql .= " GROUP BY month_key, month_label ORDER BY month_key ASC";
+            
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
-            return $stmt->fetchAll();
+            $rawResults = $stmt->fetchAll();
+            
+            // Normalize to ensure last 6 months exist (fill in zeros)
+            $dataMap = [];
+            foreach ($rawResults as $row) {
+                $dataMap[$row['month_key']] = [
+                    'label' => $row['month_label'],
+                    'count'  => (int)$row['lead_count']
+                ];
+            }
+            
+            $finalList = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $date = new DateTime();
+                $date->modify("-$i months");
+                $key = $date->format('Y-m');
+                
+                if (isset($dataMap[$key])) {
+                    $finalList[] = $dataMap[$key];
+                } else {
+                    $finalList[] = [
+                        'label' => $date->format('M Y'), 
+                        'count' => 0
+                    ];
+                }
+            }
+            
+            return $finalList;
         } catch (Exception $e) {
             return [];
         }
