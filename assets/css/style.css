@@ -24,39 +24,39 @@
 .schedule-card {
     display: block !important;
     background: #fff !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 20px !important;
-    padding: 24px !important;
-    margin-bottom: 20px !important;
+    border: 1px solid #f1f5f9 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
     text-decoration: none !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     position: relative;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     color: inherit !important;
 }
 
 .schedule-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.08);
-    border-color: #cbd5e1 !important;
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .schedule-card .sc-main {
     display: flex;
     align-items: flex-start;
-    gap: 18px;
-    margin-bottom: 20px;
+    gap: 14px;
+    margin-bottom: 12px;
 }
 
 .schedule-card .sc-icon-wrap {
-    width: 60px;
-    height: 60px;
-    border-radius: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 20px;
     flex-shrink: 0;
 }
 
@@ -68,31 +68,29 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: 2px;
 }
 
 .schedule-card .sc-title {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
-    color: #1e293b !important;
+    color: #334155 !important;
     margin: 0;
-    letter-spacing: -0.2px;
 }
 
 .schedule-card .sc-priority {
-    padding: 5px 14px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
 }
 
 .schedule-card .sc-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: #64748b !important;
     font-weight: 400;
-    line-height: 1.6;
+    line-height: 1.5;
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -102,40 +100,39 @@
 }
 
 .schedule-card .sc-divider {
-    border-top: 1px dashed #e2e8f0;
-    margin: 0 -24px 18px;
-    padding: 0 24px;
+    border-top: 1px solid #f1f5f9;
+    margin: 0 -16px 12px;
+    padding: 0 16px;
 }
 
 .schedule-card .sc-footer {
     display: flex;
     align-items: center;
-    gap: 24px;
-    font-size: 13px;
+    gap: 16px;
+    font-size: 12px;
     color: #94a3b8 !important;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .schedule-card .sc-meta-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .schedule-card .sc-meta-item i {
-    font-size: 16px;
-    color: #6366f1;
+    font-size: 14px;
+    color: #94a3b8;
 }
 
 .schedule-card .sc-view-link {
     margin-left: auto;
-    font-weight: 700;
+    font-weight: 600;
     color: #6366f1 !important;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    transition: transform 0.2s;
+    gap: 4px;
+    font-size: 13px;
 }
 
 .schedule-card:hover .sc-view-link {

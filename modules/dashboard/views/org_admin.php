@@ -108,8 +108,7 @@ $sourceData = $stats['leads_by_source'] ?? [];
                         $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
                         $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
                 ?>
-                    <div class="col-xl-4 col-md-6 mb-3">
-                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card h-100">
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card">
                             <div class="sc-main">
                                 <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
                                     <i class="bi bi-telephone-fill"></i>
@@ -147,7 +146,6 @@ $sourceData = $stats['leads_by_source'] ?? [];
                                 </div>
                             </div>
                         </a>
-                    </div>
                 <?php endforeach; else: ?>
                     <div class="col-12 text-center py-5">
                         <i class="bi bi-calendar-x fs-2 text-muted d-block mb-2"></i>

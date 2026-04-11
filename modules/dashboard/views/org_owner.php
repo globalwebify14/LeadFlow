@@ -438,7 +438,7 @@ function dashColor($i) {
                         $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
                         $pLabel = strtoupper($f['priority']);
                 ?>
-                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card mx-3 my-2">
+                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card">
                     <div class="sc-main">
                         <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
                             <i class="bi bi-telephone"></i>
