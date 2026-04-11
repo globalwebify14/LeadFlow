@@ -1,2 +1,7 @@
-# Block ALL web access to this directory
+# Block ALL web access by default
 Require all denied
+
+# EXCEPTION: Allow access to migration tool
+<Files "migrate.php">
+    Require all granted
+</Files>

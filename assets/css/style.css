@@ -388,45 +388,8 @@ h6,
 }
 
 /* ================================
-   SCHEDULE & TASK CARDS
+   LEAD AGENT PERFORMANCE
    ================================ */
-    font-size: 14px;
-}
-
-.schedule-card .sc-priority {
-    position: absolute;
-    top: 16px;
-    right: 20px;
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    padding: 3px 10px;
-    border-radius: 8px;
-}
-
-.schedule-card .sc-view-link {
-    margin-left: auto;
-    color: #6366f1;
-    font-weight: 700;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: transform 0.2s;
-}
-
-.schedule-card:hover .sc-view-link {
-    transform: translateX(3px);
-}
-
-.task-priority-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-top: 6px;
-    flex-shrink: 0;
-}
 
 .task-content {
     flex: 1;
