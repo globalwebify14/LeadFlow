@@ -32,14 +32,14 @@
     transition: all 0.2s ease;
     position: relative;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     color: inherit !important;
 }
 
 .schedule-card:hover {
     background: #f8fafc !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .schedule-card .sc-main {
@@ -235,6 +235,9 @@ h6,
 
 .card-header {
     border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+    padding: 0 20px;
+    padding-bottom: 10px !important;
+    margin-bottom: 20px;
 }
 
 /* ================================
@@ -693,7 +696,8 @@ h6,
     padding: 8px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     z-index: 1100 !important;
-    margin-top: 8px !important; /* Premium separation */
+    margin-top: 8px !important;
+    /* Premium separation */
 }
 
 /* Ensure right-aligned dropdowns stay true on desktop screens */
@@ -781,8 +785,8 @@ h6,
    RESPONSIVE OVERRIDE
    ================================ */
 @media (min-width: 1101px) {
-    #sidebar-overlay { 
-        display: none !important; 
+    #sidebar-overlay {
+        display: none !important;
     }
 }
 
@@ -794,7 +798,7 @@ h6,
     #sidebar-wrapper {
         margin-left: calc(var(--sidebar-width) * -1);
         position: fixed;
-        box-shadow: 15px 0 30px rgba(0,0,0,0.1);
+        box-shadow: 15px 0 30px rgba(0, 0, 0, 0.1);
     }
 
     #page-content-wrapper {
@@ -864,12 +868,15 @@ h6,
     .stat-card-label {
         font-size: 10px;
     }
+
     .stat-card-number {
         font-size: 18px;
     }
+
     .welcome-banner {
         padding: 20px 16px;
     }
+
     .welcome-banner h4 {
         font-size: 18px;
     }
@@ -1435,13 +1442,23 @@ h6,
 
 /* --- 1. Utilities --- */
 @media (max-width: 1100px) {
-    .hidden-mobile { display: none !important; }
-    .flex-mobile-column { flex-direction: column !important; }
-    .w-mobile-100 { width: 100% !important; }
+    .hidden-mobile {
+        display: none !important;
+    }
+
+    .flex-mobile-column {
+        flex-direction: column !important;
+    }
+
+    .w-mobile-100 {
+        width: 100% !important;
+    }
 }
 
 @media (min-width: 769px) {
-    .hidden-desktop { display: none !important; }
+    .hidden-desktop {
+        display: none !important;
+    }
 }
 
 /* --- 2. Sidebar Overlay Drawer --- */
@@ -1466,11 +1483,13 @@ h6,
 
 /* --- 3. Forms & Buttons (Mobile Touch Optimization) --- */
 @media (max-width: 1100px) {
-    .form-control, .form-select {
+
+    .form-control,
+    .form-select {
         height: 48px;
         font-size: 16px;
     }
-    
+
     .btn:not(.btn-sm) {
         min-height: 48px;
         display: flex;
@@ -1478,8 +1497,8 @@ h6,
         justify-content: center;
         font-size: 15px;
     }
-    
-    form .btn[type="submit"], 
+
+    form .btn[type="submit"],
     .modal-footer .btn {
         width: 100%;
         margin-left: 0 !important;
@@ -1500,6 +1519,7 @@ h6,
         width: calc(100% - 1rem);
         max-width: none;
     }
+
     .modal-content {
         border-radius: 20px;
     }
@@ -1510,14 +1530,17 @@ h6,
     .navbar {
         padding: 10px 15px !important;
     }
+
     .navbar .input-group {
         width: 100% !important;
         margin-top: 10px;
         margin-bottom: 15px;
     }
+
     #navbarContent {
         padding-top: 10px;
     }
+
     .navbar-nav {
         flex-direction: row;
         justify-content: flex-end;
@@ -1533,6 +1556,7 @@ h6,
         width: 100%;
         background: transparent !important;
     }
+
     .mobile-card-table thead,
     .mobile-card-table tbody,
     .mobile-card-table th,
@@ -1549,20 +1573,20 @@ h6,
 
     .mobile-card-table tr {
         background: #fff;
-        border: 1px solid rgba(0,0,0,0.06);
+        border: 1px solid rgba(0, 0, 0, 0.06);
         border-radius: 12px;
         margin-bottom: 15px;
         padding: 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
     }
-    
+
     .mobile-card-table tbody tr:hover {
         background-color: #fff;
     }
 
     .mobile-card-table td {
         border: none;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
         position: relative;
         padding: 10px 0;
         text-align: right;
@@ -1590,12 +1614,13 @@ h6,
         margin-right: 15px;
         white-space: nowrap;
     }
-    
+
     .mobile-card-table td.checkbox-cell {
         justify-content: flex-start;
         border-bottom: none;
         padding-bottom: 0;
     }
+
     .mobile-card-table td.checkbox-cell::before {
         display: none;
     }
@@ -1606,6 +1631,7 @@ h6,
     .navbar-nav .dropdown {
         position: static !important;
     }
+
     .navbar-nav .dropdown-menu {
         position: absolute;
         width: calc(100vw - 32px) !important;
@@ -1614,7 +1640,7 @@ h6,
         top: 70px !important;
         transform: none !important;
         border-radius: 16px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.12) !important;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12) !important;
         margin-top: 0;
     }
 }
