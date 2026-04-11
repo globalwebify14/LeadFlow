@@ -364,31 +364,41 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                         <span class="text-muted" style="font-size:13px;font-weight:500;">No tasks left today! You're all caught up.</span>
                     </div>
                 <?php else: ?>
-                    <?php foreach (array_slice($todayFollowups, 0, 6) as $f): 
-                        $isUrgent = (strtotime($f['followup_time']) < time());
+                    <?php foreach ($todayFollowups as $f): 
                         $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
                         $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
                     ?>
-                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card">
-                        <div class="sc-main">
-                            <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
-                                <i class="bi bi-telephone"></i>
-                            </div>
-                            <div class="sc-content">
-                                <div class="sc-header">
-                                    <h6 class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></h6>
-                                    <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
-                                        <?= strtoupper($f['priority']) ?>
-                                    </span>
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card my-2">
+                            <div class="sc-main">
+                                <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
+                                    <i class="bi bi-telephone"></i>
                                 </div>
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                    <?php if (isset($f['lead_phone']) && $f['lead_phone']): ?>
-                                        <a href="tel:<?= e($f['lead_phone']) ?>" class="action-btn-mini" style="background:#e0e7ff;color:#4f46e5; border:none;" title="Call Lead"><i class="bi bi-telephone-fill"></i></a>
-                                    <?php endif; ?>
-                                    <div class="sc-view-link ms-2">
-                                        View Lead <i class="bi bi-arrow-right"></i>
+                                <div class="sc-content">
+                                    <div class="sc-header">
+                                        <h6 class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></h6>
+                                        <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
+                                            <?= $pLabel ?>
+                                        </span>
                                     </div>
+                                    <?php 
+                                        $displayDesc = !empty($f['description']) ? $f['description'] : $f['title'];
+                                        if (trim(strtolower($f['title'])) === trim(strtolower($f['lead_name'])) && !empty($f['description'])) {
+                                            $displayDesc = $f['description'];
+                                        }
+                                    ?>
+                                    <p class="sc-desc"><?= e($displayDesc) ?></p>
+                                </div>
+                            </div>
+                            
+                            <div class="sc-divider"></div>
+                            
+                            <div class="sc-footer">
+                                <div class="sc-meta-item">
+                                    <i class="bi bi-clock"></i>
+                                    <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
+                                </div>
+                                <div class="sc-view-link">
+                                    View Lead <i class="bi bi-arrow-right"></i>
                                 </div>
                             </div>
                         </a>

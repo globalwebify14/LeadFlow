@@ -450,7 +450,14 @@ function dashColor($i) {
                                     <?= $pLabel ?>
                                 </span>
                             </div>
-                            <p class="sc-desc"><?= e($f['title']) ?></p>
+                            <?php 
+                                $displayDesc = !empty($f['description']) ? $f['description'] : $f['title'];
+                                // If title is just the lead name (common default), prefer description if available
+                                if (trim(strtolower($f['title'])) === trim(strtolower($f['lead_name'])) && !empty($f['description'])) {
+                                    $displayDesc = $f['description'];
+                                }
+                            ?>
+                            <p class="sc-desc"><?= e($displayDesc) ?></p>
                         </div>
                     </div>
                     

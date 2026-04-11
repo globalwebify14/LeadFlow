@@ -128,20 +128,26 @@ $recentActivities = $dashboard->getRecentActivities($orgId, 8, null, 'team_lead'
                         $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
                         $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
                 ?>
-                    <div class="col-xl-4 col-md-6">
-                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card">
+                    <div class="col-xl-4 col-md-6 mb-3">
+                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card h-100">
                             <div class="sc-main">
                                 <div class="sc-icon-wrap" style="background:<?= $pColor ?>10;color:<?= $pColor ?>;">
-                                    <i class="bi bi-person-fill"></i>
+                                    <i class="bi bi-telephone-fill"></i>
                                 </div>
                                 <div class="sc-content">
                                     <div class="sc-header">
                                         <h6 class="sc-title"><?= e($f['lead_name'] ?? 'General') ?></h6>
                                         <span class="sc-priority" style="background:<?= $pColor ?>15;color:<?= $pColor ?>;">
-                                            <?= strtoupper($f['priority']) ?>
+                                            <?= $pLabel ?>
                                         </span>
                                     </div>
-                                    <p class="sc-desc"><?= e($f['title']) ?></p>
+                                    <?php 
+                                        $displayDesc = !empty($f['description']) ? $f['description'] : $f['title'];
+                                        if (trim(strtolower($f['title'])) === trim(strtolower($f['lead_name'])) && !empty($f['description'])) {
+                                            $displayDesc = $f['description'];
+                                        }
+                                    ?>
+                                    <p class="sc-desc"><?= e($displayDesc) ?></p>
                                 </div>
                             </div>
                             
@@ -156,7 +162,8 @@ $recentActivities = $dashboard->getRecentActivities($orgId, 8, null, 'team_lead'
                                     <i class="bi bi-clock"></i>
                                     <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
                                 </div>
-                                    View Lead <i class="bi bi-arrow-right"></i>
+                                <div class="sc-view-link">
+                                    Lead <i class="bi bi-arrow-right"></i>
                                 </div>
                             </div>
                         </a>
