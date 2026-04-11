@@ -528,34 +528,51 @@ class Lead {
 
     /**
      * Gets pipeline stages for an organization, or initializes defaults if none exist.
+     * SELF-HEALING: Now automatically re-adds missing core stages even for existing orgs.
      */
     public function getOrInitializeStages($orgId) {
         $stmt = $this->pdo->prepare("SELECT * FROM pipeline_stages WHERE organization_id = :org ORDER BY position");
         $stmt->execute(['org' => $orgId]);
         $stages = $stmt->fetchAll();
 
-        if (empty($stages)) {
-            // Define default stages
-            $defaults = [
-                ['name' => 'New Lead', 'color' => '#3b82f6', 'pos' => 1],
-                ['name' => 'Contacted', 'color' => '#6366f1', 'pos' => 2],
-                ['name' => 'Qualified', 'color' => '#8b5cf6', 'pos' => 3],
-                ['name' => 'Negotiation', 'color' => '#f59e0b', 'pos' => 4],
-                ['name' => 'Closed Won', 'color' => '#10b981', 'pos' => 5],
-                ['name' => 'Closed Lost', 'color' => '#ef4444', 'pos' => 6]
-            ];
+        $coreStages = [
+            'New Lead'  => ['color' => '#3b82f6', 'pos' => 1],
+            'Converted' => ['color' => '#10b981', 'pos' => 7],
+            'Dropped'   => ['color' => '#64748b', 'pos' => 8]
+        ];
 
-            foreach ($defaults as $d) {
+        $missingCore = false;
+        $existingStageNames = array_map(function($s) { return trim(strtolower($s['name'])); }, $stages);
+
+        foreach ($coreStages as $name => $data) {
+            if (!in_array(strtolower($name), $existingStageNames)) {
                 $ins = $this->pdo->prepare("INSERT INTO pipeline_stages (organization_id, name, color, position) VALUES (:org, :name, :color, :pos)");
                 $ins->execute([
                     'org'   => $orgId,
-                    'name'  => $d['name'],
-                    'color' => $d['color'],
-                    'pos'   => $d['pos']
+                    'name'  => $name,
+                    'color' => $data['color'],
+                    'pos'   => $data['pos']
                 ]);
+                $missingCore = true;
             }
+        }
 
-            // Fetch again after insertion
+        // Standard defaults for brand-new orgs (if still empty after core check, which shouldn't happen)
+        if (empty($stages) && !$missingCore) {
+            $defaults = [
+                ['name' => 'Contacted', 'color' => '#6366f1', 'pos' => 2],
+                ['name' => 'Qualified', 'color' => '#8b5cf6', 'pos' => 3],
+                ['name' => 'Negotiation', 'color' => '#f59e0b', 'pos' => 4]
+            ];
+            foreach ($defaults as $d) {
+                $ins = $this->pdo->prepare("INSERT INTO pipeline_stages (organization_id, name, color, position) VALUES (:org, :name, :color, :pos)");
+                $ins->execute(['org' => $orgId, 'name' => $d['name'], 'color' => $d['color'], 'pos' => $d['pos']]);
+            }
+            $missingCore = true;
+        }
+
+        if ($missingCore) {
+            // Re-fetch if we made changes
             $stmt->execute(['org' => $orgId]);
             $stages = $stmt->fetchAll();
         }
