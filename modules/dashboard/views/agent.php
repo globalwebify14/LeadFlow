@@ -365,8 +365,9 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                     </div>
                 <?php else: ?>
                     <?php foreach ($todayFollowups as $f): 
-                        $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
-                        $pLabel = strtoupper($f['priority'] ?? 'MEDIUM');
+                        $isOverdue = strtotime($f['followup_date']) < strtotime(date('Y-m-d'));
+                        $pColor = $isOverdue ? '#ef4444' : ($f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6'));
+                        $pLabel = $isOverdue ? 'OVERDUE' : strtoupper($f['priority'] ?? 'MEDIUM');
                     ?>
                         <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card my-2">
                             <div class="sc-main">
@@ -395,7 +396,7 @@ $overdueCount  = $followupModel->getOverdueCount($orgId, $userId);
                             <div class="sc-footer">
                                 <div class="sc-meta-item">
                                     <i class="bi bi-clock"></i>
-                                    <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
+                                    <span><?= $isOverdue ? '<span class="text-danger">'.date('M d, ', strtotime($f['followup_date'])).'</span>' : '' ?><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
                                 </div>
                                 <div class="sc-view-link">
                                     View Lead <i class="bi bi-arrow-right"></i>

@@ -235,13 +235,16 @@ class Dashboard {
                     FROM followups f
                     LEFT JOIN leads l ON f.lead_id = l.id
                     LEFT JOIN users u ON f.user_id = u.id
-                    WHERE f.organization_id = :org_id AND f.followup_date = CURDATE() AND f.status = 'pending'";
+                    WHERE f.organization_id = :org_id 
+                      AND f.followup_date <= CURDATE() 
+                      AND f.status = 'pending'";
             $params = ['org_id' => $orgId];
             if ($userId) {
                 $sql .= " AND f.user_id = :user_id";
                 $params['user_id'] = $userId;
             }
-            $sql .= " ORDER BY f.followup_time ASC";
+            // Sort by date (oldest overdue first) then by time
+            $sql .= " ORDER BY f.followup_date ASC, f.followup_time ASC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll();

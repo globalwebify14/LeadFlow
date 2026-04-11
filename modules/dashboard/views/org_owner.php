@@ -435,8 +435,9 @@ function dashColor($i) {
             <div class="dash-card-body scroll-y pt-0" style="max-height:400px;">
                 <?php if (!empty($todayFollowups)):
                     foreach ($todayFollowups as $f):
-                        $pColor = $f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6');
-                        $pLabel = strtoupper($f['priority']);
+                        $isOverdue = strtotime($f['followup_date']) < strtotime(date('Y-m-d'));
+                        $pColor = $isOverdue ? '#ef4444' : ($f['priority'] === 'high' ? '#ef4444' : ($f['priority'] === 'medium' ? '#f59e0b' : '#3b82f6'));
+                        $pLabel = $isOverdue ? 'OVERDUE' : strtoupper($f['priority']);
                 ?>
                 <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $f['lead_id'] ?>" class="schedule-card">
                     <div class="sc-main">
@@ -470,7 +471,7 @@ function dashColor($i) {
                         </div>
                         <div class="sc-meta-item">
                             <i class="bi bi-clock"></i>
-                            <span><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
+                            <span><?= $isOverdue ? '<span class="text-danger">'.date('M d, ', strtotime($f['followup_date'])).'</span>' : '' ?><?= date('h:i A', strtotime($f['followup_time'])) ?></span>
                         </div>
                         <div class="sc-view-link">
                             View Lead <i class="bi bi-arrow-right"></i>
