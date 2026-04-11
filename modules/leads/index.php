@@ -522,18 +522,6 @@ include '../../includes/header.php';
             
             <?php if ($userRole !== 'agent'): ?>
             <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="priority">
-                    <option value="">Priority: All</option>
-                    <option value="Hot" <?= $filters['priority']==='Hot'?'selected':'' ?>>🔥 Hot</option>
-                    <option value="Warm" <?= $filters['priority']==='Warm'?'selected':'' ?>>☀️ Warm</option>
-                    <option value="Cold" <?= $filters['priority']==='Cold'?'selected':'' ?>>❄️ Cold</option>
-                </select>
-            </div>
-            
-            <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="source">
-                    <option value="">Source: All</option>
-                    <option value="facebook" <?= $filters['source']==='facebook'?'selected':'' ?>>Facebook Ads</option>
                     <option value="manual" <?= $filters['source']==='manual'?'selected':'' ?>>Manual Entry</option>
                     <option value="import" <?= $filters['source']==='import'?'selected':'' ?>>Excel Import</option>
                 </select>
@@ -551,14 +539,6 @@ include '../../includes/header.php';
             </div>
             <?php endif; ?>
 
-            <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="facebook_page_id">
-                    <option value="">Page: All FB Pages</option>
-                    <?php foreach ($fbPages as $fbPage): ?>
-                        <option value="<?= $fbPage['page_id'] ?>" <?= $filters['facebook_page_id'] == $fbPage['page_id'] ? 'selected' : '' ?>><?= e($fbPage['page_name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
 
             <div class="col-6 col-md-1 ms-auto d-flex">
                 <button type="submit" class="btn btn-primary w-100" style="border-radius: 8px;"><i class="bi bi-sliders"></i></button>
