@@ -21,8 +21,26 @@ class Lead {
 
         // Search filter
         if (!empty($filters['search'])) {
-            $sql .= " AND (l.name LIKE :search OR l.phone LIKE :search OR l.email LIKE :search OR l.company LIKE :search)";
-            $params[':search'] = "%" . $filters['search'] . "%";
+            $searchTerm = "%" . $filters['search'] . "%";
+            $searchId = is_numeric($filters['search']) ? (int)$filters['search'] : -1;
+
+            $sql .= " AND (l.name LIKE :search 
+                        OR l.phone LIKE :search 
+                        OR l.email LIKE :search 
+                        OR l.company LIKE :search
+                        OR l.id = :search_id";
+            
+            $params[':search']    = $searchTerm;
+            $params[':search_id'] = $searchId;
+
+            // Clean numeric search for phone numbers (only if search term has digits)
+            $digitsOnly = preg_replace('/[^0-9]/', '', $filters['search']);
+            if (!empty($digitsOnly)) {
+                $sql .= " OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(l.phone, ' ', ''), '-', ''), '+', ''), '(', ''), ')', '') LIKE :clean_search";
+                $params[':clean_search'] = "%" . $digitsOnly . "%";
+            }
+
+            $sql .= ")";
         }
 
         // Status filter
@@ -95,8 +113,25 @@ class Lead {
         $params = [':org_id' => $orgId];
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (l.name LIKE :search OR l.phone LIKE :search OR l.email LIKE :search OR l.company LIKE :search)";
-            $params[':search'] = "%" . $filters['search'] . "%";
+            $searchTerm = "%" . $filters['search'] . "%";
+            $searchId = is_numeric($filters['search']) ? (int)$filters['search'] : -1;
+
+            $sql .= " AND (l.name LIKE :search 
+                        OR l.phone LIKE :search 
+                        OR l.email LIKE :search 
+                        OR l.company LIKE :search
+                        OR l.id = :search_id";
+            
+            $params[':search']    = $searchTerm;
+            $params[':search_id'] = $searchId;
+
+            $digitsOnly = preg_replace('/[^0-9]/', '', $filters['search']);
+            if (!empty($digitsOnly)) {
+                $sql .= " OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(l.phone, ' ', ''), '-', ''), '+', ''), '(', ''), ')', '') LIKE :clean_search";
+                $params[':clean_search'] = "%" . $digitsOnly . "%";
+            }
+
+            $sql .= ")";
         }
         if (!empty($filters['status'])) {
             $sql .= " AND l.status = :status";
@@ -151,8 +186,25 @@ class Lead {
         $params = [':org_id' => $orgId];
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (l.name LIKE :search OR l.phone LIKE :search OR l.email LIKE :search OR l.company LIKE :search)";
-            $params[':search'] = "%" . $filters['search'] . "%";
+            $searchTerm = "%" . $filters['search'] . "%";
+            $searchId = is_numeric($filters['search']) ? (int)$filters['search'] : -1;
+
+            $sql .= " AND (l.name LIKE :search 
+                        OR l.phone LIKE :search 
+                        OR l.email LIKE :search 
+                        OR l.company LIKE :search
+                        OR l.id = :search_id";
+            
+            $params[':search']    = $searchTerm;
+            $params[':search_id'] = $searchId;
+
+            $digitsOnly = preg_replace('/[^0-9]/', '', $filters['search']);
+            if (!empty($digitsOnly)) {
+                $sql .= " OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(l.phone, ' ', ''), '-', ''), '+', ''), '(', ''), ')', '') LIKE :clean_search";
+                $params[':clean_search'] = "%" . $digitsOnly . "%";
+            }
+
+            $sql .= ")";
         }
         if (!empty($filters['status'])) {
             $sql .= " AND l.status = :status";

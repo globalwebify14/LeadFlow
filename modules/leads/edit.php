@@ -74,7 +74,7 @@ include '../../includes/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-6"><label class="form-label">Pipeline Stage (Status)</label>
+                <div class="col-md-6"><label class="form-label">Status</label>
                     <select class="form-select" name="status">
                         <?php foreach ($stages as $s): ?>
                             <option value="<?= $s['name'] ?>" <?= $lead['status'] === $s['name'] ? 'selected' : '' ?>><?= e($s['name']) ?></option>

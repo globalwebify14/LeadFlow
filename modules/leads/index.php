@@ -447,7 +447,6 @@ include '../../includes/header.php';
     }
 
     /* PIPELINE, STATUS, ASSIGNED: inline badges row */
-    .mobile-card-table td[data-label="Pipeline"],
     .mobile-card-table td[data-label="Status"],
     .mobile-card-table td[data-label="Assigned"] {
         display: inline-flex !important;
@@ -512,7 +511,7 @@ include '../../includes/header.php';
             </div>
             
             <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="status">
+                <select class="form-select filter-input" name="status" onchange="this.form.submit()">
                     <option value="">Status: All</option>
                     <?php foreach ($pipelineStages as $ps): ?>
                         <option value="<?= $ps ?>" <?= $filterStatus === $ps ? 'selected' : '' ?>><?= $ps ?></option>
@@ -522,7 +521,7 @@ include '../../includes/header.php';
             
             <?php if ($userRole !== 'agent'): ?>
             <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="source">
+                <select class="form-select filter-input" name="source" onchange="this.form.submit()">
                     <option value="">Source: All</option>
                     <option value="manual" <?= $filters['source']==='manual'?'selected':'' ?>>Manual Entry</option>
                     <option value="import" <?= $filters['source']==='import'?'selected':'' ?>>Excel Import</option>
@@ -532,7 +531,7 @@ include '../../includes/header.php';
             
             <?php if ($userRole !== 'agent'): ?>
             <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="assigned_to">
+                <select class="form-select filter-input" name="assigned_to" onchange="this.form.submit()">
                     <option value="">Agent: All</option>
                     <?php foreach ($agents as $agent): ?>
                         <option value="<?= $agent['id'] ?>" <?= $filters['assigned_to'] == $agent['id'] ? 'selected' : '' ?>><?= e($agent['name']) ?></option>
@@ -542,8 +541,11 @@ include '../../includes/header.php';
             <?php endif; ?>
 
 
-            <div class="col-6 col-md-1 ms-auto d-flex">
-                <button type="submit" class="btn btn-primary w-100" style="border-radius: 8px;"><i class="bi bi-sliders"></i></button>
+            <div class="col-12 col-md-2 ms-auto d-flex">
+                <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" style="border-radius: 8px;">
+                    <i class="bi bi-search"></i>
+                    <span>Search</span>
+                </button>
             </div>
         </form>
     </div>
@@ -612,14 +614,13 @@ include '../../includes/header.php';
                             <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Notes</th>
                             <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Actions</th>
                             <?php else: ?>
-                            <!-- Admin view: all columns -->
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 22%;">Name</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Phone</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Status</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Pipeline</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Assigned</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Notes</th>
-                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 8%;">Actions</th>
+                            <!-- Admin view: 6 columns -->
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 28%;">Name</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Phone</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Status</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 18%;">Assigned</th>
+                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Notes</th>
+                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Actions</th>
                             <?php endif; ?>
                         </tr>
                     </thead>
@@ -679,19 +680,7 @@ include '../../includes/header.php';
                                 </form>
                                 <?php endforeach; ?>
                             </td>
-                            
-                            <!-- PIPELINE (admin only) -->
-                            <?php if ($userRole !== 'agent'): ?>
-                            <td data-label="Pipeline" class="border-bottom border-light py-3">
-                                <?php if ($lead['stage_name']): ?>
-                                    <span class="badge rounded-pill text-white shadow-sm" style="background: <?= e($lead['stage_color'] ?: '#3b82f6') ?>; font-size: 11.5px; padding: 5px 14px; font-weight: 600;">
-                                        <?= e($lead['stage_name']) ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="badge rounded-pill text-white shadow-sm bg-primary" style="font-size: 11.5px; padding: 5px 14px; font-weight: 600;">New Lead</span>
-                                <?php endif; ?>
-                            </td>
-                            <?php endif; ?>
+
 
                             <!-- ASSIGNED -->
                             <?php if ($userRole !== 'agent'): ?>

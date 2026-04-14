@@ -549,9 +549,6 @@ include '../../includes/header.php';
                             <?php if ($pr === 'Hot'): ?><i class="bi bi-fire"></i><?php elseif ($pr === 'Cold'): ?><i class="bi bi-snow2"></i><?php else: ?><i class="bi bi-thermometer-half"></i><?php endif; ?>
                             <?= e($pr) ?> Priority
                         </span>
-                        <?php if ($stageName): ?>
-                        <span class="ld-badge status"><i class="bi bi-funnel-fill" style="font-size:9px;"></i> <?= e($stageName['name']) ?></span>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
