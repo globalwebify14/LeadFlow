@@ -19,24 +19,37 @@ $userModel = new User($pdo);
 $stages = $leadModel->getOrInitializeStages($orgId);
 $pipelineStages = array_column($stages, 'name');
 
-$filterStatus  = $_GET['status'] ?? '';
+$filterStatus = $_GET['status'] ?? '';
 
 // Handle bulk actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Capture all filters to preserve them in redirect
+    $redirectParams = $_GET; // Use existing GET as base
+    if (isset($_POST['page'])) $redirectParams['page'] = $_POST['page'];
+    
+    // Explicitly pull all possible filter fields from POST if they were sent (from individual lead forms)
+    $filterFields = ['search', 'status', 'priority', 'source', 'assigned_to', 'date_from', 'date_to', 'tag_id', 'facebook_page_id'];
+    foreach ($filterFields as $ff) {
+        if (isset($_POST['filter_' . $ff])) $redirectParams[$ff] = $_POST['filter_' . $ff];
+    }
+    
+    $queryString = http_build_query($redirectParams);
+    $redirectUrl = BASE_URL . 'modules/leads/' . ($queryString ? '?' . $queryString : '');
+
     if (isset($_POST['bulk_action'])) {
         $ids = $_POST['lead_ids'] ?? [];
-        
+
         // Handle "Select All Across All Pages"
         if (!empty($_POST['select_all_pages'])) {
             $postFilters = [
-                'search'      => $_POST['filter_search'] ?? '',
-                'status'      => $_POST['filter_status'] ?? '',
-                'priority'    => $_POST['filter_priority'] ?? '',
-                'source'      => $_POST['filter_source'] ?? '',
+                'search' => $_POST['filter_search'] ?? '',
+                'status' => $_POST['filter_status'] ?? '',
+                'priority' => $_POST['filter_priority'] ?? '',
+                'source' => $_POST['filter_source'] ?? '',
                 'assigned_to' => $_POST['filter_assigned_to'] ?? '',
-                'date_from'   => $_POST['filter_date_from'] ?? '',
-                'date_to'     => $_POST['filter_date_to'] ?? '',
-                'tag_id'          => $_POST['filter_tag_id'] ?? '',
+                'date_from' => $_POST['filter_date_from'] ?? '',
+                'date_to' => $_POST['filter_date_to'] ?? '',
+                'tag_id' => $_POST['filter_tag_id'] ?? '',
                 'facebook_page_id' => $_POST['filter_facebook_page_id'] ?? '',
             ];
             if (getUserRole() === 'agent') {
@@ -49,42 +62,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             switch ($_POST['bulk_action']) {
                 case 'delete':
                     $leadModel->bulkDelete($ids);
-                    redirect(BASE_URL . 'modules/leads/', count($ids) . ' leads deleted.', 'success');
+                    redirect(BASE_URL . 'modules/leads/' . $pageQuery, count($ids) . ' leads deleted.', 'success');
                     break;
                 case 'assign':
                     if (!empty($_POST['bulk_agent'])) {
                         $leadModel->bulkAssign($ids, $_POST['bulk_agent'], getUserId());
-                        redirect(BASE_URL . 'modules/leads/', count($ids) . ' leads assigned.', 'success');
+                        redirect(BASE_URL . 'modules/leads/' . $pageQuery, count($ids) . ' leads assigned.', 'success');
                     }
                     break;
                 default:
                     // Status change
                     if ($_POST['bulk_action']) {
                         $leadModel->bulkUpdateStatus($ids, $_POST['bulk_action'], getUserId());
-                        redirect(BASE_URL . 'modules/leads/', count($ids) . ' leads updated.', 'success');
+                        redirect($redirectUrl, count($ids) . ' leads updated.', 'success');
                     }
             }
         }
     } elseif (isset($_POST['single_assign'])) {
         $leadModel->bulkAssign([$_POST['lead_id']], $_POST['agent_id'] ?: null, getUserId());
-        redirect(BASE_URL . 'modules/leads/', 'Lead assigned successfully.', 'success');
+        redirect($redirectUrl, 'Lead assigned successfully.', 'success');
     }
 }
 
 // Filters
 $filters = [
-    'search'      => $_GET['search'] ?? '',
-    'status'      => $filterStatus,
-    'priority'    => $_GET['priority'] ?? '',
-    'source'      => $_GET['source'] ?? '',
+    'search' => $_GET['search'] ?? '',
+    'status' => $filterStatus,
+    'priority' => $_GET['priority'] ?? '',
+    'source' => $_GET['source'] ?? '',
     'assigned_to' => $_GET['assigned_to'] ?? '',
-    'date_from'   => $_GET['date_from'] ?? '',
-    'date_to'     => $_GET['date_to'] ?? '',
-    'tag_id'          => $_GET['tag_id'] ?? '',
+    'date_from' => $_GET['date_from'] ?? '',
+    'date_to' => $_GET['date_to'] ?? '',
+    'tag_id' => $_GET['tag_id'] ?? '',
     'facebook_page_id' => $_GET['facebook_page_id'] ?? '',
 ];
 
-$page = max(1, (int)($_GET['page'] ?? 1));
+$page = max(1, (int) ($_GET['page'] ?? 1));
 $limit = 15;
 $offset = ($page - 1) * $limit;
 
@@ -113,390 +126,477 @@ include '../../includes/header.php';
 ?>
 
 <style>
-/* Premium SaaS Leads Table Styles */
-.page-header-bg {
-    background: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%);
-    border-radius: 16px;
-    padding: 24px 32px;
-    margin-bottom: 24px;
-    color: white;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    position: relative;
-    overflow: hidden;
-}
-.page-header-bg::after {
-    content: '';
-    position: absolute;
-    top: 0; right: 0; bottom: 0; left: 0;
-    background: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="0" r="40" fill="rgba(255,255,255,0.03)"/><circle cx="0" cy="100" r="60" fill="rgba(255,255,255,0.02)"/></svg>') no-repeat top right / cover;
-    pointer-events: none;
-}
-.filter-card {
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-}
-.filter-input {
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    font-size: 13px;
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: #475569;
-    transition: all 0.2s;
-}
-.filter-input:focus {
-    background-color: #fff;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-/* Modern Minimalist Leads Table Styles */
-.leads-table-card {
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #eef2f6;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.02);
-    overflow: hidden;
-}
-.table-modern {
-    margin-bottom: 0;
-}
-.table-modern th {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #8a99af;
-    background-color: #fcfdfe;
-    border-bottom: 1px solid #edf2f7;
-    padding: 16px 20px;
-    font-weight: 700;
-}
-.table-modern td {
-    padding: 16px 20px;
-    vertical-align: middle;
-    border-bottom: 1px solid #f8fafc;
-    color: #475569;
-    background-color: transparent;
-}
-.table-modern tbody tr {
-    transition: background-color 0.2s;
-    border-left: 3px solid transparent;
-}
-.table-modern tbody tr:hover {
-    background-color: #f9fbfe;
-    border-left-color: #3b82f6;
-}
-.lead-avatar-small {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #f1f5f9;
-    color: #6366f1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 14px;
-    flex-shrink: 0;
-    border: 1px solid #e2e8f0;
-}
-.lead-name-modern {
-    color: #1e293b;
-    font-weight: 600;
-    font-size: 14.5px;
-    text-decoration: none;
-    display: block;
-    margin-bottom: 2px;
-}
-.lead-name-modern:hover {
-    color: #2563eb;
-}
-.phone-number {
-    color: #1e293b;
-    font-weight: 500;
-    font-size: 14px;
-    letter-spacing: -0.2px;
-}
-.agent-status-modern {
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #475569;
-    padding: 5px 28px 5px 12px;
-    border-radius: 20px;
-    font-size: 11.5px;
-    font-weight: 600;
-    cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 14px 14px;
-    transition: all 0.2s;
-}
-.agent-status-modern:hover {
-    background-color: #e2e8f0;
-    border-color: #cbd5e1;
-}
-.priority-badge-hot {
-    background: #fff1f2;
-    color: #e11d48;
-    border: 1px solid #ffe4e6;
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-.pagination-modern .page-link {
-    border: 1px solid #e2e8f0;
-    color: #64748b;
-    font-size: 12.5px;
-    padding: 5px 12px;
-    margin: 0 2px;
-    border-radius: 6px;
-    transition: all 0.2s;
-}
-.pagination-modern .page-link:hover {
-    background-color: #f8fafc;
-    color: #2563eb;
-    border-color: #bfdbfe;
-}
-.pagination-modern .page-item.active .page-link {
-    background-color: #2563eb;
-    color: #ffffff;
-    border-color: #2563eb;
-    font-weight: 600;
-}
-.agent-action-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #64748b;
-    transition: all 0.2s ease;
-    text-decoration: none;
-}
-.agent-action-pill:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-.agent-action-pill.call { color: #2563eb; background-color: #eff6ff; border-color: #dbeafe; }
-.agent-action-pill.wa { color: #16a34a; background-color: #f0fdf4; border-color: #dcfce7; }
-.agent-action-pill.email { color: #7c3aed; background-color: #f5f3ff; border-color: #ede9fe; }
+    /* Premium SaaS Leads Table Styles */
+    .page-header-bg {
+        background: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%);
+        border-radius: 16px;
+        padding: 24px 32px;
+        margin-bottom: 24px;
+        color: white;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
 
-.btn-add-note-modern {
-    color: #3b82f6;
-    font-weight: 600;
-    font-size: 11.5px;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 0;
-    transition: color 0.2s;
-}
-.btn-add-note-modern:hover {
-    color: #1d4ed8;
-}
+    .page-header-bg::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="0" r="40" fill="rgba(255,255,255,0.03)"/><circle cx="0" cy="100" r="60" fill="rgba(255,255,255,0.02)"/></svg>') no-repeat top right / cover;
+        pointer-events: none;
+    }
 
-/* ============================================================
+    .filter-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    }
+
+    .filter-input {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        font-size: 13px;
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: #475569;
+        transition: all 0.2s;
+    }
+
+    .filter-input:focus {
+        background-color: #fff;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Modern Minimalist Leads Table Styles */
+    .leads-table-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #eef2f6;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02);
+        overflow: hidden;
+    }
+
+    .table-modern {
+        margin-bottom: 0;
+    }
+
+    .table-modern th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #8a99af;
+        background-color: #fcfdfe;
+        border-bottom: 1px solid #edf2f7;
+        padding: 16px 20px;
+        font-weight: 700;
+    }
+
+    .table-modern td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f8fafc;
+        color: #475569;
+        background-color: transparent;
+    }
+
+    .table-modern tbody tr {
+        transition: background-color 0.2s;
+        border-left: 3px solid transparent;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: #f9fbfe;
+        border-left-color: #3b82f6;
+    }
+
+    .lead-avatar-small {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #6366f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+        border: 1px solid #e2e8f0;
+    }
+
+    .lead-name-modern {
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 14.5px;
+        text-decoration: none;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .lead-name-modern:hover {
+        color: #2563eb;
+    }
+
+    .phone-number {
+        color: #1e293b;
+        font-weight: 500;
+        font-size: 14px;
+        letter-spacing: -0.2px;
+    }
+
+    .agent-status-modern {
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        padding: 5px 28px 5px 12px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 14px 14px;
+        transition: all 0.2s;
+    }
+
+    .agent-status-modern:hover {
+        background-color: #e2e8f0;
+        border-color: #cbd5e1;
+    }
+
+    .priority-badge-hot {
+        background: #fff1f2;
+        color: #e11d48;
+        border: 1px solid #ffe4e6;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .pagination-modern .page-link {
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 12.5px;
+        padding: 5px 12px;
+        margin: 0 2px;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .pagination-modern .page-link:hover {
+        background-color: #f8fafc;
+        color: #2563eb;
+        border-color: #bfdbfe;
+    }
+
+    .pagination-modern .page-item.active .page-link {
+        background-color: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+        font-weight: 600;
+    }
+
+    .agent-action-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .agent-action-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .agent-action-pill.call {
+        color: #2563eb;
+        background-color: #eff6ff;
+        border-color: #dbeafe;
+    }
+
+    .agent-action-pill.wa {
+        color: #16a34a;
+        background-color: #f0fdf4;
+        border-color: #dcfce7;
+    }
+
+    .agent-action-pill.email {
+        color: #7c3aed;
+        background-color: #f5f3ff;
+        border-color: #ede9fe;
+    }
+
+    .btn-add-note-modern {
+        color: #3b82f6;
+        font-weight: 600;
+        font-size: 11.5px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 0;
+        transition: color 0.2s;
+    }
+
+    .btn-add-note-modern:hover {
+        color: #1d4ed8;
+    }
+
+    /* ============================================================
    LEADS TABLE — Desktop Overflow Fix
    ============================================================ */
-#page-content-wrapper {
-    overflow-x: hidden;
-}
-.leads-table-card {
-    overflow: hidden;
-}
-.table-modern {
-    table-layout: fixed;
-    width: 100%;
-}
-.table-modern th,
-.table-modern td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.table-modern td[data-label="Context / Notes"] {
-    white-space: normal;
-}
-.table-modern td[data-label="Lead Name"] .d-flex {
-    overflow: hidden;
-}
-
-/* ============================================================
-   LEADS MODULE — Compact Mobile Cards
-   ============================================================ */
-/* Mobile Layout for Leads Index */
-@media (max-width: 1100px) {
-    .filter-row {
-    /* Hero header: stack vertically */
-    .page-header-bg {
-        padding: 20px 16px !important;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 14px;
-        text-align: left;
+    #page-content-wrapper {
+        overflow-x: hidden;
     }
-    .page-header-bg h4 { font-size: 1rem; }
-    .page-header-bg p { font-size: 11px !important; display: none; }
-    .page-header-bg .d-flex.gap-2 {
+
+    .leads-table-card {
+        overflow: hidden;
+    }
+
+    .table-modern {
+        table-layout: fixed;
         width: 100%;
-        flex-wrap: wrap;
-        gap: 6px !important;
-    }
-    .page-header-bg .d-flex.gap-2 .btn,
-    .page-header-bg .d-flex.gap-2 a.btn {
-        flex: 1;
-        font-size: 11px !important;
-        padding: 7px 8px !important;
-        text-align: center;
-        white-space: nowrap;
     }
 
-    /* Filter card */
-    .filter-card .card-body { padding: 10px !important; }
-    .filter-card .col-6 { flex: 0 0 50% !important; max-width: 50% !important; }
-    .filter-input { font-size: 12px !important; padding: 7px 10px !important; }
-
-    /* Leads card header */
-    .leads-table-card .card-header {
-        padding: 12px 14px 6px !important;
-    }
-
-    /* Bulk bar responsiveness */
-    .bulk-bar {
-        flex-wrap: wrap !important;
-        padding: 12px !important;
-        gap: 12px !important;
-        height: auto !important;
-    }
-    .bulk-bar .d-flex.align-items-center.gap-3 {
-        width: 100%;
-        gap: 8px !important;
-        justify-content: flex-start;
-    }
-    .bulk-bar select {
-        flex: 1;
-        min-width: 120px;
-        font-size: 11px !important;
-    }
-    .bulk-bar button {
-        width: 100%;
-        margin-top: 4px;
-    }
-
-    /* ---- COMPACT CARD REDESIGN ---- */
-    .mobile-card-table tr {
-        padding: 12px !important;
-        margin-bottom: 10px !important;
-    }
-
-    /* Hide the verbose labels above each cell */
-    .mobile-card-table td::before {
-        display: none !important;
-    }
-
-    /* All cells: clean vertical stacking, no borders */
-    .mobile-card-table td {
-        flex-direction: row !important;
-        align-items: center !important;
-        text-align: left !important;
-        padding: 4px 0 !important;
-        min-height: unset !important;
-        border-bottom: none !important;
-    }
-
-    /* Hide checkbox on mobile */
-    .mobile-card-table td.checkbox-cell {
-        display: none !important;
-    }
-
-    /* LEAD NAME cell: compact row with avatar, name, badges */
-    .mobile-card-table td[data-label="Name"] {
-        padding: 0 0 6px 0 !important;
-        border-bottom: 1px solid rgba(0,0,0,0.05) !important;
-    }
-    .mobile-card-table td[data-label="Name"] .lead-name-modern {
-        max-width: 100% !important;
-        font-size: 13px !important;
-        white-space: nowrap;
+    .table-modern th,
+    .table-modern td {
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    /* PHONE cell: inline phone + action pills */
-    .mobile-card-table td[data-label="Phone"] {
-        padding: 6px 0 !important;
-    }
-    .mobile-card-table td[data-label="Phone"] .d-flex.gap-2.mt-1 {
-        margin-top: 6px !important;
+    .table-modern td[data-label="Context / Notes"] {
+        white-space: normal;
     }
 
-    /* Keep Source and Priority hidden on mobile to save space */
-    .mobile-card-table td[data-label="Source"],
-    .mobile-card-table td[data-label="Priority"] {
-        display: none !important;
+    .table-modern td[data-label="Lead Name"] .d-flex {
+        overflow: hidden;
     }
 
-    /* PIPELINE, STATUS, ASSIGNED: inline badges row */
-    .mobile-card-table td[data-label="Status"],
-    .mobile-card-table td[data-label="Assigned"] {
-        display: inline-flex !important;
-        padding: 6px 0 !important;
-        margin-right: 8px;
-    }
-    .mobile-card-table td[data-label="Actions"] .btn {
-        width: 34px;
-        height: 34px;
-    }
+    /* ============================================================
+   LEADS MODULE — Compact Mobile Cards
+   ============================================================ */
+    /* Mobile Layout for Leads Index */
+    @media (max-width: 1100px) {
+        .filter-row {
 
-    /* Pagination */
-    .d-flex.justify-content-between.align-items-center.py-4.px-4 {
-        flex-direction: column !important;
-        gap: 10px;
-        padding: 14px !important;
-    }
-    .pagination-modern .page-link { font-size: 11px; padding: 4px 8px; }
+            /* Hero header: stack vertically */
+            .page-header-bg {
+                padding: 20px 16px !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 14px;
+                text-align: left;
+            }
 
-    /* Overflow prevention */
-    .table-responsive { overflow-x: hidden !important; min-height: auto !important; }
-    .leads-table-card { overflow: hidden; }
-}
+            .page-header-bg h4 {
+                font-size: 1rem;
+            }
+
+            .page-header-bg p {
+                font-size: 11px !important;
+                display: none;
+            }
+
+            .page-header-bg .d-flex.gap-2 {
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 6px !important;
+            }
+
+            .page-header-bg .d-flex.gap-2 .btn,
+            .page-header-bg .d-flex.gap-2 a.btn {
+                flex: 1;
+                font-size: 11px !important;
+                padding: 7px 8px !important;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            /* Filter card */
+            .filter-card .card-body {
+                padding: 10px !important;
+            }
+
+            .filter-card .col-6 {
+                flex: 0 0 50% !important;
+                max-width: 50% !important;
+            }
+
+            .filter-input {
+                font-size: 12px !important;
+                padding: 7px 10px !important;
+            }
+
+            /* Leads card header */
+            .leads-table-card .card-header {
+                padding: 12px 14px 6px !important;
+            }
+
+            /* Bulk bar responsiveness */
+            .bulk-bar {
+                flex-wrap: wrap !important;
+                padding: 12px !important;
+                gap: 12px !important;
+                height: auto !important;
+            }
+
+            .bulk-bar .d-flex.align-items-center.gap-3 {
+                width: 100%;
+                gap: 8px !important;
+                justify-content: flex-start;
+            }
+
+            .bulk-bar select {
+                flex: 1;
+                min-width: 120px;
+                font-size: 11px !important;
+            }
+
+            .bulk-bar button {
+                width: 100%;
+                margin-top: 4px;
+            }
+
+            /* ---- COMPACT CARD REDESIGN ---- */
+            .mobile-card-table tr {
+                padding: 12px !important;
+                margin-bottom: 10px !important;
+            }
+
+            /* Hide the verbose labels above each cell */
+            .mobile-card-table td::before {
+                display: none !important;
+            }
+
+            /* All cells: clean vertical stacking, no borders */
+            .mobile-card-table td {
+                flex-direction: row !important;
+                align-items: center !important;
+                text-align: left !important;
+                padding: 4px 0 !important;
+                min-height: unset !important;
+                border-bottom: none !important;
+            }
+
+            /* Hide checkbox on mobile */
+            .mobile-card-table td.checkbox-cell {
+                display: none !important;
+            }
+
+            /* LEAD NAME cell: compact row with avatar, name, badges */
+            .mobile-card-table td[data-label="Name"] {
+                padding: 0 0 6px 0 !important;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+            }
+
+            .mobile-card-table td[data-label="Name"] .lead-name-modern {
+                max-width: 100% !important;
+                font-size: 13px !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* PHONE cell: inline phone + action pills */
+            .mobile-card-table td[data-label="Phone"] {
+                padding: 6px 0 !important;
+            }
+
+            .mobile-card-table td[data-label="Phone"] .d-flex.gap-2.mt-1 {
+                margin-top: 6px !important;
+            }
+
+            /* Keep Source and Priority hidden on mobile to save space */
+            .mobile-card-table td[data-label="Source"],
+            .mobile-card-table td[data-label="Priority"] {
+                display: none !important;
+            }
+
+            /* PIPELINE, STATUS, ASSIGNED: inline badges row */
+            .mobile-card-table td[data-label="Status"],
+            .mobile-card-table td[data-label="Assigned"] {
+                display: inline-flex !important;
+                padding: 6px 0 !important;
+                margin-right: 8px;
+            }
+
+            .mobile-card-table td[data-label="Actions"] .btn {
+                width: 34px;
+                height: 34px;
+            }
+
+            /* Pagination */
+            .d-flex.justify-content-between.align-items-center.py-4.px-4 {
+                flex-direction: column !important;
+                gap: 10px;
+                padding: 14px !important;
+            }
+
+            .pagination-modern .page-link {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+
+            /* Overflow prevention */
+            .table-responsive {
+                overflow-x: hidden !important;
+                min-height: auto !important;
+            }
+
+            .leads-table-card {
+                overflow: hidden;
+            }
+        }
 </style>
 
 <!-- Hero Header (admin/team lead only) -->
 <?php if ($userRole !== 'agent'): ?>
-<div class="page-header-bg d-flex justify-content-between align-items-center">
-    <div style="z-index: 1;">
-        <h4 class="fw-bold mb-1 text-white">Lead Management</h4>
-        <p class="mb-0 text-white-50" style="font-size: 14px;">View, organize, and assign your leads to drive conversions.</p>
+    <div class="page-header-bg d-flex justify-content-between align-items-center">
+        <div style="z-index: 1;">
+            <h4 class="fw-bold mb-1 text-white">Lead Management</h4>
+            <p class="mb-0 text-white-50" style="font-size: 14px;">View, organize, and assign your leads to drive
+                conversions.</p>
+        </div>
+        <div class="d-flex gap-2" style="z-index: 1;">
+            <?php if (hasModuleAccess('import_leads')): ?>
+                <button type="button" class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm"
+                    style="font-weight: 500;" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Import Leads
+                </button>
+            <?php endif; ?>
+
+            <a href="<?= BASE_URL ?>modules/leads/export.php?<?= http_build_query($filters) ?>"
+                class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm" style="font-weight: 500;">
+                <i class="bi bi-download me-1"></i> Export
+            </a>
+
+            <?php if (hasModuleAccess('manual_leads')): ?>
+                <a href="<?= BASE_URL ?>modules/leads/add.php"
+                    class="btn btn-light text-primary d-flex align-items-center shadow-sm fw-bold px-3 py-2"
+                    style="border-radius: 10px; font-size: 13.5px; border: 1px solid rgba(255,255,255,0.4);">
+                    <i class="bi bi-plus-lg me-2"></i> Add Lead
+                </a>
+            <?php endif; ?>
+        </div>
     </div>
-    <div class="d-flex gap-2" style="z-index: 1;">
-        <?php if (hasModuleAccess('import_leads')): ?>
-        <button type="button" class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm" style="font-weight: 500;" data-bs-toggle="modal" data-bs-target="#importModal">
-            <i class="bi bi-file-earmark-excel me-1"></i> Import Leads
-        </button>
-        <?php endif; ?>
-        
-        <a href="<?= BASE_URL ?>modules/leads/export.php?<?= http_build_query($filters) ?>" class="btn btn-outline-light bg-white bg-opacity-10 border-0 shadow-sm" style="font-weight: 500;">
-            <i class="bi bi-download me-1"></i> Export
-        </a>
-        
-        <?php if (hasModuleAccess('manual_leads')): ?>
-        <a href="<?= BASE_URL ?>modules/leads/add.php" class="btn btn-light text-primary d-flex align-items-center shadow-sm fw-bold px-3 py-2" style="border-radius: 10px; font-size: 13.5px; border: 1px solid rgba(255,255,255,0.4);">
-            <i class="bi bi-plus-lg me-2"></i> Add Lead
-        </a>
-        <?php endif; ?>
-    </div>
-</div>
 <?php endif; ?>
 
 <!-- Advanced Filters -->
@@ -505,11 +605,13 @@ include '../../includes/header.php';
         <form method="GET" class="row g-2 align-items-center flex-wrap">
             <div class="col-12 col-md-3">
                 <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control filter-input border-start-0 ps-0" name="search" placeholder="Search name, phone, company..." value="<?= e($filters['search']) ?>">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i
+                            class="bi bi-search"></i></span>
+                    <input type="text" class="form-control filter-input border-start-0 ps-0" name="search"
+                        placeholder="Search name, phone, company..." value="<?= e($filters['search']) ?>">
                 </div>
             </div>
-            
+
             <div class="col-6 col-md-2">
                 <select class="form-select filter-input" name="status" onchange="this.form.submit()">
                     <option value="">Status: All</option>
@@ -518,31 +620,34 @@ include '../../includes/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            
+
             <?php if ($userRole !== 'agent'): ?>
-            <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="source" onchange="this.form.submit()">
-                    <option value="">Source: All</option>
-                    <option value="manual" <?= $filters['source']==='manual'?'selected':'' ?>>Manual Entry</option>
-                    <option value="import" <?= $filters['source']==='import'?'selected':'' ?>>Excel Import</option>
-                </select>
-            </div>
+                <div class="col-6 col-md-2">
+                    <select class="form-select filter-input" name="source" onchange="this.form.submit()">
+                        <option value="">Source: All</option>
+                        <option value="manual" <?= $filters['source'] === 'manual' ? 'selected' : '' ?>>Manual Entry</option>
+                        <option value="import" <?= $filters['source'] === 'import' ? 'selected' : '' ?>>Excel Import</option>
+                    </select>
+                </div>
             <?php endif; ?>
-            
+
             <?php if ($userRole !== 'agent'): ?>
-            <div class="col-6 col-md-2">
-                <select class="form-select filter-input" name="assigned_to" onchange="this.form.submit()">
-                    <option value="">Agent: All</option>
-                    <?php foreach ($agents as $agent): ?>
-                        <option value="<?= $agent['id'] ?>" <?= $filters['assigned_to'] == $agent['id'] ? 'selected' : '' ?>><?= e($agent['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                <div class="col-6 col-md-2">
+                    <select class="form-select filter-input" name="assigned_to" onchange="this.form.submit()">
+                        <option value="">Agent: All</option>
+                        <?php foreach ($agents as $agent): ?>
+                            <option value="<?= $agent['id'] ?>" <?= $filters['assigned_to'] == $agent['id'] ? 'selected' : '' ?>>
+                                <?= e($agent['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             <?php endif; ?>
 
 
             <div class="col-12 col-md-2 ms-auto d-flex">
-                <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" style="border-radius: 8px;">
+                <button type="submit"
+                    class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                    style="border-radius: 8px;">
                     <i class="bi bi-search"></i>
                     <span>Search</span>
                 </button>
@@ -556,18 +661,23 @@ include '../../includes/header.php';
     <div class="card-header bg-white border-bottom-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
         <div>
             <span class="fs-5 fw-bold text-dark">All Leads</span>
-            <span class="badge bg-primary bg-opacity-10 text-primary ms-2 rounded-pill px-2 py-1 fs-6"><?= $totalLeads ?></span>
+            <span
+                class="badge bg-primary bg-opacity-10 text-primary ms-2 rounded-pill px-2 py-1 fs-6"><?= $totalLeads ?></span>
         </div>
     </div>
-    
+
     <div class="card-body p-0">
         <div id="bulkForm">
             <!-- Sleek Bulk Actions Bar -->
-            <div class="bulk-bar d-flex align-items-center justify-content-between mx-3 mb-3" id="bulkBar" style="display:none !important;">
+            <div class="bulk-bar d-flex align-items-center justify-content-between mx-3 mb-3" id="bulkBar"
+                style="display:none !important;">
                 <div class="d-flex align-items-center gap-3">
-                    <span class="fw-semibold badge bg-white bg-opacity-25 text-white" id="selectedCount" style="font-size: 13px;">0 selected</span>
+                    <span class="fw-semibold badge bg-white bg-opacity-25 text-white" id="selectedCount"
+                        style="font-size: 13px;">0 selected</span>
                     <span class="text-white-50 small">Quick actions:</span>
-                    <select name="bulk_action" class="form-select form-select-sm bg-dark border-secondary text-white shadow-none" style="width:160px;">
+                    <select name="bulk_action"
+                        class="form-select form-select-sm bg-dark border-secondary text-white shadow-none"
+                        style="width:160px;">
                         <option value="">Select Action...</option>
                         <?php if ($userRole !== 'agent'): ?>
                             <option value="delete">🗑️ Delete Selected</option>
@@ -579,200 +689,305 @@ include '../../includes/header.php';
                         </optgroup>
                     </select>
                     <?php if ($userRole !== 'agent'): ?>
-                    <select name="bulk_agent" class="form-select form-select-sm bg-dark border-secondary text-white shadow-none" style="width:160px;">
-                        <option value="">👤 Assign To...</option>
-                        <?php foreach ($agents as $a): ?>
-                            <option value="<?= $a['id'] ?>"><?= e($a['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                        <select name="bulk_agent"
+                            class="form-select form-select-sm bg-dark border-secondary text-white shadow-none"
+                            style="width:160px;">
+                            <option value="">👤 Assign To...</option>
+                            <?php foreach ($agents as $a): ?>
+                                <option value="<?= $a['id'] ?>"><?= e($a['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     <?php endif; ?>
                 </div>
-                <button type="button" class="btn btn-light btn-sm fw-bold px-3" onclick="applyBulkAction(event)">Apply Action</button>
+                <button type="button" class="btn btn-light btn-sm fw-bold px-3" onclick="applyBulkAction(event)">Apply
+                    Action</button>
             </div>
 
             <!-- Bulk Actions Across Pages Prompts -->
-            <div id="selectAllPagesBanner" class="alert custom-primary-banner border-0 rounded-3 mb-3 mx-3 py-2 px-3 d-none align-items-center justify-content-center gap-2" style="font-size:13px; background:#eff6ff; color:#1e40af;">
-                <span>All <strong><span id="currentPageSelectedCount">15</span></strong> leads on this page are selected.</span>
-                <button type="button" class="btn btn-sm btn-link text-primary fw-bold p-0 text-decoration-underline" id="selectAllPagesBtn">Select all <?= $totalLeads ?> leads in this view</button>
+            <div id="selectAllPagesBanner"
+                class="alert custom-primary-banner border-0 rounded-3 mb-3 mx-3 py-2 px-3 d-none align-items-center justify-content-center gap-2"
+                style="font-size:13px; background:#eff6ff; color:#1e40af;">
+                <span>All <strong><span id="currentPageSelectedCount">15</span></strong> leads on this page are
+                    selected.</span>
+                <button type="button" class="btn btn-sm btn-link text-primary fw-bold p-0 text-decoration-underline"
+                    id="selectAllPagesBtn">Select all <?= $totalLeads ?> leads in this view</button>
             </div>
-            <div id="allPagesSelectedBanner" class="alert border-0 rounded-3 mx-3 mb-3 py-2 px-3 d-none align-items-center justify-content-center gap-2" style="font-size:13px; background:#f0fdf4; color:#166534;">
-                <span><i class="bi bi-check-circle-fill me-2"></i>All <strong><?= $totalLeads ?></strong> leads in this view are selected.</span>
-                <button type="button" class="btn btn-sm btn-link text-success p-0 text-decoration-underline" id="clearSelectionBtn">Clear selection</button>
+            <div id="allPagesSelectedBanner"
+                class="alert border-0 rounded-3 mx-3 mb-3 py-2 px-3 d-none align-items-center justify-content-center gap-2"
+                style="font-size:13px; background:#f0fdf4; color:#166534;">
+                <span><i class="bi bi-check-circle-fill me-2"></i>All <strong><?= $totalLeads ?></strong> leads in this
+                    view are selected.</span>
+                <button type="button" class="btn btn-sm btn-link text-success p-0 text-decoration-underline"
+                    id="clearSelectionBtn">Clear selection</button>
             </div>
 
             <div class="table-responsive border-0" style="min-height: 400px; padding-bottom: 2rem;">
                 <table class="table table-modern table-hover align-middle mb-0 w-100 mobile-card-table">
                     <thead>
                         <tr>
-                            <th width="40" class="ps-4 border-0 text-muted" style="font-size:10px;font-weight:600;letter-spacing:0.5px;"><input type="checkbox" id="selectAll" class="form-check-input custom-checkbox"></th>
+                            <th width="40" class="ps-4 border-0 text-muted"
+                                style="font-size:10px;font-weight:600;letter-spacing:0.5px;"><input type="checkbox"
+                                    id="selectAll" class="form-check-input custom-checkbox"></th>
                             <?php if ($userRole === 'agent'): ?>
-                            <!-- Agent view: 6 columns -->
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 20%;">Name</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Phone</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Status</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 28%;">Latest Note</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Notes</th>
-                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Actions</th>
+                                <!-- Agent view: 6 columns -->
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 20%;">Name</th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Phone</th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 14%;">Status</th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 28%;">Latest Note
+                                </th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Notes</th>
+                                <th class="border-0 text-muted text-uppercase text-end pe-4"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Actions</th>
                             <?php else: ?>
-                            <!-- Admin view: 6 columns -->
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 28%;">Name</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Phone</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Status</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 18%;">Assigned</th>
-                            <th class="border-0 text-muted text-uppercase" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Notes</th>
-                            <th class="border-0 text-muted text-uppercase text-end pe-4" style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Actions</th>
+                                <!-- Admin view: 6 columns -->
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 28%;">Name</th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Phone</th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 16%;">Status</th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 18%;">Assigned</th>
+                                <th class="border-0 text-muted text-uppercase"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 12%;">Notes</th>
+                                <th class="border-0 text-muted text-uppercase text-end pe-4"
+                                    style="font-size:10px;font-weight:600;letter-spacing:0.5px; width: 10%;">Actions</th>
                             <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody style="border-top: none;">
                         <?php foreach ($leads as $lead): ?>
-                        <tr>
-                            <td class="ps-4 checkbox-cell border-bottom border-light py-3">
-                                <input type="checkbox" name="lead_ids[]" value="<?= $lead['id'] ?>" class="form-check-input custom-checkbox lead-check">
-                            </td>
-                            
-                            <!-- NAME -->
-                            <td data-label="Name" class="border-bottom border-light py-3">
-                                <div class="fw-bold" style="font-size: 13.5px; color: #1e293b;">
-                                    <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="text-decoration-none" style="color: inherit;">
-                                        <?= e($lead['name']) ?>
-                                    </a>
-                                </div>
-                                <?php if($lead['email']): ?>
-                                    <div class="text-muted text-truncate mt-1" style="font-size: 11.5px; max-width: 200px;" title="<?= e($lead['email']) ?>">
-                                        <?= e($lead['email']) ?>
+                            <tr>
+                                <td class="ps-4 checkbox-cell border-bottom border-light py-3">
+                                    <input type="checkbox" name="lead_ids[]" value="<?= $lead['id'] ?>"
+                                        class="form-check-input custom-checkbox lead-check">
+                                </td>
+
+                                <!-- NAME -->
+                                <td data-label="Name" class="border-bottom border-light py-3">
+                                    <div class="fw-bold" style="font-size: 13.5px; color: #1e293b;">
+                                        <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>"
+                                            class="text-decoration-none" style="color: inherit;">
+                                            <?= e($lead['name']) ?>
+                                        </a>
                                     </div>
-                                <?php endif; ?>
-                            </td>
-                            
-                            <!-- PHONE -->
-                            <td data-label="Phone" class="border-bottom border-light py-3">
-                                <div class="d-flex flex-column gap-1">
-                                    <span class="text-dark fw-medium" style="font-size: 12.5px; font-family: monospace; letter-spacing: 0.5px;"><?= trim(e($lead['phone'] ?: '—')) ?></span>
-                                    <?php if ($lead['phone']): ?>
-                                        <div class="d-flex gap-2 mt-1">
-                                            <?php $waPhone = preg_replace('/[^0-9]/', '', $lead['phone']); ?>
-                                            <a href="tel:<?= e($lead['phone']) ?>" class="btn btn-sm btn-light border d-inline-flex align-items-center justify-content-center text-primary" style="width:28px;height:28px;font-size:12px;border-radius:8px;" title="Call"><i class="bi bi-telephone-fill"></i></a>
-                                            <a href="https://wa.me/<?= e($waPhone) ?>" target="_blank" class="btn btn-sm text-white d-inline-flex align-items-center justify-content-center" style="background-color:#25d366;width:28px;height:28px;font-size:13px;border-radius:8px;" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                                    <?php if ($lead['email']): ?>
+                                        <div class="text-muted text-truncate mt-1" style="font-size: 11.5px; max-width: 200px;"
+                                            title="<?= e($lead['email']) ?>">
+                                            <?= e($lead['email']) ?>
                                         </div>
                                     <?php endif; ?>
-                                </div>
-                            </td>
+                                    <?php if (!empty($lead['created_at'])): ?>
+                                        <div class="text-muted mt-1 d-flex align-items-center gap-1" style="font-size: 10.5px;">
+                                            <i class="bi bi-calendar3" style="font-size: 9px;"></i>
+                                            <?= date('d M Y', strtotime($lead['created_at'])) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
 
-                            <!-- STATUS & PIPELINE -->
-                            <td data-label="Status" class="border-bottom border-light py-3" style="overflow: visible !important;">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm border-0 bg-primary bg-opacity-10 text-primary rounded-pill d-inline-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="font-size: 11.5px; padding: 5px 12px; font-weight: 600;">
-                                        <span style="width:6px;height:6px;border-radius:50%;background-color:currentColor;"></span>
-                                        <?= e($lead['status'] ?: 'New Lead') ?>
-                                        <i class="bi bi-chevron-down ms-1" style="font-size: 9px;"></i>
-                                    </button>
-                                    <ul class="dropdown-menu shadow-sm border-0" style="font-size: 12px; border-radius: 12px; min-width: 140px; z-index: 1050;">
-                                        <?php foreach ($pipelineStages as $ps): ?>
-                                            <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('status_<?= $lead['id'] ?>_<?= md5($ps) ?>').submit();"><?= e($ps) ?></a></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                </div>
-                                <?php foreach ($pipelineStages as $ps): ?>
-                                <form id="status_<?= $lead['id'] ?>_<?= md5($ps) ?>" method="POST" style="display:none;">
-                                    <input type="hidden" name="bulk_action" value="<?= e($ps) ?>">
-                                    <input type="hidden" name="lead_ids[]" value="<?= $lead['id'] ?>">
-                                </form>
-                                <?php endforeach; ?>
-                            </td>
-
-
-                            <!-- ASSIGNED -->
-                            <?php if ($userRole !== 'agent'): ?>
-                            <td data-label="Assigned" class="border-bottom border-light py-3" style="overflow: visible !important;">
-                                <?php 
-                                $assignedAgentName = 'Unassigned';
-                                foreach($agents as $ag) { if($ag['id'] == $lead['assigned_to']) { $assignedAgentName = $ag['name']; break; } }
-                                $initial = strtoupper(substr($assignedAgentName, 0, 1));
-                                $colors = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308', '#ef4444', '#14b8a6', '#f97316', '#3b82f6', '#84cc16'];
-                                $agentId = (int)($lead['assigned_to'] ?? 0);
-                                $color = $colors[($agentId * 7) % count($colors)];
-                                if ($assignedAgentName === 'Unassigned') $color = '#94a3b8';
-                                ?>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-light bg-transparent border-0 text-start d-flex align-items-center gap-2 p-0" type="button" data-bs-toggle="dropdown" style="font-size: 12px; font-weight: 500;">
-                                        <span class="text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 20px; height: 20px; border-radius: 6px; font-size: 10px; background-color: <?= $color ?>;">
-                                            <?= $initial ?>
-                                        </span>
-                                        <span style="color: #334155;">
-                                            <?= e(strtolower($assignedAgentName) === 'unassigned' ? 'Unassigned' : explode(' ', $assignedAgentName)[0]) ?>
-                                        </span>
-                                        <i class="bi bi-chevron-down text-muted" style="font-size: 9px;"></i>
-                                    </button>
-                                    <ul class="dropdown-menu shadow-sm border-0" style="font-size: 12px; border-radius: 12px;">
-                                        <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_null').submit();">Unassigned</a></li>
-                                        <?php foreach ($agents as $agent): ?>
-                                            <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>').submit();"><?= e($agent['name']) ?></a></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                </div>
-                                <form id="assign_<?= $lead['id'] ?>_null" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value=""></form>
-                                <?php foreach ($agents as $agent): ?>
-                                <form id="assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>" method="POST" style="display:none;"><input type="hidden" name="single_assign" value="1"><input type="hidden" name="lead_id" value="<?= $lead['id'] ?>"><input type="hidden" name="agent_id" value="<?= $agent['id'] ?>"></form>
-                                <?php endforeach; ?>
-                            </td>
-                            <?php endif; ?>
-
-                            <!-- LATEST NOTE (Agent Only) -->
-                            <?php if ($userRole === 'agent'): ?>
-                            <td data-label="Latest Note" class="border-bottom border-light py-3 pe-3">
-                                <?php $latestNote = trim($lead['note'] ?? ''); ?>
-                                <div class="d-flex align-items-start gap-2" style="cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'" onclick="openQuickNote(<?= $lead['id'] ?>)">
-                                    <i class="bi bi-chat-left-text text-muted mt-1" style="font-size: 11px; opacity: 0.7;"></i>
-                                    <div id="note_text_<?= $lead['id'] ?>" style="font-size: 11.5px; line-height: 1.5; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-width: 280px;" title="<?= e($latestNote) ?>">
-                                        <?php if ($latestNote): ?>
-                                            <?= e($latestNote) ?>
-                                        <?php else: ?>
-                                            <span class="fst-italic opacity-50">No notes yet</span>
+                                <!-- PHONE -->
+                                <td data-label="Phone" class="border-bottom border-light py-3">
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="text-dark fw-medium"
+                                            style="font-size: 12.5px; font-family: monospace; letter-spacing: 0.5px;"><?= trim(e($lead['phone'] ?: '—')) ?></span>
+                                        <?php if ($lead['phone']): ?>
+                                            <div class="d-flex gap-2 mt-1">
+                                                <?php $waPhone = preg_replace('/[^0-9]/', '', $lead['phone']); ?>
+                                                <a href="tel:<?= e($lead['phone']) ?>"
+                                                    class="btn btn-sm btn-light border d-inline-flex align-items-center justify-content-center text-primary"
+                                                    style="width:28px;height:28px;font-size:12px;border-radius:8px;"
+                                                    title="Call"><i class="bi bi-telephone-fill"></i></a>
+                                                <a href="https://wa.me/<?= e($waPhone) ?>" target="_blank"
+                                                    class="btn btn-sm text-white d-inline-flex align-items-center justify-content-center"
+                                                    style="background-color:#25d366;width:28px;height:28px;font-size:13px;border-radius:8px;"
+                                                    title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
-                                </div>
-                            </td>
-                            <?php endif; ?>
+                                </td>
 
-                            <!-- NOTES -->
-                            <td data-label="Notes" class="border-bottom border-light py-3">
-                                <?php if ($userRole === 'agent'): ?>
-                                <!-- Agent view: static Add Note button -->
-                                <button type="button" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1" style="font-size:11.5px; font-weight:500; border-radius:6px; color:#475569; max-width: 120px;" onclick="openQuickNote(<?= $lead['id'] ?>)">
-                                    <i class="bi bi-pencil-square text-primary"></i> 
-                                    <span>Add Note</span>
-                                </button>
-                                <?php else: ?>
-                                <!-- Admin view: compact note preview button -->
-                                <button type="button" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1" style="font-size:11.5px; font-weight:500; border-radius:6px; color:#475569; max-width: 120px;" onclick="openQuickNote(<?= $lead['id'] ?>)">
-                                    <i class="bi bi-pencil-square text-primary"></i> 
-                                    <span id="note_text_<?= $lead['id'] ?>" class="text-truncate" style="max-width: 80px;"><?= !empty($lead['note']) ? e(mb_substr($lead['note'], 0, 20)) . '...' : 'Add Note' ?></span>
-                                </button>
-                                <?php endif; ?>
-                            </td>
-
-                            <!-- ACTIONS -->
-                            <td class="text-end pe-4 border-bottom border-light py-3" data-label="Actions">
-                                <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>" class="btn btn-light btn-sm rounded-circle d-inline-flex align-items-center justify-content-center border" style="width: 32px; height: 32px;" title="View Detail">
-                                    <i class="bi bi-arrow-right text-primary" style="font-size: 14px;"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                        
-                        <?php if (empty($leads)): ?>
-                        <tr>
-                            <td colspan="10" class="text-center py-5">
-                                <div class="py-4">
-                                    <div class="bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 60px; height: 60px;">
-                                        <i class="bi bi-inbox text-primary" style="font-size: 24px;"></i>
+                                <!-- STATUS & PIPELINE -->
+                                <td data-label="Status" class="border-bottom border-light py-3"
+                                    style="overflow: visible !important;">
+                                    <div class="dropdown">
+                                        <button
+                                            class="btn btn-sm border-0 bg-primary bg-opacity-10 text-primary rounded-pill d-inline-flex align-items-center gap-2"
+                                            type="button" data-bs-toggle="dropdown"
+                                            style="font-size: 11.5px; padding: 5px 12px; font-weight: 600;">
+                                            <span
+                                                style="width:6px;height:6px;border-radius:50%;background-color:currentColor;"></span>
+                                            <?= e($lead['status'] ?: 'New Lead') ?>
+                                            <i class="bi bi-chevron-down ms-1" style="font-size: 9px;"></i>
+                                        </button>
+                                        <ul class="dropdown-menu shadow-sm border-0"
+                                            style="font-size: 12px; border-radius: 12px; min-width: 140px; z-index: 1050;">
+                                            <?php foreach ($pipelineStages as $ps): ?>
+                                                <li><a class="dropdown-item py-2" href="#"
+                                                        onclick="event.preventDefault(); document.getElementById('status_<?= $lead['id'] ?>_<?= md5($ps) ?>').submit();"><?= e($ps) ?></a>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
                                     </div>
-                                    <h6 class="fw-bold text-dark">No leads found</h6>
-                                    <p class="text-muted small mb-0">Try adjusting your filters or importing new leads.</p>
-                                </div>
-                            </td>
-                        </tr>
+                                    <?php foreach ($pipelineStages as $ps): ?>
+                                        <form id="status_<?= $lead['id'] ?>_<?= md5($ps) ?>" method="POST"
+                                            style="display:none;">
+                                            <input type="hidden" name="bulk_action" value="<?= e($ps) ?>">
+                                            <input type="hidden" name="lead_ids[]" value="<?= $lead['id'] ?>">
+                                            <input type="hidden" name="page" value="<?= $page ?>">
+                                            <?php foreach ($filters as $fk => $fv): if ($fv): ?>
+                                                <input type="hidden" name="filter_<?= e($fk) ?>" value="<?= e($fv) ?>">
+                                            <?php endif; endforeach; ?>
+                                        </form>
+                                    <?php endforeach; ?>
+                                </td>
+
+
+                                <!-- ASSIGNED -->
+                                <?php if ($userRole !== 'agent'): ?>
+                                    <td data-label="Assigned" class="border-bottom border-light py-3"
+                                        style="overflow: visible !important;">
+                                        <?php
+                                        $assignedAgentName = 'Unassigned';
+                                        foreach ($agents as $ag) {
+                                            if ($ag['id'] == $lead['assigned_to']) {
+                                                $assignedAgentName = $ag['name'];
+                                                break;
+                                            }
+                                        }
+                                        $initial = strtoupper(substr($assignedAgentName, 0, 1));
+                                        $colors = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#8b5cf6', '#06b6d4', '#eab308', '#ef4444', '#14b8a6', '#f97316', '#3b82f6', '#84cc16'];
+                                        $agentId = (int) ($lead['assigned_to'] ?? 0);
+                                        $color = $colors[($agentId * 7) % count($colors)];
+                                        if ($assignedAgentName === 'Unassigned')
+                                            $color = '#94a3b8';
+                                        ?>
+                                        <div class="dropdown">
+                                            <button
+                                                class="btn btn-sm btn-light bg-transparent border-0 text-start d-flex align-items-center gap-2 p-0"
+                                                type="button" data-bs-toggle="dropdown"
+                                                style="font-size: 12px; font-weight: 500;">
+                                                <span
+                                                    class="text-white d-flex align-items-center justify-content-center shadow-sm"
+                                                    style="width: 20px; height: 20px; border-radius: 6px; font-size: 10px; background-color: <?= $color ?>;">
+                                                    <?= $initial ?>
+                                                </span>
+                                                <span style="color: #334155;">
+                                                    <?= e(strtolower($assignedAgentName) === 'unassigned' ? 'Unassigned' : explode(' ', $assignedAgentName)[0]) ?>
+                                                </span>
+                                                <i class="bi bi-chevron-down text-muted" style="font-size: 9px;"></i>
+                                            </button>
+                                            <ul class="dropdown-menu shadow-sm border-0"
+                                                style="font-size: 12px; border-radius: 12px;">
+                                                <li><a class="dropdown-item py-2" href="#"
+                                                        onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_null').submit();">Unassigned</a>
+                                                </li>
+                                                <?php foreach ($agents as $agent): ?>
+                                                    <li><a class="dropdown-item py-2" href="#"
+                                                            onclick="event.preventDefault(); document.getElementById('assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>').submit();"><?= e($agent['name']) ?></a>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </div>
+                                        <form id="assign_<?= $lead['id'] ?>_null" method="POST" style="display:none;">
+                                            <input type="hidden" name="single_assign" value="1">
+                                            <input type="hidden" name="lead_id" value="<?= $lead['id'] ?>">
+                                            <input type="hidden" name="agent_id" value="">
+                                            <input type="hidden" name="page" value="<?= $page ?>">
+                                            <?php foreach ($filters as $fk => $fv): if ($fv): ?>
+                                                <input type="hidden" name="filter_<?= e($fk) ?>" value="<?= e($fv) ?>">
+                                            <?php endif; endforeach; ?>
+                                        </form>
+                                        <?php foreach ($agents as $agent): ?>
+                                            <form id="assign_<?= $lead['id'] ?>_<?= $agent['id'] ?>" method="POST" style="display:none;">
+                                                <input type="hidden" name="single_assign" value="1">
+                                                <input type="hidden" name="lead_id" value="<?= $lead['id'] ?>">
+                                                <input type="hidden" name="agent_id" value="<?= $agent['id'] ?>">
+                                                <input type="hidden" name="page" value="<?= $page ?>">
+                                                <?php foreach ($filters as $fk => $fv): if ($fv): ?>
+                                                    <input type="hidden" name="filter_<?= e($fk) ?>" value="<?= e($fv) ?>">
+                                                <?php endif; endforeach; ?>
+                                            </form>
+                                        <?php endforeach; ?>
+                                    </td>
+                                <?php endif; ?>
+
+                                <!-- LATEST NOTE (Agent Only) -->
+                                <?php if ($userRole === 'agent'): ?>
+                                    <td data-label="Latest Note" class="border-bottom border-light py-3 pe-3">
+                                        <?php $latestNote = trim($lead['note'] ?? ''); ?>
+                                        <div class="d-flex align-items-start gap-2"
+                                            style="cursor: pointer; transition: opacity 0.2s;"
+                                            onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"
+                                            onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                            <i class="bi bi-chat-left-text text-muted mt-1"
+                                                style="font-size: 11px; opacity: 0.7;"></i>
+                                            <div id="note_text_<?= $lead['id'] ?>"
+                                                style="font-size: 11.5px; line-height: 1.5; color: #475569; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; max-width: 280px;"
+                                                title="<?= e($latestNote) ?>">
+                                                <?php if ($latestNote): ?>
+                                                    <?= e($latestNote) ?>
+                                                <?php else: ?>
+                                                    <span class="fst-italic opacity-50">No notes yet</span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </td>
+                                <?php endif; ?>
+
+                                <!-- NOTES -->
+                                <td data-label="Notes" class="border-bottom border-light py-3">
+                                    <?php if ($userRole === 'agent'): ?>
+                                        <!-- Agent view: static Add Note button -->
+                                        <button type="button"
+                                            class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1"
+                                            style="font-size:11.5px; font-weight:500; border-radius:6px; color:#475569; max-width: 120px;"
+                                            onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                            <i class="bi bi-pencil-square text-primary"></i>
+                                            <span>Add Note</span>
+                                        </button>
+                                    <?php else: ?>
+                                        <!-- Admin view: compact note preview button -->
+                                        <button type="button"
+                                            class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1"
+                                            style="font-size:11.5px; font-weight:500; border-radius:6px; color:#475569; max-width: 120px;"
+                                            onclick="openQuickNote(<?= $lead['id'] ?>)">
+                                            <i class="bi bi-pencil-square text-primary"></i>
+                                            <span id="note_text_<?= $lead['id'] ?>" class="text-truncate"
+                                                style="max-width: 80px;"><?= !empty($lead['note']) ? e(mb_substr($lead['note'], 0, 20)) . '...' : 'Add Note' ?></span>
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
+
+                                <!-- ACTIONS -->
+                                <td class="text-end pe-4 border-bottom border-light py-3" data-label="Actions">
+                                    <a href="<?= BASE_URL ?>modules/leads/view.php?id=<?= $lead['id'] ?>"
+                                        class="btn btn-light btn-sm rounded-circle d-inline-flex align-items-center justify-content-center border"
+                                        style="width: 32px; height: 32px;" title="View Detail">
+                                        <i class="bi bi-arrow-right text-primary" style="font-size: 14px;"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+
+                        <?php if (empty($leads)): ?>
+                            <tr>
+                                <td colspan="10" class="text-center py-5">
+                                    <div class="py-4">
+                                        <div class="bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                                            style="width: 60px; height: 60px;">
+                                            <i class="bi bi-inbox text-primary" style="font-size: 24px;"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-dark">No leads found</h6>
+                                        <p class="text-muted small mb-0">Try adjusting your filters or importing new leads.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -780,265 +995,280 @@ include '../../includes/header.php';
         </div>
 
         <?php if ($totalPages > 1): ?>
-        <div class="d-flex justify-content-between align-items-center py-4 px-4 border-top">
-            <div class="text-muted" style="font-size: 12px; font-weight: 500;">
-                Showing <span class="text-dark"><?= $offset + 1 ?></span> to <span class="text-dark"><?= min($totalLeads, $offset + $limit) ?></span> of <span class="text-dark"><?= $totalLeads ?></span> entries
+            <div class="d-flex justify-content-between align-items-center py-4 px-4 border-top">
+                <div class="text-muted" style="font-size: 12px; font-weight: 500;">
+                    Showing <span class="text-dark"><?= $offset + 1 ?></span> to <span
+                        class="text-dark"><?= min($totalLeads, $offset + $limit) ?></span> of <span
+                        class="text-dark"><?= $totalLeads ?></span> entries
+                </div>
+                <nav>
+                    <ul class="pagination pagination-modern mb-0">
+                        <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                            <a class="page-link"
+                                href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>"><i
+                                    class="bi bi-chevron-left"></i></a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#"><?= $page ?></a></li>
+                        <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                            <a class="page-link"
+                                href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>"><i
+                                    class="bi bi-chevron-right"></i></a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-            <nav>
-                <ul class="pagination pagination-modern mb-0">
-                    <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>"><i class="bi bi-chevron-left"></i></a>
-                    </li>
-                    <li class="page-item active"><a class="page-link" href="#"><?= $page ?></a></li>
-                    <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>"><i class="bi bi-chevron-right"></i></a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
         <?php else: ?>
             <div class="py-3"></div> <!-- Bottom spacing when no pagination -->
         <?php endif; ?>
-<script>
-window.globalTotalLeads = <?= $totalLeads ?>;
-window.isSelectAllPages = false;
-
-function rebindLeadEvents() {
-    // Select All
-    const selectAll = document.getElementById('selectAll');
-    if (selectAll) {
-        selectAll.addEventListener('change', function() {
-            document.querySelectorAll('.lead-check').forEach(cb => cb.checked = this.checked);
-            updateBulkBar();
-        });
-    }
-    document.querySelectorAll('.lead-check').forEach(cb => cb.addEventListener('change', updateBulkBar));
-
-    const selAllPagesBtn = document.getElementById('selectAllPagesBtn');
-    if (selAllPagesBtn) {
-        selAllPagesBtn.onclick = function(e) {
-            e.preventDefault();
-            window.isSelectAllPages = true;
-            document.getElementById('selectAllPagesBanner').classList.add('d-none');
-            document.getElementById('selectAllPagesBanner').classList.remove('d-flex');
-            document.getElementById('allPagesSelectedBanner').classList.remove('d-none');
-            document.getElementById('allPagesSelectedBanner').classList.add('d-flex');
-            updateBulkBar();
-        };
-    }
-
-    const clearSelBtn = document.getElementById('clearSelectionBtn');
-    if (clearSelBtn) {
-        clearSelBtn.onclick = function(e) {
-            e.preventDefault();
+        <script>
+            window.globalTotalLeads = <?= $totalLeads ?>;
             window.isSelectAllPages = false;
-            document.querySelectorAll('.lead-check').forEach(cb => cb.checked = false);
-            if (selectAll) selectAll.checked = false;
-            document.getElementById('selectAllPagesBanner').classList.add('d-none');
-            document.getElementById('selectAllPagesBanner').classList.remove('d-flex');
-            document.getElementById('allPagesSelectedBanner').classList.add('d-none');
-            document.getElementById('allPagesSelectedBanner').classList.remove('d-flex');
-            updateBulkBar();
-        };
-    }
 
-    // Agent Quick Actions
-    document.querySelectorAll('.agent-quick-status').forEach(select => {
-        select.addEventListener('change', function() {
-            const leadId = this.getAttribute('data-lead-id');
-            const status = this.value;
-            const selectEl = this;
-            selectEl.disabled = true;
-            
-            fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ 'action': 'update_status', 'lead_id': leadId, 'status': status })
-            })
-            .then(res => res.json())
-            .then(data => {
-                selectEl.disabled = false;
-                if (data.success) {
-                    selectEl.style.boxShadow = '0 0 0 0.25rem rgba(25, 135, 84, 0.25)';
-                    selectEl.style.borderColor = '#198754';
-                    setTimeout(() => { selectEl.style.boxShadow = ''; selectEl.style.borderColor = ''; }, 1000);
-                } else { alert(data.message || 'Error updating status'); }
-            })
-            .catch(err => { selectEl.disabled = false; alert('A network error occurred'); });
-        });
-    });
-}
+            function rebindLeadEvents() {
+                // Select All
+                const selectAll = document.getElementById('selectAll');
+                if (selectAll) {
+                    selectAll.addEventListener('change', function () {
+                        document.querySelectorAll('.lead-check').forEach(cb => cb.checked = this.checked);
+                        updateBulkBar();
+                    });
+                }
+                document.querySelectorAll('.lead-check').forEach(cb => cb.addEventListener('change', updateBulkBar));
 
-function updateBulkBar() {
-    const checked = document.querySelectorAll('.lead-check:checked').length;
-    const totalVisible = document.querySelectorAll('.lead-check').length;
-    const bar = document.getElementById('bulkBar');
-    const saBanner = document.getElementById('selectAllPagesBanner');
-    const apBanner = document.getElementById('allPagesSelectedBanner');
-    
-    if (!bar) return;
-    
-    if (checked < totalVisible) {
-        window.isSelectAllPages = false;
-        if(saBanner) { saBanner.classList.add('d-none'); saBanner.classList.remove('d-flex'); }
-        if(apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
-        const selectAll = document.getElementById('selectAll');
-        if(selectAll) selectAll.checked = false;
-    }
-    
-    if (checked > 0) {
-        bar.style.display = 'flex';
-        bar.style.setProperty('display', 'flex', 'important');
-        setTimeout(() => { bar.classList.add('active'); }, 10);
-        
-        let displayCount = window.isSelectAllPages ? window.globalTotalLeads : checked;
-        document.getElementById('selectedCount').textContent = displayCount + ' selected';
+                const selAllPagesBtn = document.getElementById('selectAllPagesBtn');
+                if (selAllPagesBtn) {
+                    selAllPagesBtn.onclick = function (e) {
+                        e.preventDefault();
+                        window.isSelectAllPages = true;
+                        document.getElementById('selectAllPagesBanner').classList.add('d-none');
+                        document.getElementById('selectAllPagesBanner').classList.remove('d-flex');
+                        document.getElementById('allPagesSelectedBanner').classList.remove('d-none');
+                        document.getElementById('allPagesSelectedBanner').classList.add('d-flex');
+                        updateBulkBar();
+                    };
+                }
 
-        if (checked === totalVisible && window.globalTotalLeads > totalVisible && !window.isSelectAllPages) {
-            document.getElementById('currentPageSelectedCount').textContent = checked;
-            if(saBanner) { saBanner.classList.remove('d-none'); saBanner.classList.add('d-flex'); }
-            if(apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
-        }
-    } else {
-        bar.classList.remove('active');
-        setTimeout(() => { bar.style.display = 'none'; }, 300);
-        if(saBanner) { saBanner.classList.add('d-none'); saBanner.classList.remove('d-flex'); }
-        if(apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
-    }
-}
+                const clearSelBtn = document.getElementById('clearSelectionBtn');
+                if (clearSelBtn) {
+                    clearSelBtn.onclick = function (e) {
+                        e.preventDefault();
+                        window.isSelectAllPages = false;
+                        document.querySelectorAll('.lead-check').forEach(cb => cb.checked = false);
+                        if (selectAll) selectAll.checked = false;
+                        document.getElementById('selectAllPagesBanner').classList.add('d-none');
+                        document.getElementById('selectAllPagesBanner').classList.remove('d-flex');
+                        document.getElementById('allPagesSelectedBanner').classList.add('d-none');
+                        document.getElementById('allPagesSelectedBanner').classList.remove('d-flex');
+                        updateBulkBar();
+                    };
+                }
 
-function applyBulkAction(event) {
-    event.preventDefault();
-    const actionSelect = document.querySelector('select[name="bulk_action"]');
-    const agentSelect = document.querySelector('select[name="bulk_agent"]');
-    let action = actionSelect ? actionSelect.value : '';
-    let agent = agentSelect ? agentSelect.value : '';
+                // Agent Quick Actions
+                document.querySelectorAll('.agent-quick-status').forEach(select => {
+                    select.addEventListener('change', function () {
+                        const leadId = this.getAttribute('data-lead-id');
+                        const status = this.value;
+                        const selectEl = this;
+                        selectEl.disabled = true;
 
-    if (!action && agent) action = 'assign';
-    if (!action && !agent) {
-        alert('Please select an action or an agent.');
-        return;
-    }
-
-    const checked = Array.from(document.querySelectorAll('.lead-check:checked'));
-    if (checked.length === 0 && !window.isSelectAllPages) {
-        alert("No leads selected.");
-        return;
-    }
-
-    const targetCount = window.isSelectAllPages ? window.globalTotalLeads : checked.length;
-    if (!confirm('Execute bulk action on ' + targetCount + ' selected leads?')) return;
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
-
-    const inputAction = document.createElement('input');
-    inputAction.name = 'bulk_action';
-    inputAction.value = action;
-    form.appendChild(inputAction);
-
-    if (agent && action === 'assign') {
-        const inputAgent = document.createElement('input');
-        inputAgent.name = 'bulk_agent';
-        inputAgent.value = agent;
-        form.appendChild(inputAgent);
-    }
-    
-    if (window.isSelectAllPages && window.globalTotalLeads > 0) {
-        const inputSA = document.createElement('input');
-        inputSA.name = 'select_all_pages';
-        inputSA.value = '1';
-        form.appendChild(inputSA);
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        for (const [key, value] of urlParams) {
-            const hiddenField = document.createElement('input');
-            hiddenField.type = 'hidden';
-            hiddenField.name = 'filter_' + key;
-            hiddenField.value = value;
-            form.appendChild(hiddenField);
-        }
-    } else {
-        checked.forEach(cb => {
-            const inputId = document.createElement('input');
-            inputId.name = 'lead_ids[]';
-            inputId.value = cb.value;
-            form.appendChild(inputId);
-        });
-    }
-
-    document.body.appendChild(form);
-    form.submit();
-}
-
-function refreshLeadData() {
-    const card = document.getElementById('leadsTableCard');
-    if (!card) return;
-    
-    card.style.opacity = '0.6';
-    card.style.transition = 'opacity 0.3s ease';
-    
-    fetch(window.location.href)
-        .then(res => res.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newContent = doc.getElementById('leadsTableCard');
-            if (newContent) {
-                card.innerHTML = newContent.innerHTML;
-                rebindLeadEvents();
-                // Play a subtle notification sound if you like
+                        fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: new URLSearchParams({ 'action': 'update_status', 'lead_id': leadId, 'status': status })
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                selectEl.disabled = false;
+                                if (data.success) {
+                                    selectEl.style.boxShadow = '0 0 0 0.25rem rgba(25, 135, 84, 0.25)';
+                                    selectEl.style.borderColor = '#198754';
+                                    setTimeout(() => { selectEl.style.boxShadow = ''; selectEl.style.borderColor = ''; }, 1000);
+                                } else { alert(data.message || 'Error updating status'); }
+                            })
+                            .catch(err => { selectEl.disabled = false; alert('A network error occurred'); });
+                    });
+                });
             }
-            card.style.opacity = '1';
-        })
-        .catch(err => {
-            console.error("Refresh failed:", err);
-            card.style.opacity = '1';
-        });
-}
 
-// Initial binding
-rebindLeadEvents();
+            function updateBulkBar() {
+                const checked = document.querySelectorAll('.lead-check:checked').length;
+                const totalVisible = document.querySelectorAll('.lead-check').length;
+                const bar = document.getElementById('bulkBar');
+                const saBanner = document.getElementById('selectAllPagesBanner');
+                const apBanner = document.getElementById('allPagesSelectedBanner');
 
-// Fix z-index overlap for assignment dropdowns in table
-document.addEventListener('show.bs.dropdown', function (event) {
-    let tr = event.target.closest('tr');
-    if (tr) { tr.style.position = 'relative'; tr.style.zIndex = '1050'; }
-});
-document.addEventListener('hide.bs.dropdown', function (event) {
-    let tr = event.target.closest('tr');
-    if (tr) { tr.style.zIndex = ''; setTimeout(() => { tr.style.position = ''; }, 300); }
-});
+                if (!bar) return;
 
-let currentNoteLeadId = null;
+                if (checked < totalVisible) {
+                    window.isSelectAllPages = false;
+                    if (saBanner) { saBanner.classList.add('d-none'); saBanner.classList.remove('d-flex'); }
+                    if (apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
+                    const selectAll = document.getElementById('selectAll');
+                    if (selectAll) selectAll.checked = false;
+                }
 
-function loadNoteHistory(leadId) {
-    const historyContainer = document.getElementById('quickNoteHistory');
-    historyContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Loading notes...</div>';
-    
-    const params = new URLSearchParams({ 'action': 'get_notes', 'lead_id': parseInt(leadId) });
-    fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success && data.notes.length > 0) {
-            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#ef4444', '#84cc16'];
-            let html = '<div class="mb-0">';
-            html += '<div class="d-flex align-items-center justify-content-between mb-2">';
-            html += '<label class="form-label fw-bold mb-0" style="color:#6366f1;"><i class="bi bi-journal-text me-1"></i> Conversation History</label>';
-            html += '<span class="badge rounded-pill text-white" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size:11px;">' + data.notes.length + ' notes</span>';
-            html += '</div>';
-            html += '<div class="overflow-auto" style="max-height: 300px; padding-right: 4px;">';
-            data.notes.forEach((n, idx) => {
-                const dateObj = new Date(n.created_at);
-                const dateStr = dateObj.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'}) + ' · ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                const userName = n.user_name || 'System';
-                const borderColor = colors[idx % colors.length];
-                html += `
+                if (checked > 0) {
+                    bar.style.display = 'flex';
+                    bar.style.setProperty('display', 'flex', 'important');
+                    setTimeout(() => { bar.classList.add('active'); }, 10);
+
+                    let displayCount = window.isSelectAllPages ? window.globalTotalLeads : checked;
+                    document.getElementById('selectedCount').textContent = displayCount + ' selected';
+
+                    if (checked === totalVisible && window.globalTotalLeads > totalVisible && !window.isSelectAllPages) {
+                        document.getElementById('currentPageSelectedCount').textContent = checked;
+                        if (saBanner) { saBanner.classList.remove('d-none'); saBanner.classList.add('d-flex'); }
+                        if (apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
+                    }
+                } else {
+                    bar.classList.remove('active');
+                    setTimeout(() => { bar.style.display = 'none'; }, 300);
+                    if (saBanner) { saBanner.classList.add('d-none'); saBanner.classList.remove('d-flex'); }
+                    if (apBanner) { apBanner.classList.add('d-none'); apBanner.classList.remove('d-flex'); }
+                }
+            }
+
+            function applyBulkAction(event) {
+                event.preventDefault();
+                const actionSelect = document.querySelector('select[name="bulk_action"]');
+                const agentSelect = document.querySelector('select[name="bulk_agent"]');
+                let action = actionSelect ? actionSelect.value : '';
+                let agent = agentSelect ? agentSelect.value : '';
+
+                if (!action && agent) action = 'assign';
+                if (!action && !agent) {
+                    alert('Please select an action or an agent.');
+                    return;
+                }
+
+                const checked = Array.from(document.querySelectorAll('.lead-check:checked'));
+                if (checked.length === 0 && !window.isSelectAllPages) {
+                    alert("No leads selected.");
+                    return;
+                }
+
+                const targetCount = window.isSelectAllPages ? window.globalTotalLeads : checked.length;
+                if (!confirm('Execute bulk action on ' + targetCount + ' selected leads?')) return;
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.style.display = 'none';
+
+                const inputAction = document.createElement('input');
+                inputAction.name = 'bulk_action';
+                inputAction.value = action;
+                form.appendChild(inputAction);
+
+                if (agent && action === 'assign') {
+                    const inputAgent = document.createElement('input');
+                    inputAgent.name = 'bulk_agent';
+                    inputAgent.value = agent;
+                    form.appendChild(inputAgent);
+                }
+
+                // Always include current page
+                const inputPage = document.createElement('input');
+                inputPage.type = 'hidden';
+                inputPage.name = 'page';
+                inputPage.value = '<?= $page ?>';
+                form.appendChild(inputPage);
+
+                // Always include filters from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                for (const [key, value] of urlParams) {
+                    if (key === 'page') continue; // Handled separately
+                    const hiddenField = document.createElement('input');
+                    hiddenField.type = 'hidden';
+                    hiddenField.name = 'filter_' + key;
+                    hiddenField.value = value;
+                    form.appendChild(hiddenField);
+                }
+
+                if (window.isSelectAllPages && window.globalTotalLeads > 0) {
+                    const inputSA = document.createElement('input');
+                    inputSA.name = 'select_all_pages';
+                    inputSA.value = '1';
+                    form.appendChild(inputSA);
+                } else {
+                    checked.forEach(cb => {
+                        const inputId = document.createElement('input');
+                        inputId.name = 'lead_ids[]';
+                        inputId.value = cb.value;
+                        form.appendChild(inputId);
+                    });
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+
+            function refreshLeadData() {
+                const card = document.getElementById('leadsTableCard');
+                if (!card) return;
+
+                card.style.opacity = '0.6';
+                card.style.transition = 'opacity 0.3s ease';
+
+                fetch(window.location.href)
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newContent = doc.getElementById('leadsTableCard');
+                        if (newContent) {
+                            card.innerHTML = newContent.innerHTML;
+                            rebindLeadEvents();
+                            // Play a subtle notification sound if you like
+                        }
+                        card.style.opacity = '1';
+                    })
+                    .catch(err => {
+                        console.error("Refresh failed:", err);
+                        card.style.opacity = '1';
+                    });
+            }
+
+            // Initial binding
+            rebindLeadEvents();
+
+            // Fix z-index overlap for assignment dropdowns in table
+            document.addEventListener('show.bs.dropdown', function (event) {
+                let tr = event.target.closest('tr');
+                if (tr) { tr.style.position = 'relative'; tr.style.zIndex = '1050'; }
+            });
+            document.addEventListener('hide.bs.dropdown', function (event) {
+                let tr = event.target.closest('tr');
+                if (tr) { tr.style.zIndex = ''; setTimeout(() => { tr.style.position = ''; }, 300); }
+            });
+
+            let currentNoteLeadId = null;
+
+            function loadNoteHistory(leadId) {
+                const historyContainer = document.getElementById('quickNoteHistory');
+                historyContainer.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> Loading notes...</div>';
+
+                const params = new URLSearchParams({ 'action': 'get_notes', 'lead_id': parseInt(leadId) });
+                fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.notes.length > 0) {
+                            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#ef4444', '#84cc16'];
+                            let html = '<div class="mb-0">';
+                            html += '<div class="d-flex align-items-center justify-content-between mb-2">';
+                            html += '<label class="form-label fw-bold mb-0" style="color:#6366f1;"><i class="bi bi-journal-text me-1"></i> Conversation History</label>';
+                            html += '<span class="badge rounded-pill text-white" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size:11px;">' + data.notes.length + ' notes</span>';
+                            html += '</div>';
+                            html += '<div class="overflow-auto" style="max-height: 300px; padding-right: 4px;">';
+                            data.notes.forEach((n, idx) => {
+                                const dateObj = new Date(n.created_at);
+                                const dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                const userName = n.user_name || 'System';
+                                const borderColor = colors[idx % colors.length];
+                                html += `
                     <div class="mb-2 rounded-3 p-3" style="background: ${borderColor}12; border-left: 4px solid ${borderColor}; box-shadow: 0 2px 8px ${borderColor}20; border: 1px solid ${borderColor}25; border-left: 4px solid ${borderColor};">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="fw-bold d-inline-flex align-items-center gap-1 rounded-pill px-2 py-1" style="font-size:11px; color: white; background:${borderColor};"><i class="bi bi-person-fill"></i>${userName}</span>
@@ -1046,184 +1276,208 @@ function loadNoteHistory(leadId) {
                         </div>
                         <div class="text-dark" style="font-size: 13px; white-space: pre-wrap; word-break: break-word; line-height:1.6;">${n.note}</div>
                     </div>`;
+                            });
+                            html += '</div></div>';
+                            historyContainer.innerHTML = html;
+                        } else {
+                            historyContainer.innerHTML = '<div class="text-center py-4 rounded-3" style="background:#f8fafc;"><i class="bi bi-chat-left-dots" style="font-size:2rem;color:#cbd5e1;"></i><br><span class="text-muted small mt-2 d-block">No previous notes yet. Start the conversation!</span></div>';
+                        }
+                    })
+                    .catch(() => {
+                        historyContainer.innerHTML = '<div class="text-center py-4 rounded-3" style="background:#f8fafc;"><i class="bi bi-chat-left-dots" style="font-size:2rem;color:#cbd5e1;"></i><br><span class="text-muted small mt-2 d-block">No previous notes yet. Start the conversation!</span></div>';
+                    });
+            }
+
+            function openQuickNote(leadId) {
+                currentNoteLeadId = leadId;
+                document.getElementById('quickNoteText').value = '';
+
+                // Reset followup toggle and fields
+                const followupCheckbox = document.getElementById('quickNoteCreateFollowup');
+                followupCheckbox.checked = false;
+                document.getElementById('quickNoteFollowupFields').classList.add('d-none');
+                document.getElementById('quickNoteFDate').required = false;
+                document.getElementById('quickNoteFDate').value = '';
+                document.getElementById('quickNoteFTime').value = '';
+
+                loadNoteHistory(leadId);
+                var modal = new bootstrap.Modal(document.getElementById('quickNoteModal'));
+                modal.show();
+            }
+
+            function saveQuickNote() {
+                const noteText = document.getElementById('quickNoteText').value;
+                if (!noteText || noteText.trim().length === 0) {
+                    alert("Please enter a note.");
+                    return;
+                }
+
+                const isFollowup = document.getElementById('quickNoteCreateFollowup').checked;
+                const fDate = document.getElementById('quickNoteFDate').value;
+                const fTime = document.getElementById('quickNoteFTime').value;
+
+                if (isFollowup && !fDate) {
+                    alert("Please select a follow-up date.");
+                    return;
+                }
+
+                const saveBtn = document.getElementById('saveQuickNoteBtn');
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+                const params = new URLSearchParams({
+                    'action': 'add_note',
+                    'lead_id': currentNoteLeadId,
+                    'note': noteText.trim(),
+                    'create_followup': isFollowup ? '1' : '0',
+                    'followup_date': fDate,
+                    'followup_time': fTime
+                });
+
+                fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = 'Save Note';
+                        if (data.success) {
+                            // Update button text on table
+                            const noteDiv = document.getElementById('note_text_' + currentNoteLeadId);
+                            if (noteDiv) {
+                                noteDiv.textContent = noteText.trim();
+                                noteDiv.title = noteText.trim();
+                            }
+
+                            // Close the modal
+                            const modalEl = document.getElementById('quickNoteModal');
+                            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
+                        } else {
+                            alert(data.message || 'Error adding note');
+                        }
+                    })
+                    .catch(err => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = 'Save Note';
+                        alert('A network error occurred. Note not saved.');
+                    });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // Relocate modals to body to prevent Bootstrap z-index trapping in fixed/relative layout wrappers
+                var modImport = document.getElementById('importModal');
+                if (modImport) document.body.appendChild(modImport);
+                var modNote = document.getElementById('quickNoteModal');
+                if (modNote) document.body.appendChild(modNote);
             });
-            html += '</div></div>';
-            historyContainer.innerHTML = html;
-        } else {
-            historyContainer.innerHTML = '<div class="text-center py-4 rounded-3" style="background:#f8fafc;"><i class="bi bi-chat-left-dots" style="font-size:2rem;color:#cbd5e1;"></i><br><span class="text-muted small mt-2 d-block">No previous notes yet. Start the conversation!</span></div>';
-        }
-    })
-    .catch(() => {
-        historyContainer.innerHTML = '<div class="text-center py-4 rounded-3" style="background:#f8fafc;"><i class="bi bi-chat-left-dots" style="font-size:2rem;color:#cbd5e1;"></i><br><span class="text-muted small mt-2 d-block">No previous notes yet. Start the conversation!</span></div>';
-    });
-}
+        </script>
 
-function openQuickNote(leadId) {
-    currentNoteLeadId = leadId;
-    document.getElementById('quickNoteText').value = '';
-    
-    // Reset followup toggle and fields
-    const followupCheckbox = document.getElementById('quickNoteCreateFollowup');
-    followupCheckbox.checked = false;
-    document.getElementById('quickNoteFollowupFields').classList.add('d-none');
-    document.getElementById('quickNoteFDate').required = false;
-    document.getElementById('quickNoteFDate').value = '';
-    document.getElementById('quickNoteFTime').value = '';
-
-    loadNoteHistory(leadId);
-    var modal = new bootstrap.Modal(document.getElementById('quickNoteModal'));
-    modal.show();
-}
-
-function saveQuickNote() {
-    const noteText = document.getElementById('quickNoteText').value;
-    if (!noteText || noteText.trim().length === 0) {
-        alert("Please enter a note.");
-        return;
-    }
-    
-    const isFollowup = document.getElementById('quickNoteCreateFollowup').checked;
-    const fDate = document.getElementById('quickNoteFDate').value;
-    const fTime = document.getElementById('quickNoteFTime').value;
-
-    if (isFollowup && !fDate) {
-        alert("Please select a follow-up date.");
-        return;
-    }
-    
-    const saveBtn = document.getElementById('saveQuickNoteBtn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
-
-    const params = new URLSearchParams({ 
-        'action': 'add_note', 
-        'lead_id': currentNoteLeadId, 
-        'note': noteText.trim(),
-        'create_followup': isFollowup ? '1' : '0',
-        'followup_date': fDate,
-        'followup_time': fTime
-    });
-
-    fetch('<?= BASE_URL ?>modules/leads/ajax_agent_actions.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params
-    })
-    .then(res => res.json())
-    .then(data => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = 'Save Note';
-        if (data.success) {
-            // Update button text on table
-            const noteDiv = document.getElementById('note_text_' + currentNoteLeadId);
-            if (noteDiv) { 
-                noteDiv.textContent = noteText.trim(); 
-                noteDiv.title = noteText.trim(); 
-            }
-            
-            // Close the modal
-            const modalEl = document.getElementById('quickNoteModal');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-        } else { 
-            alert(data.message || 'Error adding note'); 
-        }
-    })
-    .catch(err => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = 'Save Note';
-        alert('A network error occurred. Note not saved.');
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Relocate modals to body to prevent Bootstrap z-index trapping in fixed/relative layout wrappers
-    var modImport = document.getElementById('importModal');
-    if (modImport) document.body.appendChild(modImport);
-    var modNote = document.getElementById('quickNoteModal');
-    if (modNote) document.body.appendChild(modNote);
-});
-</script>
-
-<!-- Import Leads Modal -->
-<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <form action="<?= BASE_URL ?>modules/leads/import_leads.php" method="POST" enctype="multipart/form-data">
-                <div class="modal-header bg-light border-0">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-excel text-success me-2"></i>Import Leads</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="alert alert-info border-0 rounded bg-info bg-opacity-10 text-dark" style="font-size:13px;">
-                        <i class="bi bi-info-circle-fill text-info me-2"></i><strong>Smart Columns Detection:</strong><br>
-                        Upload your CSV or Excel file. Our system will automatically map common column names (like "Customer Name", "Phone", "Mobile", "Email Address").
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Select File (.csv, .xlsx)</label>
-                        <input class="form-control" type="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" required>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 bg-light">
-                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-upload me-2"></i>Upload File</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Note Modal -->
-<div class="modal fade" id="quickNoteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
-            <div class="modal-header border-0 py-3 px-4" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
-                <h5 class="modal-title fw-bold text-white"><i class="bi bi-pencil-square me-2"></i>Lead Notes</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <!-- Add New Note -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold"><i class="bi bi-plus-circle text-primary me-1"></i> Add New Note</label>
-                    <textarea class="form-control" id="quickNoteText" rows="3" placeholder="Write your note here..." style="border-radius:12px; border: 1.5px solid #e2e8f0;"></textarea>
-                </div>
-                
-                <!-- Follow-up Toggle -->
-                <div class="rounded-3 p-3 mb-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0;">
-                    <div class="form-check form-switch mb-0">
-                        <input class="form-check-input" type="checkbox" id="quickNoteCreateFollowup" style="cursor:pointer;" onchange="document.getElementById('quickNoteFollowupFields').classList.toggle('d-none', !this.checked); document.getElementById('quickNoteFDate').required = this.checked;">
-                        <label class="form-check-label fw-semibold text-dark ms-1" for="quickNoteCreateFollowup" style="cursor:pointer;">
-                            <i class="bi bi-telephone-forward text-success me-1"></i> Also create this note as a Follow-up
-                        </label>
-                    </div>
-                    
-                    <div id="quickNoteFollowupFields" class="d-none mt-3 row g-2">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted mb-1">Follow-up Date <span class="text-danger">*</span></label>
-                            <input type="date" id="quickNoteFDate" class="form-control form-control-sm" style="border-radius:8px;" min="<?= date('Y-m-d') ?>">
+        <!-- Import Leads Modal -->
+        <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <form action="<?= BASE_URL ?>modules/leads/import_leads.php" method="POST"
+                        enctype="multipart/form-data">
+                        <div class="modal-header bg-light border-0">
+                            <h5 class="modal-title fw-bold"><i
+                                    class="bi bi-file-earmark-excel text-success me-2"></i>Import Leads</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold text-muted mb-1">Time (Optional)</label>
-                            <input type="time" id="quickNoteFTime" class="form-control form-control-sm" style="border-radius:8px;">
+                        <div class="modal-body p-4">
+                            <div class="alert alert-info border-0 rounded bg-info bg-opacity-10 text-dark"
+                                style="font-size:13px;">
+                                <i class="bi bi-info-circle-fill text-info me-2"></i><strong>Smart Columns
+                                    Detection:</strong><br>
+                                Upload your CSV or Excel file. Our system will automatically map common column names
+                                (like "Customer Name", "Phone", "Mobile", "Email Address").
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Select File (.csv, .xlsx)</label>
+                                <input class="form-control" type="file" name="file"
+                                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                                    required>
+                            </div>
                         </div>
-                    </div>
+                        <div class="modal-footer border-0 bg-light">
+                            <button type="button" class="btn btn-outline-secondary px-4"
+                                data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm"><i
+                                    class="bi bi-upload me-2"></i>Upload File</button>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- Previous Notes Timeline -->
-                <div id="quickNoteHistory"></div>
-            </div>
-            <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn px-4 rounded-pill text-white shadow-sm" id="saveQuickNoteBtn" onclick="saveQuickNote()" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
-                    <i class="bi bi-check-lg me-1"></i> Save Note
-                </button>
             </div>
         </div>
-    </div>
-</div>
 
-<?php include '../../includes/footer.php'; ?>
+        <!-- Quick Note Modal -->
+        <div class="modal fade" id="quickNoteModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
+                    <div class="modal-header border-0 py-3 px-4"
+                        style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                        <h5 class="modal-title fw-bold text-white"><i class="bi bi-pencil-square me-2"></i>Lead Notes
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <!-- Add New Note -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold"><i class="bi bi-plus-circle text-primary me-1"></i> Add
+                                New Note</label>
+                            <textarea class="form-control" id="quickNoteText" rows="3"
+                                placeholder="Write your note here..."
+                                style="border-radius:12px; border: 1.5px solid #e2e8f0;"></textarea>
+                        </div>
 
+                        <!-- Follow-up Toggle -->
+                        <div class="rounded-3 p-3 mb-3"
+                            style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0;">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="quickNoteCreateFollowup"
+                                    style="cursor:pointer;"
+                                    onchange="document.getElementById('quickNoteFollowupFields').classList.toggle('d-none', !this.checked); document.getElementById('quickNoteFDate').required = this.checked;">
+                                <label class="form-check-label fw-semibold text-dark ms-1" for="quickNoteCreateFollowup"
+                                    style="cursor:pointer;">
+                                    <i class="bi bi-telephone-forward text-success me-1"></i> Also create this note as a
+                                    Follow-up
+                                </label>
+                            </div>
 
+                            <div id="quickNoteFollowupFields" class="d-none mt-3 row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Follow-up Date <span
+                                            class="text-danger">*</span></label>
+                                    <input type="date" id="quickNoteFDate" class="form-control form-control-sm"
+                                        style="border-radius:8px;" min="<?= date('Y-m-d') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Time (Optional)</label>
+                                    <input type="time" id="quickNoteFTime" class="form-control form-control-sm"
+                                        style="border-radius:8px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Previous Notes Timeline -->
+                        <div id="quickNoteHistory"></div>
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-outline-secondary px-4 rounded-pill"
+                            data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn px-4 rounded-pill text-white shadow-sm" id="saveQuickNoteBtn"
+                            onclick="saveQuickNote()"
+                            style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                            <i class="bi bi-check-lg me-1"></i> Save Note
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <?php include '../../includes/footer.php'; ?>
